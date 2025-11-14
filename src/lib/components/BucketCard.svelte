@@ -1,6 +1,35 @@
 <script lang="ts">
 	import type { BucketWithCycle } from '$lib/types/bucket';
 	import { format } from 'date-fns';
+	import {
+		ShoppingCart,
+		Fuel,
+		Utensils,
+		Coffee,
+		Popcorn,
+		Dumbbell,
+		Gamepad2,
+		Smartphone,
+		Shirt,
+		Home,
+		Dog,
+		Heart
+	} from 'lucide-svelte';
+
+	const iconMap: Record<string, any> = {
+		'shopping-cart': ShoppingCart,
+		'fuel': Fuel,
+		'utensils': Utensils,
+		'coffee': Coffee,
+		'popcorn': Popcorn,
+		'dumbbell': Dumbbell,
+		'gamepad': Gamepad2,
+		'smartphone': Smartphone,
+		'shirt': Shirt,
+		'home': Home,
+		'dog': Dog,
+		'heart': Heart
+	};
 
 	interface Props {
 		bucket: BucketWithCycle;
@@ -66,8 +95,10 @@
 	<div class="p-4">
 		<div class="mb-2 flex items-center justify-between gap-2">
 			<div class="flex items-center gap-2">
-				{#if bucket.icon}
-					<span class="text-xl">{bucket.icon}</span>
+				{#if bucket.icon && iconMap[bucket.icon]}
+					<div class="text-blue-600">
+						<svelte:component this={iconMap[bucket.icon]} size={20} />
+					</div>
 				{/if}
 				<h3 class="text-lg font-semibold text-gray-900">{bucket.name}</h3>
 			</div>

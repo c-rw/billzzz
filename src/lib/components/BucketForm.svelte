@@ -1,6 +1,20 @@
 <script lang="ts">
 	import type { FrequencyType } from '$lib/types/bucket';
 	import { format } from 'date-fns';
+	import {
+		ShoppingCart,
+		Fuel,
+		Utensils,
+		Coffee,
+		Popcorn,
+		Dumbbell,
+		Gamepad2,
+		Smartphone,
+		Shirt,
+		Home,
+		Dog,
+		Heart
+	} from 'lucide-svelte';
 
 	interface Props {
 		initialData?: {
@@ -35,18 +49,18 @@
 
 	// Preset icon options
 	const iconOptions = [
-		{ emoji: '🛒', label: 'Groceries' },
-		{ emoji: '⛽', label: 'Petrol' },
-		{ emoji: '🍔', label: 'Fast Food' },
-		{ emoji: '☕', label: 'Coffee' },
-		{ emoji: '🎬', label: 'Entertainment' },
-		{ emoji: '🏋️', label: 'Fitness' },
-		{ emoji: '🎮', label: 'Gaming' },
-		{ emoji: '📱', label: 'Tech' },
-		{ emoji: '👕', label: 'Clothing' },
-		{ emoji: '🏠', label: 'Home' },
-		{ emoji: '🐕', label: 'Pets' },
-		{ emoji: '💊', label: 'Health' }
+		{ id: 'shopping-cart', component: ShoppingCart, label: 'Groceries' },
+		{ id: 'fuel', component: Fuel, label: 'Gas' },
+		{ id: 'utensils', component: Utensils, label: 'Food' },
+		{ id: 'coffee', component: Coffee, label: 'Coffee' },
+		{ id: 'popcorn', component: Popcorn, label: 'Entertainment' },
+		{ id: 'dumbbell', component: Dumbbell, label: 'Fitness' },
+		{ id: 'gamepad', component: Gamepad2, label: 'Gaming' },
+		{ id: 'smartphone', component: Smartphone, label: 'Tech' },
+		{ id: 'shirt', component: Shirt, label: 'Clothing' },
+		{ id: 'home', component: Home, label: 'Home' },
+		{ id: 'dog', component: Dog, label: 'Pets' },
+		{ id: 'heart', component: Heart, label: 'Health' }
 	];
 
 	// Reset form when initialData changes
@@ -107,13 +121,13 @@
 			{#each iconOptions as option}
 				<button
 					type="button"
-					onclick={() => (icon = option.emoji)}
-					class="p-2 text-2xl rounded-md border-2 transition-all {icon === option.emoji
-						? 'border-blue-500 bg-blue-50'
-						: 'border-gray-200 hover:border-gray-300'}"
+					onclick={() => (icon = option.id)}
+					class="p-3 rounded-md border-2 transition-all {icon === option.id
+						? 'border-blue-500 bg-blue-50 text-blue-700'
+						: 'border-gray-200 hover:border-gray-300 text-gray-600'}"
 					title={option.label}
 				>
-					{option.emoji}
+					<svelte:component this={option.component} size={24} />
 				</button>
 			{/each}
 		</div>

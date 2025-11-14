@@ -46,6 +46,7 @@
 	"dependencies": {
 		"better-sqlite3": "^12.4.1",
 		"date-fns": "^4.1.0",
-		"drizzle-orm": "^0.44.7"
+		"drizzle-orm": "^0.44.7",
+		"lucide-svelte": "^0.553.0"
 	}
 }

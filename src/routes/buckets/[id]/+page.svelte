@@ -6,6 +6,35 @@
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 	import { format } from 'date-fns';
+	import {
+		ShoppingCart,
+		Fuel,
+		Utensils,
+		Coffee,
+		Popcorn,
+		Dumbbell,
+		Gamepad2,
+		Smartphone,
+		Shirt,
+		Home,
+		Dog,
+		Heart
+	} from 'lucide-svelte';
+
+	const iconMap: Record<string, any> = {
+		'shopping-cart': ShoppingCart,
+		'fuel': Fuel,
+		'utensils': Utensils,
+		'coffee': Coffee,
+		'popcorn': Popcorn,
+		'dumbbell': Dumbbell,
+		'gamepad': Gamepad2,
+		'smartphone': Smartphone,
+		'shirt': Shirt,
+		'home': Home,
+		'dog': Dog,
+		'heart': Heart
+	};
 
 	let { data }: { data: PageData } = $props();
 
@@ -172,8 +201,10 @@
 					/>
 				</svg>
 			</button>
-			{#if bucket.icon}
-				<span class="text-3xl">{bucket.icon}</span>
+			{#if bucket.icon && iconMap[bucket.icon]}
+				<div class="text-blue-600">
+					<svelte:component this={iconMap[bucket.icon]} size={32} />
+				</div>
 			{/if}
 			<h1 class="text-3xl font-bold text-gray-900">{bucket.name}</h1>
 		</div>
