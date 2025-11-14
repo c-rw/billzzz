@@ -1,0 +1,135 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+dist
+dist-ssr
+*.local
+
+# SvelteKit
+.svelte-kit
+.svelte-kit/**/*
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+!.env.test
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Database
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
+/drizzle/*.db
+/drizzle/*.db-shm
+/drizzle/*.db-wal
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# IDE & Editors
+.vscode/*
+!.vscode/mcp.json
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+.vscode-test
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage
+*.lcov
+.nyc_output
+.coverage
+.cache
+.pytest_cache/
+test-results/
+playwright-report/
+
+# Temporary Files
+*.tmp
+*.temp
+.cache/
+.parcel-cache
+.eslintcache
+.stylelintcache
+
+# Package Manager
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-store
+.pnpm-debug.log
+
+# Docker
+.dockerignore
+*.pid
+*.seed
+*.pid.lock
+
+# Misc
+.turbo
+.next
+.nuxt
+*.tsbuildinfo
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Development Notes
+claude.md
+*.private.md
+
+# Claude Code
+.claude/

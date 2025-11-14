@@ -1,0 +1,311 @@
+import { db } from './index';
+import { bills, categories, paymentHistory, paydaySettings, type NewBill, type NewCategory, type Category, type NewPaydaySettings } from './schema';
+import { eq, and, gte, lte, desc, asc, like, or, sql } from 'drizzle-orm';
+import type { BillFilters, BillSort } from '$lib/types/bill';
+import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
+
+// ===== CATEGORY QUERIES =====
+
+export function getAllCategories(): Category[] {
+	return db.select().from(categories).orderBy(categories.name).all();
+}
+
+export function getCategoryById(id: number) {
+	return db.select().from(categories).where(eq(categories.id, id)).get();
+}
+
+export function createCategory(data: NewCategory) {
+	return db.insert(categories).values(data).returning().get();
+}
+
+export function updateCategory(id: number, data: Partial<NewCategory>) {
+	return db.update(categories).set(data).where(eq(categories.id, id)).returning().get();
+}
+
+export function deleteCategory(id: number) {
+	return db.delete(categories).where(eq(categories.id, id)).returning().get();
+}
+
+// ===== BILL QUERIES =====
+
+export function getAllBills(filters?: BillFilters, sort?: BillSort) {
+	let query = db
+		.select({
+			id: bills.id,
+			name: bills.name,
+			amount: bills.amount,
+			dueDate: bills.dueDate,
+			paymentLink: bills.paymentLink,
+			categoryId: bills.categoryId,
+			isRecurring: bills.isRecurring,
+			recurrenceType: bills.recurrenceType,
+			recurrenceDay: bills.recurrenceDay,
+			isPaid: bills.isPaid,
+			isAutopay: bills.isAutopay,
+			notes: bills.notes,
+			createdAt: bills.createdAt,
+			updatedAt: bills.updatedAt,
+			category: categories
+		})
+		.from(bills)
+		.leftJoin(categories, eq(bills.categoryId, categories.id));
+
+	// Apply filters
+	const conditions = [];
+
+	if (filters?.status && filters.status !== 'all') {
+		const now = new Date();
+
+		if (filters.status === 'paid') {
+			conditions.push(eq(bills.isPaid, true));
+		} else if (filters.status === 'unpaid') {
+			conditions.push(eq(bills.isPaid, false));
+		} else if (filters.status === 'overdue') {
+			conditions.push(
+				and(
+					eq(bills.isPaid, false),
+					lte(bills.dueDate, now)
+				)
+			);
+		} else if (filters.status === 'upcoming') {
+			const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+			conditions.push(
+				and(
+					eq(bills.isPaid, false),
+					gte(bills.dueDate, now),
+					lte(bills.dueDate, sevenDaysFromNow)
+				)
+			);
+		}
+	}
+
+	if (filters?.categoryId) {
+		conditions.push(eq(bills.categoryId, filters.categoryId));
+	}
+
+	if (filters?.searchQuery) {
+		conditions.push(
+			or(
+				like(bills.name, `%${filters.searchQuery}%`),
+				like(bills.notes, `%${filters.searchQuery}%`)
+			)
+		);
+	}
+
+	if (conditions.length > 0) {
+		query = query.where(and(...conditions)) as any;
+	}
+
+	// Apply sorting
+	if (sort) {
+		const column = bills[sort.field];
+		const direction = sort.direction === 'asc' ? asc : desc;
+		query = query.orderBy(direction(column)) as any;
+	} else {
+		// Default sort by due date ascending
+		query = query.orderBy(asc(bills.dueDate)) as any;
+	}
+
+	return query.all();
+}
+
+export function getBillById(id: number) {
+	return db
+		.select({
+			id: bills.id,
+			name: bills.name,
+			amount: bills.amount,
+			dueDate: bills.dueDate,
+			paymentLink: bills.paymentLink,
+			categoryId: bills.categoryId,
+			isRecurring: bills.isRecurring,
+			recurrenceType: bills.recurrenceType,
+			recurrenceDay: bills.recurrenceDay,
+			isPaid: bills.isPaid,
+			isAutopay: bills.isAutopay,
+			notes: bills.notes,
+			createdAt: bills.createdAt,
+			updatedAt: bills.updatedAt,
+			category: categories
+		})
+		.from(bills)
+		.leftJoin(categories, eq(bills.categoryId, categories.id))
+		.where(eq(bills.id, id))
+		.get();
+}
+
+export function createBill(data: NewBill) {
+	return db.insert(bills).values(data).returning().get();
+}
+
+export function updateBill(id: number, data: Partial<NewBill>) {
+	return db
+		.update(bills)
+		.set({
+			...data,
+			updatedAt: new Date()
+		})
+		.where(eq(bills.id, id))
+		.returning()
+		.get();
+}
+
+export function deleteBill(id: number) {
+	return db.delete(bills).where(eq(bills.id, id)).returning().get();
+}
+
+export function markBillAsPaid(id: number, paid: boolean) {
+	return db
+		.update(bills)
+		.set({
+			isPaid: paid,
+			updatedAt: new Date()
+		})
+		.where(eq(bills.id, id))
+		.returning()
+		.get();
+}
+
+// ===== PAYMENT HISTORY QUERIES =====
+
+export function getPaymentHistoryForBill(billId: number) {
+	return db
+		.select()
+		.from(paymentHistory)
+		.where(eq(paymentHistory.billId, billId))
+		.orderBy(desc(paymentHistory.paymentDate))
+		.all();
+}
+
+export function addPaymentHistory(billId: number, amount: number, notes?: string) {
+	return db
+		.insert(paymentHistory)
+		.values({
+			billId,
+			amount,
+			paymentDate: new Date(),
+			notes
+		})
+		.returning()
+		.get();
+}
+
+export function getAllPaymentHistory() {
+	return db
+		.select({
+			id: paymentHistory.id,
+			billId: paymentHistory.billId,
+			amount: paymentHistory.amount,
+			paymentDate: paymentHistory.paymentDate,
+			notes: paymentHistory.notes,
+			createdAt: paymentHistory.createdAt,
+			billName: bills.name,
+			bill: bills
+		})
+		.from(paymentHistory)
+		.innerJoin(bills, eq(paymentHistory.billId, bills.id))
+		.orderBy(desc(paymentHistory.paymentDate))
+		.all();
+}
+
+export function deletePaymentHistory(id: number) {
+	return db.delete(paymentHistory).where(eq(paymentHistory.id, id)).returning().get();
+}
+
+// ===== DASHBOARD STATS =====
+
+export function getDashboardStats() {
+	const now = new Date();
+	const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+	const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+	const allBills = db.select().from(bills).all();
+
+	const totalBills = allBills.length;
+	const paidBills = allBills.filter((b) => b.isPaid).length;
+	const unpaidBills = totalBills - paidBills;
+	const overdueBills = allBills.filter((b) => !b.isPaid && b.dueDate <= now).length;
+	const upcomingBills = allBills.filter(
+		(b) => !b.isPaid && b.dueDate > now && b.dueDate <= sevenDaysFromNow
+	).length;
+
+	// Calculate total amount due in next 30 days (including overdue)
+	const totalAmount = allBills
+		.filter((b) => !b.isPaid && b.dueDate <= thirtyDaysFromNow)
+		.reduce((sum, b) => sum + b.amount, 0);
+
+	// Get payday settings if configured
+	const paydayConfig = getPaydaySettings();
+	let nextPayday: Date | null = null;
+	let followingPayday: Date | null = null;
+	let dueBeforeNextPayday = 0;
+	let amountDueBeforeNextPayday = 0;
+	let dueBeforeFollowingPayday = 0;
+	let amountDueBeforeFollowingPayday = 0;
+
+	if (paydayConfig) {
+		try {
+			nextPayday = calculateNextPayday(paydayConfig, now);
+			followingPayday = calculateFollowingPayday(paydayConfig, now);
+
+			// Count bills due before next payday
+			const billsBeforeNextPayday = allBills.filter(
+				(b) => !b.isPaid && b.dueDate <= nextPayday!
+			);
+			dueBeforeNextPayday = billsBeforeNextPayday.length;
+			amountDueBeforeNextPayday = billsBeforeNextPayday.reduce((sum, b) => sum + b.amount, 0);
+
+			// Count bills due before following payday
+			const billsBeforeFollowingPayday = allBills.filter(
+				(b) => !b.isPaid && b.dueDate <= followingPayday!
+			);
+			dueBeforeFollowingPayday = billsBeforeFollowingPayday.length;
+			amountDueBeforeFollowingPayday = billsBeforeFollowingPayday.reduce((sum, b) => sum + b.amount, 0);
+		} catch (error) {
+			console.error('Error calculating payday stats:', error);
+		}
+	}
+
+	return {
+		totalBills,
+		paidBills,
+		unpaidBills,
+		overdueBills,
+		upcomingBills,
+		totalAmount,
+		nextPayday,
+		followingPayday,
+		dueBeforeNextPayday,
+		amountDueBeforeNextPayday,
+		dueBeforeFollowingPayday,
+		amountDueBeforeFollowingPayday,
+		hasPaydayConfigured: paydayConfig !== undefined
+	};
+}
+
+// ===== PAYDAY SETTINGS QUERIES =====
+
+export function getPaydaySettings() {
+	// There should only be one payday settings record
+	return db.select().from(paydaySettings).get();
+}
+
+export function createPaydaySettings(data: NewPaydaySettings) {
+	return db.insert(paydaySettings).values(data).returning().get();
+}
+
+export function updatePaydaySettings(id: number, data: Partial<NewPaydaySettings>) {
+	return db
+		.update(paydaySettings)
+		.set({
+			...data,
+			updatedAt: new Date()
+		})
+		.where(eq(paydaySettings.id, id))
+		.returning()
+		.get();
+}
+
+export function deletePaydaySettings(id: number) {
+	return db.delete(paydaySettings).where(eq(paydaySettings.id, id)).returning().get();
+}
