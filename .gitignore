@@ -130,6 +130,8 @@ playwright-report/
 # Development Notes
 claude.md
 *.private.md
+*.xlsx
+*.xls
 
 # Claude Code
 .claude/

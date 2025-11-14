@@ -161,6 +161,7 @@
 			<button
 				onclick={() => goto('/buckets')}
 				class="rounded-md p-2 text-gray-500 hover:bg-gray-100"
+				aria-label="Back to buckets"
 			>
 				<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path

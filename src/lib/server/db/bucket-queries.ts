@@ -293,7 +293,9 @@ function addComputedFields(cycle: BucketCycle): BucketCycleWithComputed {
 /**
  * Create a transaction and update cycle totals
  */
-export async function createTransaction(data: NewBucketTransaction): Promise<BucketTransaction> {
+export async function createTransaction(
+	data: Omit<NewBucketTransaction, 'cycleId'>
+): Promise<BucketTransaction> {
 	const bucket = await getBucketById(data.bucketId);
 	if (!bucket) throw new Error('Bucket not found');
 

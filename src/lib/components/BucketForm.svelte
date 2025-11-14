@@ -102,7 +102,7 @@
 
 	<!-- Icon Selection -->
 	<div>
-		<label class="block text-sm font-medium text-gray-700 mb-2">Icon (Optional)</label>
+		<div class="block text-sm font-medium text-gray-700 mb-2">Icon (Optional)</div>
 		<div class="grid grid-cols-6 gap-2">
 			{#each iconOptions as option}
 				<button

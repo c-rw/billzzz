@@ -70,7 +70,6 @@
 				step="0.01"
 				class="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500"
 				placeholder="0.00"
-				autofocus
 			/>
 		</div>
 	</div>
