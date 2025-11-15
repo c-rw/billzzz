@@ -7,7 +7,7 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 ### 💵 Bills Management
 - Track bills with due dates, amounts, and payment links
 - Recurring bills (weekly, biweekly, monthly, quarterly, yearly)
-- Categories with custom colors and icons
+- Categories with custom colors and Lucide icons
 - Payment history tracking
 - Mark bills as paid/unpaid
 - Filter and search bills
@@ -23,9 +23,7 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 
 ### 📊 Debt Calculator
 - Track multiple debts with customizable interest rates
-- Rate bucket support for promotional rates, balance transfers, and deferred interest
 - Multiple payoff strategies (snowball, avalanche, custom)
-- Payment allocation across different rate tiers
 - Visual timeline and comparison tools
 - Linked bill tracking for minimum payments
 
@@ -35,6 +33,7 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - **Database**: SQLite with better-sqlite3
 - **ORM**: Drizzle ORM
 - **Styling**: Tailwind CSS 4
+- **Icons**: Lucide (via lucide-svelte)
 - **Language**: TypeScript
 
 ## Docker Deployment
@@ -139,7 +138,6 @@ The application uses SQLite with the following main tables:
 
 ### Debt Calculator
 - **debts** - Debt accounts with interest rates
-- **debt_rate_buckets** - Promotional rates and balance segments
 - **debt_payments** - Payment history
 - **debt_strategy_settings** - Payoff strategy configuration
 
