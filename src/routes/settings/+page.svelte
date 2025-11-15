@@ -4,6 +4,20 @@
 	import { format } from 'date-fns';
 	import Modal from '$lib/components/Modal.svelte';
 	import PaydaySettingsForm from '$lib/components/PaydaySettingsForm.svelte';
+	import {
+		ShoppingCart,
+		Fuel,
+		Utensils,
+		Coffee,
+		Popcorn,
+		Dumbbell,
+		Gamepad2,
+		Smartphone,
+		Shirt,
+		Home,
+		Dog,
+		Heart
+	} from 'lucide-svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -16,6 +30,33 @@
 		color: '#3B82F6',
 		icon: ''
 	});
+	let iconSearchQuery = $state('');
+
+	// Icon options for categories (same as buckets)
+	const iconOptions = [
+		{ id: 'shopping-cart', component: ShoppingCart, label: 'Groceries' },
+		{ id: 'fuel', component: Fuel, label: 'Gas' },
+		{ id: 'utensils', component: Utensils, label: 'Food' },
+		{ id: 'coffee', component: Coffee, label: 'Coffee' },
+		{ id: 'popcorn', component: Popcorn, label: 'Entertainment' },
+		{ id: 'dumbbell', component: Dumbbell, label: 'Fitness' },
+		{ id: 'gamepad', component: Gamepad2, label: 'Gaming' },
+		{ id: 'smartphone', component: Smartphone, label: 'Tech' },
+		{ id: 'shirt', component: Shirt, label: 'Clothing' },
+		{ id: 'home', component: Home, label: 'Home' },
+		{ id: 'dog', component: Dog, label: 'Pets' },
+		{ id: 'heart', component: Heart, label: 'Health' }
+	];
+
+	// Filter icons based on search query
+	const filteredIconOptions = $derived(
+		iconSearchQuery.trim() === ''
+			? iconOptions
+			: iconOptions.filter(option =>
+				option.label.toLowerCase().includes(iconSearchQuery.toLowerCase()) ||
+				option.id.toLowerCase().includes(iconSearchQuery.toLowerCase())
+			)
+	);
 
 	const editingCategory = $derived(
 		editingCategoryId !== null ? data.categories.find((c) => c.id === editingCategoryId) : null
@@ -90,6 +131,7 @@
 			color: '#3B82F6',
 			icon: ''
 		};
+		iconSearchQuery = '';
 		showAddCategoryModal = true;
 	}
 
@@ -101,6 +143,7 @@
 				color: category.color,
 				icon: category.icon || ''
 			};
+			iconSearchQuery = '';
 			editingCategoryId = id;
 			showEditCategoryModal = true;
 		}
@@ -422,14 +465,20 @@
 				{:else}
 					<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 						{#each data.categories as category (category.id)}
+							{@const iconOption = iconOptions.find(opt => opt.id === category.icon)}
+							{@const DisplayIcon = iconOption?.component}
 							<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
 								<div class="flex items-start justify-between">
 									<div class="flex items-center gap-3">
 										<div
-											class="flex h-10 w-10 items-center justify-center rounded-lg text-xl"
+											class="flex h-10 w-10 items-center justify-center rounded-lg"
 											style="background-color: {category.color}20; color: {category.color}"
 										>
-											{category.icon || '📁'}
+											{#if DisplayIcon}
+												<DisplayIcon size={24} />
+											{:else}
+												<span class="text-xl">📁</span>
+											{/if}
 										</div>
 										<div>
 											<h3 class="font-medium text-gray-900">{category.name}</h3>
@@ -499,17 +548,40 @@
 		</div>
 
 		<div>
-			<label for="category-icon" class="block text-sm font-medium text-gray-700">
-				Icon (emoji)
-			</label>
+			<div class="block text-sm font-medium text-gray-700 mb-2">Icon (Optional)</div>
 			<input
-				id="category-icon"
 				type="text"
-				bind:value={categoryForm.icon}
-				placeholder="📁"
-				maxlength="2"
-				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				bind:value={iconSearchQuery}
+				placeholder="Search icons..."
+				class="mb-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
 			/>
+			<div class="grid grid-cols-6 gap-2">
+				{#each filteredIconOptions as option}
+					{@const IconComponent = option.component}
+					<button
+						type="button"
+						onclick={() => (categoryForm.icon = option.id)}
+						class="p-3 rounded-md border-2 transition-all {categoryForm.icon === option.id
+							? 'border-blue-500 bg-blue-50 text-blue-700'
+							: 'border-gray-200 hover:border-gray-300 text-gray-600'}"
+						title={option.label}
+					>
+						<IconComponent size={24} />
+					</button>
+				{/each}
+			</div>
+			{#if filteredIconOptions.length === 0}
+				<p class="mt-2 text-sm text-gray-500 text-center">No icons found</p>
+			{/if}
+			{#if categoryForm.icon}
+				<button
+					type="button"
+					onclick={() => (categoryForm.icon = '')}
+					class="mt-2 text-xs text-gray-500 hover:text-gray-700"
+				>
+					Clear selection
+				</button>
+			{/if}
 		</div>
 
 		<div>
@@ -566,17 +638,40 @@
 		</div>
 
 		<div>
-			<label for="edit-category-icon" class="block text-sm font-medium text-gray-700">
-				Icon (emoji)
-			</label>
+			<div class="block text-sm font-medium text-gray-700 mb-2">Icon (Optional)</div>
 			<input
-				id="edit-category-icon"
 				type="text"
-				bind:value={categoryForm.icon}
-				placeholder="📁"
-				maxlength="2"
-				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				bind:value={iconSearchQuery}
+				placeholder="Search icons..."
+				class="mb-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
 			/>
+			<div class="grid grid-cols-6 gap-2">
+				{#each filteredIconOptions as option}
+					{@const IconComponent = option.component}
+					<button
+						type="button"
+						onclick={() => (categoryForm.icon = option.id)}
+						class="p-3 rounded-md border-2 transition-all {categoryForm.icon === option.id
+							? 'border-blue-500 bg-blue-50 text-blue-700'
+							: 'border-gray-200 hover:border-gray-300 text-gray-600'}"
+						title={option.label}
+					>
+						<IconComponent size={24} />
+					</button>
+				{/each}
+			</div>
+			{#if filteredIconOptions.length === 0}
+				<p class="mt-2 text-sm text-gray-500 text-center">No icons found</p>
+			{/if}
+			{#if categoryForm.icon}
+				<button
+					type="button"
+					onclick={() => (categoryForm.icon = '')}
+					class="mt-2 text-xs text-gray-500 hover:text-gray-700"
+				>
+					Clear selection
+				</button>
+			{/if}
 		</div>
 
 		<div>
