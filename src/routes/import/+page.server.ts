@@ -12,6 +12,7 @@ import {
 	updateImportedTransaction,
 	markTransactionsAsProcessed
 } from '$lib/server/db/queries';
+import { getAllBucketsWithCurrentCycle, createTransaction } from '$lib/server/db/bucket-queries';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const sessionId = url.searchParams.get('session');
@@ -21,12 +22,14 @@ export const load: PageServerLoad = async ({ url }) => {
 		const transactions = getImportedTransactionsBySession(parseInt(sessionId));
 		const categories = getAllCategories();
 		const existingBills = getAllBills();
+		const buckets = await getAllBucketsWithCurrentCycle();
 
 		return {
 			sessionId: parseInt(sessionId),
 			transactions,
 			categories,
-			existingBills
+			existingBills,
+			buckets
 		};
 	}
 
@@ -34,7 +37,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		sessionId: null,
 		transactions: [],
 		categories: [],
-		existingBills: []
+		existingBills: [],
+		buckets: []
 	};
 };
 
@@ -114,8 +118,13 @@ export const actions: Actions = {
 			createImportedTransactionsBatch(transactionData);
 
 			// Redirect to review page
-			return redirect(302, `/import?session=${session.id}`);
+			throw redirect(302, `/import?session=${session.id}`);
 		} catch (error) {
+			// Don't catch redirect errors - let them propagate
+			if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
+				throw error;
+			}
+
 			console.error('Upload error:', error);
 			return fail(500, {
 				error: 'An unexpected error occurred while processing the file'
@@ -131,6 +140,9 @@ export const actions: Actions = {
 
 			let importedCount = 0;
 
+			// Get all transaction details for bucket mapping
+			const sessionTransactions = getImportedTransactionsBySession(sessionId);
+
 			for (const mapping of mappings) {
 				const {
 					transactionId,
@@ -141,8 +153,12 @@ export const actions: Actions = {
 					dueDate,
 					categoryId,
 					isRecurring,
-					recurrenceType
+					recurrenceType,
+					bucketId
 				} = mapping;
+
+				// Find the full transaction data
+				const transactionData = sessionTransactions.find(t => t.transaction.id === transactionId);
 
 				if (action === 'map_existing' && billId) {
 					// Map to existing bill - add as payment history
@@ -174,6 +190,21 @@ export const actions: Actions = {
 						isProcessed: true
 					});
 					importedCount++;
+				} else if (action === 'map_to_bucket' && bucketId && transactionData) {
+					// Map to bucket - create bucket transaction
+					await createTransaction({
+						bucketId,
+						amount,
+						timestamp: transactionData.transaction.datePosted,
+						vendor: transactionData.transaction.payee,
+						notes: transactionData.transaction.memo || undefined
+					});
+
+					updateImportedTransaction(transactionId, {
+						mappedBucketId: bucketId,
+						isProcessed: true
+					});
+					importedCount++;
 				}
 				// If action is 'skip', we just don't process it
 			}
@@ -187,8 +218,13 @@ export const actions: Actions = {
 				});
 			}
 
-			return redirect(302, '/');
+			throw redirect(302, '/');
 		} catch (error) {
+			// Don't catch redirect errors - let them propagate
+			if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
+				throw error;
+			}
+
 			console.error('Process transactions error:', error);
 			return fail(500, {
 				error: 'Failed to process transactions'
