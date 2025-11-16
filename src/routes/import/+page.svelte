@@ -1,7 +1,26 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
-	import { Upload, ArrowLeft, Check, X, Plus, FileText } from 'lucide-svelte';
+	import {
+		Upload,
+		ArrowLeft,
+		Check,
+		X,
+		Plus,
+		FileText,
+		ShoppingCart,
+		Fuel,
+		Utensils,
+		Coffee,
+		Popcorn,
+		Dumbbell,
+		Gamepad2,
+		Smartphone,
+		Shirt,
+		Home,
+		Dog,
+		Heart
+	} from 'lucide-svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -9,11 +28,27 @@
 	let processing = $state(false);
 	let selectedFile = $state<File | null>(null);
 
+	// Icon mapping for buckets
+	const iconMap: Record<string, any> = {
+		'shopping-cart': ShoppingCart,
+		fuel: Fuel,
+		utensils: Utensils,
+		coffee: Coffee,
+		popcorn: Popcorn,
+		dumbbell: Dumbbell,
+		gamepad: Gamepad2,
+		smartphone: Smartphone,
+		shirt: Shirt,
+		home: Home,
+		dog: Dog,
+		heart: Heart
+	};
+
 	// Transaction mapping state
 	let transactionMappings = $state<
 		Array<{
 			transactionId: number;
-			action: 'map_existing' | 'create_new' | 'skip';
+			action: 'map_existing' | 'create_new' | 'map_to_bucket' | 'skip';
 			billId?: number;
 			billName?: string;
 			amount: number;
@@ -21,6 +56,7 @@
 			categoryId?: number;
 			isRecurring?: boolean;
 			recurrenceType?: string;
+			bucketId?: number;
 		}>
 	>([]);
 
@@ -216,8 +252,8 @@
 										<div class="col-span-12 md:col-span-8">
 											<div class="space-y-3">
 												<!-- Action Type -->
-												<div class="flex gap-2">
-													<label class="flex-1">
+												<div class="grid grid-cols-2 gap-2">
+													<label class="flex items-center">
 														<input
 															type="radio"
 															name="action_{index}"
@@ -228,7 +264,7 @@
 														/>
 														<span class="text-sm">Skip</span>
 													</label>
-													<label class="flex-1">
+													<label class="flex items-center">
 														<input
 															type="radio"
 															name="action_{index}"
@@ -239,7 +275,7 @@
 														/>
 														<span class="text-sm">Map to Bill</span>
 													</label>
-													<label class="flex-1">
+													<label class="flex items-center">
 														<input
 															type="radio"
 															name="action_{index}"
@@ -249,6 +285,17 @@
 															class="mr-2"
 														/>
 														<span class="text-sm">Create New Bill</span>
+													</label>
+													<label class="flex items-center">
+														<input
+															type="radio"
+															name="action_{index}"
+															value="map_to_bucket"
+															checked={transactionMappings[index]?.action === 'map_to_bucket'}
+															onchange={() => updateMapping(index, { action: 'map_to_bucket' })}
+															class="mr-2"
+														/>
+														<span class="text-sm">Map to Bucket</span>
 													</label>
 												</div>
 
@@ -265,6 +312,30 @@
 														{#each data.existingBills as existingBill}
 															<option value={existingBill.id}>
 																{existingBill.name} (${existingBill.amount.toFixed(2)})
+															</option>
+														{/each}
+													</select>
+												{/if}
+
+												<!-- Map to Bucket -->
+												{#if transactionMappings[index]?.action === 'map_to_bucket'}
+													<select
+														class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+														onchange={(e) =>
+															updateMapping(index, {
+																bucketId: parseInt((e.target as HTMLSelectElement).value)
+															})}
+													>
+														<option value="">Select a bucket...</option>
+														{#each data.buckets as bucket}
+															{@const Icon = iconMap[bucket.icon || 'shopping-cart']}
+															{@const remaining = bucket.currentCycle
+																? bucket.currentCycle.budgetAmount +
+																	bucket.currentCycle.carryoverAmount -
+																	bucket.currentCycle.totalSpent
+																: bucket.budgetAmount}
+															<option value={bucket.id}>
+																{bucket.name} (${remaining.toFixed(2)} available)
 															</option>
 														{/each}
 													</select>
