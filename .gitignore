@@ -132,6 +132,7 @@ claude.md
 *.private.md
 *.xlsx
 *.xls
+*.qfx
 
 # Claude Code
 .claude/
