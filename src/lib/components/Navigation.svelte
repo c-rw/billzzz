@@ -28,6 +28,14 @@
 						Buckets
 					</a>
 					<a
+						href="/import"
+						class="rounded-md px-3 py-2 text-sm font-medium transition-colors {isActive('/import')
+							? 'bg-blue-100 text-blue-700'
+							: 'text-gray-700 hover:bg-gray-100'}"
+					>
+						Import
+					</a>
+					<a
 						href="/debt-calculator"
 						class="rounded-md px-3 py-2 text-sm font-medium transition-colors {isActive('/debt-calculator')
 							? 'bg-blue-100 text-blue-700'

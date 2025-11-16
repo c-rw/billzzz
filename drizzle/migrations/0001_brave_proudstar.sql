@@ -1,1 +1,0 @@
-ALTER TABLE `bills` ADD `is_autopay` integer DEFAULT false NOT NULL;

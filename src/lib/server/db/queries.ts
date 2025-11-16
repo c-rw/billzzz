@@ -1,5 +1,18 @@
 import { db } from './index';
-import { bills, categories, paymentHistory, paydaySettings, type NewBill, type NewCategory, type Category, type NewPaydaySettings } from './schema';
+import {
+	bills,
+	categories,
+	paymentHistory,
+	paydaySettings,
+	importSessions,
+	importedTransactions,
+	type NewBill,
+	type NewCategory,
+	type Category,
+	type NewPaydaySettings,
+	type NewImportSession,
+	type NewImportedTransaction
+} from './schema';
 import { eq, and, gte, lte, desc, asc, like, or, sql } from 'drizzle-orm';
 import type { BillFilters, BillSort } from '$lib/types/bill';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
@@ -308,4 +321,91 @@ export function updatePaydaySettings(id: number, data: Partial<NewPaydaySettings
 
 export function deletePaydaySettings(id: number) {
 	return db.delete(paydaySettings).where(eq(paydaySettings.id, id)).returning().get();
+}
+
+// ===== IMPORT QUERIES =====
+
+export function createImportSession(data: NewImportSession) {
+	return db.insert(importSessions).values(data).returning().get();
+}
+
+export function getImportSession(id: number) {
+	return db.select().from(importSessions).where(eq(importSessions.id, id)).get();
+}
+
+export function updateImportSession(
+	id: number,
+	data: Partial<Omit<NewImportSession, 'createdAt'>>
+) {
+	return db.update(importSessions).set(data).where(eq(importSessions.id, id)).returning().get();
+}
+
+export function getAllImportSessions() {
+	return db.select().from(importSessions).orderBy(desc(importSessions.createdAt)).all();
+}
+
+export function createImportedTransaction(data: NewImportedTransaction) {
+	return db.insert(importedTransactions).values(data).returning().get();
+}
+
+export function createImportedTransactionsBatch(data: NewImportedTransaction[]) {
+	return db.insert(importedTransactions).values(data).returning().all();
+}
+
+export function getImportedTransactionsBySession(sessionId: number) {
+	return db
+		.select({
+			transaction: importedTransactions,
+			bill: bills,
+			category: categories
+		})
+		.from(importedTransactions)
+		.leftJoin(bills, eq(importedTransactions.mappedBillId, bills.id))
+		.leftJoin(categories, eq(importedTransactions.suggestedCategoryId, categories.id))
+		.where(eq(importedTransactions.sessionId, sessionId))
+		.orderBy(desc(importedTransactions.datePosted))
+		.all();
+}
+
+export function updateImportedTransaction(
+	id: number,
+	data: Partial<Omit<NewImportedTransaction, 'createdAt' | 'sessionId' | 'fitId'>>
+) {
+	return db
+		.update(importedTransactions)
+		.set(data)
+		.where(eq(importedTransactions.id, id))
+		.returning()
+		.get();
+}
+
+export function deleteImportedTransaction(id: number) {
+	return db.delete(importedTransactions).where(eq(importedTransactions.id, id)).returning().get();
+}
+
+export function checkDuplicateFitId(fitId: string) {
+	return db
+		.select()
+		.from(importedTransactions)
+		.where(eq(importedTransactions.fitId, fitId))
+		.get();
+}
+
+export function getUnprocessedTransactions(sessionId: number) {
+	return db
+		.select()
+		.from(importedTransactions)
+		.where(
+			and(eq(importedTransactions.sessionId, sessionId), eq(importedTransactions.isProcessed, false))
+		)
+		.all();
+}
+
+export function markTransactionsAsProcessed(transactionIds: number[]) {
+	return db
+		.update(importedTransactions)
+		.set({ isProcessed: true })
+		.where(sql`${importedTransactions.id} IN ${sql.raw(`(${transactionIds.join(',')})`)}`)
+		.returning()
+		.all();
 }

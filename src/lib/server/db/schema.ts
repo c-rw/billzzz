@@ -204,3 +204,54 @@ export type NewDebtPayment = typeof debtPayments.$inferInsert;
 
 export type DebtStrategySettings = typeof debtStrategySettings.$inferSelect;
 export type NewDebtStrategySettings = typeof debtStrategySettings.$inferInsert;
+
+// Import sessions - track OFX/QFX file imports
+export const importSessions = sqliteTable('import_sessions', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	fileName: text('file_name').notNull(),
+	fileType: text('file_type', { enum: ['ofx', 'qfx'] }).notNull(),
+	transactionCount: integer('transaction_count').notNull(),
+	importedCount: integer('imported_count').notNull().default(0),
+	status: text('status', { enum: ['pending', 'completed', 'failed'] })
+		.notNull()
+		.default('pending'),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
+
+// Imported transactions - temporary storage for OFX transactions before mapping
+export const importedTransactions = sqliteTable('imported_transactions', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	sessionId: integer('session_id')
+		.notNull()
+		.references(() => importSessions.id, { onDelete: 'cascade' }),
+	fitId: text('fit_id').notNull(), // Financial Institution Transaction ID
+	transactionType: text('transaction_type').notNull(), // DEBIT, CREDIT, etc.
+	datePosted: integer('date_posted', { mode: 'timestamp' }).notNull(),
+	amount: real('amount').notNull(),
+	payee: text('payee').notNull(),
+	memo: text('memo'),
+	checkNumber: text('check_number'),
+	// Mapping fields
+	mappedBillId: integer('mapped_bill_id').references(() => bills.id, { onDelete: 'set null' }),
+	mappedBucketId: integer('mapped_bucket_id').references(() => buckets.id, {
+		onDelete: 'set null'
+	}),
+	createNewBill: integer('create_new_bill', { mode: 'boolean' }).default(false),
+	suggestedCategoryId: integer('suggested_category_id').references(() => categories.id, {
+		onDelete: 'set null'
+	}),
+	isRecurringCandidate: integer('is_recurring_candidate', { mode: 'boolean' }).default(false),
+	recurrencePattern: text('recurrence_pattern'), // JSON with detected pattern info
+	isProcessed: integer('is_processed', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
+
+export type ImportSession = typeof importSessions.$inferSelect;
+export type NewImportSession = typeof importSessions.$inferInsert;
+
+export type ImportedTransaction = typeof importedTransactions.$inferSelect;
+export type NewImportedTransaction = typeof importedTransactions.$inferInsert;
