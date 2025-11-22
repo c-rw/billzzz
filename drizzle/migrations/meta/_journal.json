@@ -15,6 +15,13 @@
       "when": 1763307119360,
       "tag": "0001_overjoyed_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1763761331829,
+      "tag": "0002_far_komodo",
+      "breakpoints": true
     }
   ]
 }

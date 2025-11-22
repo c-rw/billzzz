@@ -5,20 +5,23 @@ import {
 	createImportSession,
 	createImportedTransactionsBatch,
 	getImportedTransactionsBySession,
+	getImportSession,
 	getAllCategories,
 	getAllBills,
 	createBill,
 	addPaymentHistory,
 	updateImportedTransaction,
-	markTransactionsAsProcessed
+	markTransactionsAsProcessed,
+	checkDuplicateFitId
 } from '$lib/server/db/queries';
-import { getAllBucketsWithCurrentCycle, createTransaction } from '$lib/server/db/bucket-queries';
+import { getAllBucketsWithCurrentCycle, createTransaction, createBucket } from '$lib/server/db/bucket-queries';
 
 export const load: PageServerLoad = async ({ url }) => {
 	const sessionId = url.searchParams.get('session');
 
 	if (sessionId) {
 		// Load existing import session for review
+		const session = getImportSession(parseInt(sessionId));
 		const transactions = getImportedTransactionsBySession(parseInt(sessionId));
 		const categories = getAllCategories();
 		const existingBills = getAllBills();
@@ -26,6 +29,7 @@ export const load: PageServerLoad = async ({ url }) => {
 
 		return {
 			sessionId: parseInt(sessionId),
+			session,
 			transactions,
 			categories,
 			existingBills,
@@ -93,29 +97,45 @@ export const actions: Actions = {
 				return fail(400, { error: 'No transactions found in the OFX file' });
 			}
 
+			// Check for duplicate transactions by fitId
+			const newTransactions = [];
+			let skippedCount = 0;
+
+			for (const txn of parseResult.transactions) {
+				const duplicate = checkDuplicateFitId(txn.fitId);
+				if (!duplicate) {
+					newTransactions.push(txn);
+				} else {
+					skippedCount++;
+				}
+			}
+
 			// Create import session
 			const session = createImportSession({
 				fileName: file.name,
 				fileType: fileName.endsWith('.qfx') ? 'qfx' : 'ofx',
 				transactionCount: parseResult.transactions.length,
 				importedCount: 0,
+				skippedCount: skippedCount,
 				status: 'pending'
 			});
 
-			// Insert transactions into database
-			const transactionData = parseResult.transactions.map((txn) => ({
-				sessionId: session.id,
-				fitId: txn.fitId,
-				transactionType: txn.transactionType,
-				datePosted: txn.datePosted,
-				amount: txn.amount,
-				payee: txn.payee,
-				memo: txn.memo || null,
-				checkNumber: txn.checkNumber || null,
-				isProcessed: false
-			}));
+			// Insert only non-duplicate transactions into database
+			if (newTransactions.length > 0) {
+				const transactionData = newTransactions.map((txn) => ({
+					sessionId: session.id,
+					fitId: txn.fitId,
+					transactionType: txn.transactionType,
+					datePosted: txn.datePosted,
+					amount: txn.amount,
+					payee: txn.payee,
+					memo: txn.memo || null,
+					checkNumber: txn.checkNumber || null,
+					isProcessed: false
+				}));
 
-			createImportedTransactionsBatch(transactionData);
+				createImportedTransactionsBatch(transactionData);
+			}
 
 			// Redirect to review page
 			throw redirect(302, `/import?session=${session.id}`);
@@ -160,15 +180,15 @@ export const actions: Actions = {
 				// Find the full transaction data
 				const transactionData = sessionTransactions.find(t => t.transaction.id === transactionId);
 
-				if (action === 'map_existing' && billId) {
+				if (action === 'map_existing' && billId && transactionData) {
 					// Map to existing bill - add as payment history
-					addPaymentHistory(billId, amount);
+					addPaymentHistory(billId, amount, transactionData.transaction.datePosted);
 					updateImportedTransaction(transactionId, {
 						mappedBillId: billId,
 						isProcessed: true
 					});
 					importedCount++;
-				} else if (action === 'create_new') {
+				} else if (action === 'create_new' && transactionData) {
 					// Create new bill
 					const newBill = createBill({
 						name: billName,
@@ -183,6 +203,9 @@ export const actions: Actions = {
 						notes: null,
 						paymentLink: null
 					});
+
+					// Add payment history for the imported transaction
+					addPaymentHistory(newBill.id, amount, transactionData.transaction.datePosted, 'Payment recorded from import');
 
 					updateImportedTransaction(transactionId, {
 						mappedBillId: newBill.id,
@@ -202,6 +225,35 @@ export const actions: Actions = {
 
 					updateImportedTransaction(transactionId, {
 						mappedBucketId: bucketId,
+						isProcessed: true
+					});
+					importedCount++;
+				} else if (action === 'create_new_bucket' && transactionData) {
+					// Create new bucket from imported transaction
+					const { bucketName, budgetAmount, frequency, anchorDate } = mapping;
+
+					const newBucket = await createBucket({
+						name: bucketName,
+						frequency: frequency || 'monthly',
+						budgetAmount: budgetAmount || amount,
+						anchorDate: new Date(anchorDate || transactionData.transaction.datePosted),
+						enableCarryover: true,
+						icon: 'shopping-cart',
+						color: null
+					});
+
+					// Create transaction in the new bucket
+					await createTransaction({
+						bucketId: newBucket.id,
+						amount,
+						timestamp: transactionData.transaction.datePosted,
+						vendor: transactionData.transaction.payee,
+						notes: transactionData.transaction.memo || undefined
+					});
+
+					updateImportedTransaction(transactionId, {
+						mappedBucketId: newBucket.id,
+						createNewBill: false,
 						isProcessed: true
 					});
 					importedCount++;

@@ -1,0 +1,1 @@
+ALTER TABLE `import_sessions` ADD `skipped_count` integer DEFAULT 0 NOT NULL;

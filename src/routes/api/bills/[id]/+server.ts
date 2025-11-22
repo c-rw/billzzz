@@ -92,7 +92,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 			const note = amountPaid !== currentBill.amount
 				? `Payment recorded. Original amount: $${currentBill.amount.toFixed(2)}`
 				: 'Payment recorded';
-			addPaymentHistory(id, amountPaid, note);
+			addPaymentHistory(id, amountPaid, undefined, note);
 		}
 
 		// If marking as paid and bill is recurring, calculate next due date

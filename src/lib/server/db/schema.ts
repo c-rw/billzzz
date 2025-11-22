@@ -212,6 +212,7 @@ export const importSessions = sqliteTable('import_sessions', {
 	fileType: text('file_type', { enum: ['ofx', 'qfx'] }).notNull(),
 	transactionCount: integer('transaction_count').notNull(),
 	importedCount: integer('imported_count').notNull().default(0),
+	skippedCount: integer('skipped_count').notNull().default(0),
 	status: text('status', { enum: ['pending', 'completed', 'failed'] })
 		.notNull()
 		.default('pending'),

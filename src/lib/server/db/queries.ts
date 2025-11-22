@@ -190,13 +190,13 @@ export function getPaymentHistoryForBill(billId: number) {
 		.all();
 }
 
-export function addPaymentHistory(billId: number, amount: number, notes?: string) {
+export function addPaymentHistory(billId: number, amount: number, paymentDate?: Date, notes?: string) {
 	return db
 		.insert(paymentHistory)
 		.values({
 			billId,
 			amount,
-			paymentDate: new Date(),
+			paymentDate: paymentDate || new Date(),
 			notes
 		})
 		.returning()
@@ -387,7 +387,12 @@ export function checkDuplicateFitId(fitId: string) {
 	return db
 		.select()
 		.from(importedTransactions)
-		.where(eq(importedTransactions.fitId, fitId))
+		.where(
+			and(
+				eq(importedTransactions.fitId, fitId),
+				eq(importedTransactions.isProcessed, true)
+			)
+		)
 		.get();
 }
 

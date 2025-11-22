@@ -107,14 +107,6 @@
 
 <div class="min-h-screen bg-gray-50 py-8">
 	<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-		<!-- Header -->
-		<div class="mb-6">
-			<a href="/" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-700">
-				<ArrowLeft class="mr-1 h-4 w-4" />
-				Back to Dashboard
-			</a>
-		</div>
-
 		<div class="mb-8">
 			<h1 class="text-3xl font-bold text-gray-900">Import Transactions</h1>
 			<p class="mt-2 text-gray-600">Upload OFX or QFX files from your bank to import transactions</p>
@@ -196,6 +188,11 @@
 								Review Transactions ({data.transactions.length})
 							</h2>
 							<p class="text-sm text-gray-600">Map transactions to bills or create new bills</p>
+							{#if data.session?.skippedCount && data.session.skippedCount > 0}
+								<p class="text-sm text-amber-600 mt-1">
+									{data.session.skippedCount} duplicate transaction{data.session.skippedCount > 1 ? 's' : ''} skipped (already imported)
+								</p>
+							{/if}
 						</div>
 						<div class="flex gap-2">
 							<button
@@ -252,18 +249,7 @@
 										<div class="col-span-12 md:col-span-8">
 											<div class="space-y-3">
 												<!-- Action Type -->
-												<div class="grid grid-cols-2 gap-2">
-													<label class="flex items-center">
-														<input
-															type="radio"
-															name="action_{index}"
-															value="skip"
-															checked={transactionMappings[index]?.action === 'skip'}
-															onchange={() => updateMapping(index, { action: 'skip' })}
-															class="mr-2"
-														/>
-														<span class="text-sm">Skip</span>
-													</label>
+												<div class="grid grid-cols-3 gap-2">
 													<label class="flex items-center">
 														<input
 															type="radio"
@@ -290,12 +276,34 @@
 														<input
 															type="radio"
 															name="action_{index}"
+															value="skip"
+															checked={transactionMappings[index]?.action === 'skip'}
+															onchange={() => updateMapping(index, { action: 'skip' })}
+															class="mr-2"
+														/>
+														<span class="text-sm">Skip</span>
+													</label>
+													<label class="flex items-center">
+														<input
+															type="radio"
+															name="action_{index}"
 															value="map_to_bucket"
 															checked={transactionMappings[index]?.action === 'map_to_bucket'}
 															onchange={() => updateMapping(index, { action: 'map_to_bucket' })}
 															class="mr-2"
 														/>
 														<span class="text-sm">Map to Bucket</span>
+													</label>
+													<label class="flex items-center">
+														<input
+															type="radio"
+															name="action_{index}"
+															value="create_new_bucket"
+															checked={transactionMappings[index]?.action === 'create_new_bucket'}
+															onchange={() => updateMapping(index, { action: 'create_new_bucket', bucketName: transaction.payee, budgetAmount: transaction.amount, frequency: 'monthly', anchorDate: new Date(transaction.datePosted).toISOString().split('T')[0] })}
+															class="mr-2"
+														/>
+														<span class="text-sm">Create New Bucket</span>
 													</label>
 												</div>
 
@@ -406,6 +414,78 @@
 																/>
 																Recurring Bill
 															</label>
+														</div>
+													</div>
+												{/if}
+
+												<!-- Create New Bucket -->
+												{#if transactionMappings[index]?.action === 'create_new_bucket'}
+													<div class="grid grid-cols-2 gap-3">
+														<div>
+															<label for="bucketName_{index}" class="block text-xs text-gray-600 mb-1"
+																>Bucket Name</label
+															>
+															<input
+																id="bucketName_{index}"
+																type="text"
+																value={transactionMappings[index]?.bucketName || transaction.payee}
+																onchange={(e) =>
+																	updateMapping(index, {
+																		bucketName: (e.target as HTMLInputElement).value
+																	})}
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+															/>
+														</div>
+														<div>
+															<label for="budgetAmount_{index}" class="block text-xs text-gray-600 mb-1"
+																>Budget Amount</label
+															>
+															<input
+																id="budgetAmount_{index}"
+																type="number"
+																step="0.01"
+																value={transactionMappings[index]?.budgetAmount || transaction.amount}
+																onchange={(e) =>
+																	updateMapping(index, {
+																		budgetAmount: parseFloat((e.target as HTMLInputElement).value)
+																	})}
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+															/>
+														</div>
+														<div>
+															<label for="frequency_{index}" class="block text-xs text-gray-600 mb-1"
+																>Frequency</label
+															>
+															<select
+																id="frequency_{index}"
+																value={transactionMappings[index]?.frequency || 'monthly'}
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																onchange={(e) =>
+																	updateMapping(index, {
+																		frequency: (e.target as HTMLSelectElement).value
+																	})}
+															>
+																<option value="weekly">Weekly</option>
+																<option value="biweekly">Biweekly</option>
+																<option value="monthly">Monthly</option>
+																<option value="quarterly">Quarterly</option>
+																<option value="yearly">Yearly</option>
+															</select>
+														</div>
+														<div>
+															<label for="anchorDate_{index}" class="block text-xs text-gray-600 mb-1"
+																>Start Date</label
+															>
+															<input
+																id="anchorDate_{index}"
+																type="date"
+																value={transactionMappings[index]?.anchorDate || new Date(transaction.datePosted).toISOString().split('T')[0]}
+																onchange={(e) =>
+																	updateMapping(index, {
+																		anchorDate: (e.target as HTMLInputElement).value
+																	})}
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+															/>
 														</div>
 													</div>
 												{/if}

@@ -38,12 +38,23 @@ export async function parseOfxFile(fileBuffer: Buffer): Promise<OFXParseResult> 
 		// Extract transaction data
 		if (bankTransferList && Array.isArray(bankTransferList)) {
 			for (const txn of bankTransferList) {
-				// Parse OFX date format (YYYYMMDDHHMMSS or YYYYMMDD)
-				const dateStr = txn.DTPOSTED;
-				const year = parseInt(dateStr.substring(0, 4));
-				const month = parseInt(dateStr.substring(4, 6)) - 1;
-				const day = parseInt(dateStr.substring(6, 8));
-				const datePosted = new Date(year, month, day);
+				// Parse date from DTPOSTED
+				// The library may return either:
+				// - ISO format: "2025-11-03"
+				// - OFX format: "20251103000000.000[-5:EST]" or "20251103"
+				const dateStr = String(txn.DTPOSTED);
+				let datePosted: Date;
+
+				if (dateStr.includes('-')) {
+					// ISO format: "2025-11-03"
+					datePosted = new Date(dateStr + 'T00:00:00Z');
+				} else {
+					// OFX format: "20251103..." - parse manually
+					const year = parseInt(dateStr.substring(0, 4));
+					const month = parseInt(dateStr.substring(4, 6)) - 1; // JS months are 0-indexed
+					const day = parseInt(dateStr.substring(6, 8));
+					datePosted = new Date(Date.UTC(year, month, day));
+				}
 
 				transactions.push({
 					fitId: txn.FITID,

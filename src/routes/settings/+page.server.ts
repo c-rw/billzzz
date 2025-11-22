@@ -227,6 +227,16 @@ export const actions: Actions = {
 			db.delete(paydaySettings).run();
 			db.delete(categories).run();
 
+			// Clean up any orphaned debt_rate_buckets table data (legacy table)
+			try {
+				db.run('DELETE FROM debt_rate_buckets');
+			} catch (e) {
+				// Table might not exist, ignore error
+			}
+
+			// Reset SQLite autoincrement sequences to start fresh
+			db.run('DELETE FROM sqlite_sequence');
+
 			console.log('All data has been reset');
 
 			return {
