@@ -74,18 +74,12 @@
 						</p>
 					</div>
 					<div class="flex gap-2">
-						<button
-							onclick={onEdit}
-							class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
-						>
+						<Button variant="primary" size="sm" onclick={onEdit}>
 							Edit
-						</button>
-						<button
-							onclick={onDelete}
-							class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900"
-						>
+						</Button>
+						<Button variant="danger" size="sm" onclick={onDelete}>
 							Remove
-						</button>
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -108,10 +102,7 @@
 				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
 					Set up your payday schedule to see bills due before your next paycheck
 				</p>
-				<button
-					onclick={onEdit}
-					class="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
-				>
+				<Button variant="primary" size="md" onclick={onEdit} class="mt-4">
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
@@ -121,7 +112,7 @@
 						/>
 					</svg>
 					Set Payday Schedule
-				</button>
+				</Button>
 			</div>
 		{/if}
 	</div>

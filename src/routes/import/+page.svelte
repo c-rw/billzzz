@@ -151,10 +151,11 @@
 										required
 										class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-500"
 									/>
-									<button
+									<Button
 										type="submit"
+										variant="primary"
+										size="md"
 										disabled={uploading || !selectedFile}
-										class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 									>
 										{#if uploading}
 											<span class="mr-2">Uploading...</span>
@@ -162,7 +163,7 @@
 											<Upload class="mr-2 h-4 w-4" />
 											Upload
 										{/if}
-									</button>
+									</Button>
 								</div>
 								{#if selectedFile}
 									<p class="mt-2 text-sm text-gray-600">
@@ -200,20 +201,12 @@
 							{/if}
 						</div>
 						<div class="flex gap-2">
-							<button
-								type="button"
-								onclick={selectAllUnmapped}
-								class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-							>
+							<Button variant="secondary" size="sm" onclick={selectAllUnmapped}>
 								Select All Unmapped
-							</button>
-							<button
-								type="button"
-								onclick={deselectAll}
-								class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-							>
+							</Button>
+							<Button variant="secondary" size="sm" onclick={deselectAll}>
 								Deselect All
-							</button>
+							</Button>
 						</div>
 					</div>
 
@@ -508,17 +501,18 @@
 							>
 								Cancel
 							</a>
-							<button
+							<Button
 								type="submit"
+								variant="primary"
+								size="md"
 								disabled={processing}
-								class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 							>
 								{#if processing}
 									Processing...
 								{:else}
 									Import {transactionMappings.filter((m) => m.action !== 'skip').length} Transactions
 								{/if}
-							</button>
+							</Button>
 						</div>
 					</form>
 				</div>

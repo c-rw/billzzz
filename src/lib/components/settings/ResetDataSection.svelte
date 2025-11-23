@@ -42,10 +42,7 @@
 						Permanently delete all bills, buckets, debts, categories, payment history, and
 						settings. This action cannot be undone.
 					</p>
-					<button
-						onclick={onReset}
-						class="mt-3 inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600"
-					>
+					<Button variant="danger" size="md" onclick={onReset} class="mt-3">
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
 								stroke-linecap="round"
@@ -55,7 +52,7 @@
 							/>
 						</svg>
 						Reset All Data
-					</button>
+					</Button>
 				</div>
 			</div>
 		</div>

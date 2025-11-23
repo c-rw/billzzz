@@ -120,10 +120,7 @@
 				<h1 class="text-3xl font-bold text-gray-900">Buckets</h1>
 				<p class="mt-2 text-gray-600">Track your variable spending categories</p>
 			</div>
-			<button
-				onclick={() => (showAddModal = true)}
-				class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-			>
+			<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
@@ -133,7 +130,7 @@
 					/>
 				</svg>
 				Add Bucket
-			</button>
+			</Button>
 		</div>
 	</div>
 
@@ -180,10 +177,7 @@
 				Get started by creating your first spending bucket.
 			</p>
 			<div class="mt-6">
-				<button
-					onclick={() => (showAddModal = true)}
-					class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-				>
+				<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
@@ -193,7 +187,7 @@
 						/>
 					</svg>
 					Add Bucket
-				</button>
+				</Button>
 			</div>
 		</div>
 	{:else}

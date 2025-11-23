@@ -32,10 +32,7 @@
 					Manage your bill categories. Add, edit, or remove categories.
 				</p>
 			</div>
-			<button
-				onclick={onAdd}
-				class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
-			>
+			<Button variant="primary" size="md" onclick={onAdd}>
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
@@ -45,7 +42,7 @@
 					/>
 				</svg>
 				Add Category
-			</button>
+			</Button>
 		</div>
 	</div>
 

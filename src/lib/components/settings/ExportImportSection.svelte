@@ -46,10 +46,7 @@
 						<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
 							Download a JSON file with all your bills, buckets, debts, categories, and settings (payment history not included)
 						</p>
-						<button
-							onclick={onExport}
-							class="mt-3 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
-						>
+						<Button variant="primary" size="md" onclick={onExport} class="mt-3">
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path
 									stroke-linecap="round"
@@ -59,7 +56,7 @@
 								/>
 							</svg>
 							Export All Data
-						</button>
+						</Button>
 					</div>
 				</div>
 			</div>
@@ -125,14 +122,16 @@
 									}
 								}}
 							/>
-							<button
-								type="button"
+							<Button
+								variant="primary"
+								size="md"
 								onclick={(e) => {
-									const input = e.currentTarget.parentElement?.querySelector('#import-file-input');
+									const target = e.currentTarget as HTMLButtonElement;
+									const input = target?.parentElement?.querySelector('#import-file-input');
 									if (input) (input as HTMLInputElement).click();
 								}}
 								disabled={importing}
-								class="mt-3 inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-green-700 dark:hover:bg-green-600"
+								class="mt-3 bg-green-600 hover:bg-green-700 focus:ring-green-500 dark:bg-green-700 dark:hover:bg-green-600"
 							>
 								{#if importing}
 									<svg
@@ -160,7 +159,7 @@
 									</svg>
 									Import from Backup
 								{/if}
-							</button>
+							</Button>
 						</form>
 					</div>
 				</div>

@@ -90,10 +90,12 @@
 		</div>
 
 		<div class="flex gap-3 pt-4">
-			<button
+			<Button
 				type="submit"
+				variant="danger"
+				size="md"
 				disabled={resetting || resetConfirmation !== 'DELETE ALL DATA'}
-				class="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-700 dark:hover:bg-red-600"
+				fullWidth={true}
 			>
 				{#if resetting}
 					<span class="inline-flex items-center gap-2">
@@ -115,15 +117,16 @@
 				{:else}
 					Delete All Data
 				{/if}
-			</button>
-			<button
-				type="button"
+			</Button>
+			<Button
+				variant="secondary"
+				size="md"
 				onclick={handleClose}
 				disabled={resetting}
-				class="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+				fullWidth={true}
 			>
 				Cancel
-			</button>
+			</Button>
 		</div>
 	</form>
 </Modal>

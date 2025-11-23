@@ -336,9 +336,10 @@
 						<option value="name">Sort by Name</option>
 					</select>
 
-					<button
+					<Button
+						variant="secondary"
+						size="sm"
 						onclick={() => (sortDirection = sortDirection === 'asc' ? 'desc' : 'asc')}
-						class="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
 						title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
 					>
 						{#if sortDirection === 'asc'}
@@ -360,22 +361,16 @@
 								/>
 							</svg>
 						{/if}
-					</button>
+					</Button>
 
 					{#if filterStatus !== 'all' || filterCategory !== null || searchQuery}
-						<button
-							onclick={resetFilters}
-							class="text-sm text-blue-600 hover:text-blue-700"
-						>
+						<Button variant="ghost" size="sm" onclick={resetFilters}>
 							Reset filters
-						</button>
+						</Button>
 					{/if}
 				</div>
 
-				<button
-					onclick={() => (showAddModal = true)}
-					class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-				>
+				<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
@@ -385,7 +380,7 @@
 						/>
 					</svg>
 					Add Bill
-				</button>
+				</Button>
 			</div>
 		</div>
 
@@ -408,10 +403,7 @@
 				<h3 class="mt-2 text-sm font-semibold text-gray-900">No bills found</h3>
 				<p class="mt-1 text-sm text-gray-500">Get started by adding your first bill.</p>
 				<div class="mt-6">
-					<button
-						onclick={() => (showAddModal = true)}
-						class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-					>
+					<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
 						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path
 								stroke-linecap="round"
@@ -421,7 +413,7 @@
 							/>
 						</svg>
 						Add Bill
-					</button>
+					</Button>
 				</div>
 			</div>
 		{:else}

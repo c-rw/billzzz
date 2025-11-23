@@ -67,21 +67,22 @@
 
 			<!-- Actions -->
 			<div class="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
-				<button
-					type="button"
+				<Button
+					variant="secondary"
+					size="md"
 					onclick={onCancel}
 					disabled={isSubmitting}
-					class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 				>
 					Cancel
-				</button>
-				<button
+				</Button>
+				<Button
 					type="submit"
+					variant="primary"
+					size="md"
 					disabled={isSubmitting}
-					class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
 				>
 					{isSubmitting ? 'Confirming...' : 'Confirm Payment'}
-				</button>
+				</Button>
 			</div>
 		</form>
 	</Modal>
