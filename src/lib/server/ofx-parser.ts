@@ -9,6 +9,7 @@ export interface ParsedTransaction {
 	payee: string;
 	memo?: string;
 	checkNumber?: string;
+	isIncome: boolean;
 }
 
 export interface OFXParseResult {
@@ -56,14 +57,18 @@ export async function parseOfxFile(fileBuffer: Buffer): Promise<OFXParseResult> 
 					datePosted = new Date(Date.UTC(year, month, day));
 				}
 
+				const transactionType = txn.TRNTYPE;
+				const isIncome = transactionType === 'CREDIT';
+
 				transactions.push({
 					fitId: txn.FITID,
-					transactionType: txn.TRNTYPE,
+					transactionType,
 					datePosted,
 					amount: Math.abs(parseFloat(txn.TRNAMT.toString())), // Use absolute value
 					payee: txn.NAME || txn.MEMO || 'Unknown',
 					memo: txn.MEMO || undefined,
-					checkNumber: txn.CHECKNUM || undefined
+					checkNumber: txn.CHECKNUM || undefined,
+					isIncome
 				});
 			}
 		}

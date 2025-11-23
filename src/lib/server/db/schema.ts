@@ -245,6 +245,7 @@ export const importedTransactions = sqliteTable('imported_transactions', {
 	}),
 	isRecurringCandidate: integer('is_recurring_candidate', { mode: 'boolean' }).default(false),
 	recurrencePattern: text('recurrence_pattern'), // JSON with detected pattern info
+	isIncome: integer('is_income', { mode: 'boolean' }).notNull().default(false),
 	isProcessed: integer('is_processed', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()

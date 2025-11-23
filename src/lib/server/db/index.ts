@@ -219,6 +219,19 @@ function initializeDatabase() {
 		sqlite.exec("ALTER TABLE debts ADD COLUMN payment_allocation_strategy TEXT DEFAULT 'highest-rate-first' CHECK(payment_allocation_strategy IN ('lowest-rate-first', 'highest-rate-first', 'oldest-first'))");
 		console.log('Added payment_allocation_strategy column to debts table');
 	}
+
+	// Check if is_income column exists in imported_transactions table
+	const importedTxnColumns = sqlite.prepare("PRAGMA table_info(imported_transactions)").all() as Array<{ name: string }>;
+	const hasIsIncome = importedTxnColumns.some(col => col.name === 'is_income');
+
+	if (!hasIsIncome) {
+		sqlite.exec('ALTER TABLE imported_transactions ADD COLUMN is_income INTEGER NOT NULL DEFAULT 0');
+		console.log('Added is_income column to imported_transactions table');
+
+		// Backfill existing CREDIT transactions as income
+		sqlite.exec("UPDATE imported_transactions SET is_income = 1 WHERE transaction_type = 'CREDIT'");
+		console.log('Backfilled existing CREDIT transactions as income');
+	}
 	} catch (error) {
 		console.error('Migration error:', error);
 	}

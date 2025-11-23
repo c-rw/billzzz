@@ -23,7 +23,9 @@ export const load: PageServerLoad = async ({ url }) => {
 	if (sessionId) {
 		// Load existing import session for review
 		const session = getImportSession(parseInt(sessionId));
-		const transactions = getImportedTransactionsBySession(parseInt(sessionId));
+		const allTransactions = getImportedTransactionsBySession(parseInt(sessionId));
+		// Filter out already processed transactions (e.g., income that was auto-processed)
+		const transactions = allTransactions.filter(t => !t.transaction.isProcessed);
 		const categories = getAllCategories();
 		const existingBills = getAllBills();
 		const buckets = await getAllBucketsWithCurrentCycle();
@@ -122,6 +124,7 @@ export const actions: Actions = {
 			});
 
 			// Insert only non-duplicate transactions into database
+			let autoProcessedCount = 0;
 			if (newTransactions.length > 0) {
 				const transactionData = newTransactions.map((txn) => ({
 					sessionId: session.id,
@@ -132,10 +135,22 @@ export const actions: Actions = {
 					payee: txn.payee,
 					memo: txn.memo || null,
 					checkNumber: txn.checkNumber || null,
-					isProcessed: false
+					isIncome: txn.isIncome,
+					isProcessed: txn.isIncome // Auto-process income immediately
 				}));
 
 				createImportedTransactionsBatch(transactionData);
+
+				// Count auto-processed income transactions
+				autoProcessedCount = newTransactions.filter(txn => txn.isIncome).length;
+			}
+
+			// Update session with auto-processed income count
+			if (autoProcessedCount > 0) {
+				const { updateImportSession } = await import('$lib/server/db/queries');
+				updateImportSession(session.id, {
+					importedCount: autoProcessedCount
+				});
 			}
 
 			// Redirect to review page
@@ -308,8 +323,9 @@ export const actions: Actions = {
 			// Update session
 			if (importedCount > 0) {
 				const { updateImportSession } = await import('$lib/server/db/queries');
+				const session = getImportSession(sessionId);
 				updateImportSession(sessionId, {
-					importedCount,
+					importedCount: (session?.importedCount || 0) + importedCount,
 					status: 'completed'
 				});
 			}
