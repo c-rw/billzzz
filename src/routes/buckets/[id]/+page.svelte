@@ -3,6 +3,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import BucketForm from '$lib/components/BucketForm.svelte';
 	import TransactionForm from '$lib/components/TransactionForm.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 	import { format } from 'date-fns';
@@ -211,18 +212,16 @@
 		</div>
 
 		<div class="flex items-center gap-3">
-			<button
-				onclick={() => (showEditModal = true)}
-				class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-			>
+			<Button variant="secondary" onclick={() => (showEditModal = true)}>
 				Edit Bucket
-			</button>
-			<button
+			</Button>
+			<Button
+				variant="secondary"
 				onclick={handleDeleteBucket}
-				class="rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+				class="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900"
 			>
 				Delete Bucket
-			</button>
+			</Button>
 		</div>
 	</div>
 
@@ -300,10 +299,7 @@
 	<div class="mb-8">
 		<div class="mb-4 flex items-center justify-between">
 			<h2 class="text-xl font-semibold text-gray-900">Transactions</h2>
-			<button
-				onclick={() => (showAddTransactionModal = true)}
-				class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-			>
+			<Button onclick={() => (showAddTransactionModal = true)}>
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
@@ -313,7 +309,7 @@
 					/>
 				</svg>
 				Add Transaction
-			</button>
+			</Button>
 		</div>
 
 		{#if currentCycleTransactions.length === 0}

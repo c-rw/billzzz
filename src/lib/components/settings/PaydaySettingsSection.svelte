@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/Button.svelte';
 	import type { PaydaySettings } from '$lib/server/db/schema';
 
 	let {
@@ -12,21 +13,21 @@
 	} = $props();
 </script>
 
-<div class="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm">
-	<div class="border-b border-gray-200 px-6 py-4">
-		<h2 class="text-xl font-semibold text-gray-900">Payday Schedule</h2>
-		<p class="mt-1 text-sm text-gray-600">
+<div class="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700">
+	<div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+		<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Payday Schedule</h2>
+		<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
 			Configure your payday schedule to see how much is due before your next paycheck
 		</p>
 	</div>
 
 	<div class="p-6">
 		{#if paydaySettings}
-			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
 				<div class="flex items-start justify-between">
 					<div>
-						<p class="text-sm font-medium text-gray-700">Current Schedule</p>
-						<p class="mt-1 text-lg text-gray-900">
+						<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Current Schedule</p>
+						<p class="mt-1 text-lg text-gray-900 dark:text-gray-100">
 							{#if paydaySettings.frequency === 'weekly'}
 								Every {[
 									'Sunday',
@@ -75,13 +76,13 @@
 					<div class="flex gap-2">
 						<button
 							onclick={onEdit}
-							class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+							class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
 						>
 							Edit
 						</button>
 						<button
 							onclick={onDelete}
-							class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+							class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-600 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-red-900"
 						>
 							Remove
 						</button>
@@ -89,9 +90,9 @@
 				</div>
 			</div>
 		{:else}
-			<div class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center">
+			<div class="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
 				<svg
-					class="mx-auto h-12 w-12 text-gray-400"
+					class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
 					fill="none"
 					stroke="currentColor"
 					viewBox="0 0 24 24"
@@ -103,13 +104,13 @@
 						d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
 					/>
 				</svg>
-				<h3 class="mt-2 text-sm font-medium text-gray-900">No payday schedule set</h3>
-				<p class="mt-1 text-sm text-gray-500">
+				<h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No payday schedule set</h3>
+				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
 					Set up your payday schedule to see bills due before your next paycheck
 				</p>
 				<button
 					onclick={onEdit}
-					class="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+					class="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
 				>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path

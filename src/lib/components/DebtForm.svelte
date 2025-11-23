@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Bill } from '$lib/types/bill';
+	import Button from '$lib/components/Button.svelte';
 
 	interface Props {
 		bills?: Bill[];
@@ -71,8 +72,8 @@
 
 <form onsubmit={handleSubmit} class="space-y-6">
 	<div>
-		<label for="name" class="block text-sm font-medium text-gray-700">
-			Debt Name <span class="text-red-600">*</span>
+		<label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+			Debt Name <span class="text-red-600 dark:text-red-400">*</span>
 		</label>
 		<input
 			id="name"
@@ -80,18 +81,18 @@
 			bind:value={name}
 			required
 			placeholder="Credit Card, Student Loan, etc."
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 		/>
 	</div>
 
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 		<div>
-			<label for="originalBalance" class="block text-sm font-medium text-gray-700">
-				Original Balance <span class="text-red-600">*</span>
+			<label for="originalBalance" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				Original Balance <span class="text-red-600 dark:text-red-400">*</span>
 			</label>
 			<div class="mt-1 relative rounded-md shadow-sm">
 				<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-					<span class="text-gray-500 sm:text-sm">$</span>
+					<span class="text-gray-500 sm:text-sm dark:text-gray-400">$</span>
 				</div>
 				<input
 					id="originalBalance"
@@ -100,18 +101,18 @@
 					min="0"
 					bind:value={originalBalance}
 					required
-					class="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+					class="block w-full pl-7 rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				/>
 			</div>
 		</div>
 
 		<div>
-			<label for="currentBalance" class="block text-sm font-medium text-gray-700">
-				Current Balance <span class="text-red-600">*</span>
+			<label for="currentBalance" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				Current Balance <span class="text-red-600 dark:text-red-400">*</span>
 			</label>
 			<div class="mt-1 relative rounded-md shadow-sm">
 				<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-					<span class="text-gray-500 sm:text-sm">$</span>
+					<span class="text-gray-500 sm:text-sm dark:text-gray-400">$</span>
 				</div>
 				<input
 					id="currentBalance"
@@ -120,7 +121,7 @@
 					min="0"
 					bind:value={currentBalance}
 					required
-					class="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+					class="block w-full pl-7 rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				/>
 			</div>
 		</div>
@@ -128,8 +129,8 @@
 
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 		<div>
-			<label for="interestRate" class="block text-sm font-medium text-gray-700">
-				Interest Rate (APR) <span class="text-red-600">*</span>
+			<label for="interestRate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				Interest Rate (APR) <span class="text-red-600 dark:text-red-400">*</span>
 			</label>
 			<div class="mt-1 relative rounded-md shadow-sm">
 				<input
@@ -140,22 +141,22 @@
 					max="100"
 					bind:value={interestRate}
 					required
-					class="block w-full pr-8 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+					class="block w-full pr-8 rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				/>
 				<div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-					<span class="text-gray-500 sm:text-sm">%</span>
+					<span class="text-gray-500 sm:text-sm dark:text-gray-400">%</span>
 				</div>
 			</div>
-			<p class="mt-1 text-xs text-gray-500">Annual Percentage Rate (e.g., 15.5 for 15.5%)</p>
+			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Annual Percentage Rate (e.g., 15.5 for 15.5%)</p>
 		</div>
 
 		<div>
-			<label for="minimumPayment" class="block text-sm font-medium text-gray-700">
-				Minimum Payment <span class="text-red-600">*</span>
+			<label for="minimumPayment" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				Minimum Payment <span class="text-red-600 dark:text-red-400">*</span>
 			</label>
 			<div class="mt-1 relative rounded-md shadow-sm">
 				<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-					<span class="text-gray-500 sm:text-sm">$</span>
+					<span class="text-gray-500 sm:text-sm dark:text-gray-400">$</span>
 				</div>
 				<input
 					id="minimumPayment"
@@ -164,33 +165,33 @@
 					min="0"
 					bind:value={minimumPayment}
 					required
-					class="block w-full pl-7 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+					class="block w-full pl-7 rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				/>
 			</div>
 		</div>
 	</div>
 
 	<div>
-		<label for="linkedBill" class="block text-sm font-medium text-gray-700">
+		<label for="linkedBill" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
 			Link to Bill (Optional)
 		</label>
 		<select
 			id="linkedBill"
 			bind:value={linkedBillId}
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 		>
 			<option value={null}>No linked bill</option>
 			{#each bills as bill}
 				<option value={bill.id}>{bill.name} - ${bill.amount.toFixed(2)}</option>
 			{/each}
 		</select>
-		<p class="mt-1 text-xs text-gray-500">
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 			Link this debt to a recurring bill for automatic minimum payment tracking
 		</p>
 	</div>
 
 	<div>
-		<label for="priority" class="block text-sm font-medium text-gray-700">
+		<label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
 			Priority (Optional)
 		</label>
 		<input
@@ -199,37 +200,28 @@
 			min="1"
 			bind:value={priority}
 			placeholder="Used for custom payoff strategy"
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 		/>
-		<p class="mt-1 text-xs text-gray-500">Lower numbers = higher priority in custom strategy</p>
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Lower numbers = higher priority in custom strategy</p>
 	</div>
 
 	<div>
-		<label for="notes" class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
+		<label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes (Optional)</label>
 		<textarea
 			id="notes"
 			bind:value={notes}
 			rows="3"
 			placeholder="Add any additional notes about this debt..."
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 		></textarea>
 	</div>
 
 	<div class="flex justify-end gap-3">
-		<button
-			type="button"
-			onclick={onCancel}
-			disabled={isSubmitting}
-			class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-		>
+		<Button variant="secondary" onclick={onCancel} disabled={isSubmitting}>
 			Cancel
-		</button>
-		<button
-			type="submit"
-			disabled={isSubmitting}
-			class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-		>
+		</Button>
+		<Button type="submit" disabled={isSubmitting}>
 			{isSubmitting ? 'Saving...' : submitLabel}
-		</button>
+		</Button>
 	</div>
 </form>

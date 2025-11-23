@@ -2,6 +2,7 @@
 	import type { Category } from '$lib/types/bill';
 	import type { RecurrenceType } from '$lib/types/bill';
 	import { format } from 'date-fns';
+	import Button from '$lib/components/Button.svelte';
 
 	interface Props {
 		categories: Category[];
@@ -86,27 +87,27 @@
 <form onsubmit={handleSubmit} class="space-y-6">
 	<!-- Bill Name -->
 	<div>
-		<label for="name" class="block text-sm font-medium text-gray-700">
-			Bill Name <span class="text-red-500">*</span>
+		<label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+			Bill Name <span class="text-red-500 dark:text-red-400">*</span>
 		</label>
 		<input
 			type="text"
 			id="name"
 			bind:value={name}
 			required
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 			placeholder="e.g., Electric Bill"
 		/>
 	</div>
 
 	<!-- Amount -->
 	<div>
-		<label for="amount" class="block text-sm font-medium text-gray-700">
-			Amount <span class="text-red-500">*</span>
+		<label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+			Amount <span class="text-red-500 dark:text-red-400">*</span>
 		</label>
 		<div class="relative mt-1">
 			<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-				<span class="text-gray-500">$</span>
+				<span class="text-gray-500 dark:text-gray-400">$</span>
 			</div>
 			<input
 				type="number"
@@ -115,7 +116,7 @@
 				required
 				min="0"
 				step="0.01"
-				class="block w-full rounded-md border-gray-300 pl-7 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 pl-7 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				placeholder="0.00"
 			/>
 		</div>
@@ -123,39 +124,39 @@
 
 	<!-- Due Date -->
 	<div>
-		<label for="dueDate" class="block text-sm font-medium text-gray-700">
-			Due Date <span class="text-red-500">*</span>
+		<label for="dueDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+			Due Date <span class="text-red-500 dark:text-red-400">*</span>
 		</label>
 		<input
 			type="date"
 			id="dueDate"
 			bind:value={dueDate}
 			required
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 		/>
 	</div>
 
 	<!-- Payment Link -->
 	<div>
-		<label for="paymentLink" class="block text-sm font-medium text-gray-700">
+		<label for="paymentLink" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
 			Payment Link (Optional)
 		</label>
 		<input
 			type="url"
 			id="paymentLink"
 			bind:value={paymentLink}
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 			placeholder="https://example.com/pay"
 		/>
 	</div>
 
 	<!-- Category -->
 	<div>
-		<label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+		<label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
 		<select
 			id="category"
 			bind:value={categoryId}
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 		>
 			<option value={null}>No Category</option>
 			{#each categories as category}
@@ -172,23 +173,23 @@
 			type="checkbox"
 			id="isAutopay"
 			bind:checked={isAutopay}
-			class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+			class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
 		/>
-		<label for="isAutopay" class="ml-2 block text-sm font-medium text-gray-700">
+		<label for="isAutopay" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
 			This bill is set to autopay
 		</label>
 	</div>
 
 	<!-- Recurring -->
-	<div class="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+	<div class="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
 		<div class="flex items-center">
 			<input
 				type="checkbox"
 				id="isRecurring"
 				bind:checked={isRecurring}
-				class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+				class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
 			/>
-			<label for="isRecurring" class="ml-2 block text-sm font-medium text-gray-700">
+			<label for="isRecurring" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
 				This is a recurring bill
 			</label>
 		</div>
@@ -196,13 +197,13 @@
 		{#if isRecurring}
 			<div class="space-y-4">
 				<div>
-					<label for="recurrenceType" class="block text-sm font-medium text-gray-700">
+					<label for="recurrenceType" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
 						Frequency
 					</label>
 					<select
 						id="recurrenceType"
 						bind:value={recurrenceType}
-						class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+						class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 					>
 						<option value="weekly">Weekly</option>
 						<option value="biweekly">Every 2 Weeks</option>
@@ -214,7 +215,7 @@
 
 				{#if recurrenceType === 'monthly' || recurrenceType === 'quarterly'}
 					<div>
-						<label for="recurrenceDay" class="block text-sm font-medium text-gray-700">
+						<label for="recurrenceDay" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
 							Day of Month
 						</label>
 						<input
@@ -223,10 +224,10 @@
 							bind:value={recurrenceDay}
 							min="1"
 							max="31"
-							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+							class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 							placeholder="e.g., 1 for 1st of month"
 						/>
-						<p class="mt-1 text-xs text-gray-500">
+						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 							Leave empty to use the same day as the initial due date
 						</p>
 					</div>
@@ -237,34 +238,25 @@
 
 	<!-- Notes -->
 	<div>
-		<label for="notes" class="block text-sm font-medium text-gray-700">
+		<label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
 			Notes (Optional)
 		</label>
 		<textarea
 			id="notes"
 			bind:value={notes}
 			rows="3"
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 			placeholder="Any additional information..."
 		></textarea>
 	</div>
 
 	<!-- Actions -->
-	<div class="flex items-center justify-end gap-3 border-t border-gray-200 pt-6">
-		<button
-			type="button"
-			onclick={onCancel}
-			disabled={isSubmitting}
-			class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-		>
+	<div class="flex items-center justify-end gap-3 border-t border-gray-200 pt-6 dark:border-gray-700">
+		<Button variant="secondary" onclick={onCancel} disabled={isSubmitting}>
 			Cancel
-		</button>
-		<button
-			type="submit"
-			disabled={isSubmitting}
-			class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-		>
+		</Button>
+		<Button type="submit" disabled={isSubmitting}>
 			{isSubmitting ? 'Saving...' : submitLabel}
-		</button>
+		</Button>
 	</div>
 </form>

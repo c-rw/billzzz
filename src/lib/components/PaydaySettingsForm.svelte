@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/Button.svelte';
 	import type { PaydaySettings } from '$lib/server/db/schema';
 	import { format } from 'date-fns';
 
@@ -48,13 +49,13 @@
 <form onsubmit={handleSubmit} class="space-y-6">
 	<!-- Frequency -->
 	<div>
-		<label for="frequency" class="block text-sm font-medium text-gray-700">
-			How often do you get paid? <span class="text-red-500">*</span>
+		<label for="frequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+			How often do you get paid? <span class="text-red-500 dark:text-red-400">*</span>
 		</label>
 		<select
 			id="frequency"
 			bind:value={frequency}
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 		>
 			<option value="weekly">Weekly</option>
 			<option value="biweekly">Every 2 Weeks (Biweekly)</option>
@@ -66,13 +67,13 @@
 	<!-- Weekly/Biweekly: Day of Week -->
 	{#if frequency === 'weekly' || frequency === 'biweekly'}
 		<div>
-			<label for="dayOfWeek" class="block text-sm font-medium text-gray-700">
-				What day of the week? <span class="text-red-500">*</span>
+			<label for="dayOfWeek" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				What day of the week? <span class="text-red-500 dark:text-red-400">*</span>
 			</label>
 			<select
 				id="dayOfWeek"
 				bind:value={dayOfWeek}
-				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 			>
 				{#each dayNames as dayName, index}
 					<option value={index}>{dayName}</option>
@@ -84,17 +85,17 @@
 	<!-- Biweekly: Start Date -->
 	{#if frequency === 'biweekly'}
 		<div>
-			<label for="startDate" class="block text-sm font-medium text-gray-700">
-				Next Payday <span class="text-red-500">*</span>
+			<label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				Next Payday <span class="text-red-500 dark:text-red-400">*</span>
 			</label>
 			<input
 				type="date"
 				id="startDate"
 				bind:value={startDate}
 				required
-				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 			/>
-			<p class="mt-1 text-xs text-gray-500">
+			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 				Enter your next payday so we can calculate the biweekly schedule
 			</p>
 		</div>
@@ -103,8 +104,8 @@
 	<!-- Monthly: Day of Month -->
 	{#if frequency === 'monthly'}
 		<div>
-			<label for="dayOfMonth" class="block text-sm font-medium text-gray-700">
-				What day of the month? <span class="text-red-500">*</span>
+			<label for="dayOfMonth" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				What day of the month? <span class="text-red-500 dark:text-red-400">*</span>
 			</label>
 			<input
 				type="number"
@@ -113,9 +114,9 @@
 				min="1"
 				max="31"
 				required
-				class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+				class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 			/>
-			<p class="mt-1 text-xs text-gray-500">
+			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 				e.g., 15 for the 15th of each month
 			</p>
 		</div>
@@ -125,8 +126,8 @@
 	{#if frequency === 'semi-monthly'}
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label for="dayOfMonth" class="block text-sm font-medium text-gray-700">
-					First Payday <span class="text-red-500">*</span>
+				<label for="dayOfMonth" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+					First Payday <span class="text-red-500 dark:text-red-400">*</span>
 				</label>
 				<input
 					type="number"
@@ -135,12 +136,12 @@
 					min="1"
 					max="31"
 					required
-					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+					class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				/>
 			</div>
 			<div>
-				<label for="dayOfMonth2" class="block text-sm font-medium text-gray-700">
-					Second Payday <span class="text-red-500">*</span>
+				<label for="dayOfMonth2" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+					Second Payday <span class="text-red-500 dark:text-red-400">*</span>
 				</label>
 				<input
 					type="number"
@@ -149,31 +150,22 @@
 					min="1"
 					max="31"
 					required
-					class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+					class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				/>
 			</div>
 		</div>
-		<p class="text-xs text-gray-500">
+		<p class="text-xs text-gray-500 dark:text-gray-400">
 			e.g., 1 and 15 for the 1st and 15th of each month
 		</p>
 	{/if}
 
 	<!-- Actions -->
-	<div class="flex items-center justify-end gap-3 border-t border-gray-200 pt-6">
-		<button
-			type="button"
-			onclick={onCancel}
-			disabled={isSubmitting}
-			class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-		>
+	<div class="flex items-center justify-end gap-3 border-t border-gray-200 pt-6 dark:border-gray-700">
+		<Button variant="secondary" onclick={onCancel} disabled={isSubmitting}>
 			Cancel
-		</button>
-		<button
-			type="submit"
-			disabled={isSubmitting}
-			class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-		>
+		</Button>
+		<Button type="submit" disabled={isSubmitting}>
 			{isSubmitting ? 'Saving...' : 'Save Payday Schedule'}
-		</button>
+		</Button>
 	</div>
 </form>

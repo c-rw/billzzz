@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Modal from '$lib/components/Modal.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 
@@ -40,10 +41,10 @@
 		}}
 		class="space-y-4"
 	>
-		<div class="rounded-lg bg-red-50 border border-red-200 p-4">
+		<div class="rounded-lg bg-red-50 border border-red-200 p-4 dark:bg-red-900 dark:border-red-700">
 			<div class="flex">
 				<svg
-					class="h-5 w-5 text-red-600 flex-shrink-0"
+					class="h-5 w-5 text-red-600 dark:text-red-400 shrink-0"
 					fill="currentColor"
 					viewBox="0 0 20 20"
 				>
@@ -54,8 +55,8 @@
 					/>
 				</svg>
 				<div class="ml-3">
-					<h3 class="text-sm font-medium text-red-800">Warning: This action is irreversible!</h3>
-					<div class="mt-2 text-sm text-red-700">
+					<h3 class="text-sm font-medium text-red-800 dark:text-red-200">Warning: This action is irreversible!</h3>
+					<div class="mt-2 text-sm text-red-700 dark:text-red-300">
 						<p>This will permanently delete:</p>
 						<ul class="list-disc pl-5 mt-2 space-y-1">
 							<li>All bills and payment history</li>
@@ -74,8 +75,8 @@
 		</div>
 
 		<div>
-			<label for="reset-confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-				To confirm, type <strong class="text-red-600">DELETE ALL DATA</strong> below:
+			<label for="reset-confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+				To confirm, type <strong class="text-red-600 dark:text-red-400">DELETE ALL DATA</strong> below:
 			</label>
 			<input
 				id="reset-confirmation"
@@ -84,7 +85,7 @@
 				bind:value={resetConfirmation}
 				required
 				placeholder="DELETE ALL DATA"
-				class="block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+				class="block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400 dark:focus:border-red-400 dark:focus:ring-red-400"
 			/>
 		</div>
 
@@ -92,7 +93,7 @@
 			<button
 				type="submit"
 				disabled={resetting || resetConfirmation !== 'DELETE ALL DATA'}
-				class="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-red-700 dark:hover:bg-red-600"
 			>
 				{#if resetting}
 					<span class="inline-flex items-center gap-2">
@@ -119,7 +120,7 @@
 				type="button"
 				onclick={handleClose}
 				disabled={resetting}
-				class="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="flex-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
 			>
 				Cancel
 			</button>

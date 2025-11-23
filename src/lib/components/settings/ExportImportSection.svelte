@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/components/Button.svelte';
 	import { enhance } from '$app/forms';
 
 	let {
@@ -10,10 +11,10 @@
 	let importing = $state(false);
 </script>
 
-<div class="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm">
-	<div class="border-b border-gray-200 px-6 py-4">
-		<h2 class="text-xl font-semibold text-gray-900">Backup & Restore</h2>
-		<p class="mt-1 text-sm text-gray-600">
+<div class="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700">
+	<div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+		<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Backup & Restore</h2>
+		<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
 			Export all your data or import from a previous backup
 		</p>
 	</div>
@@ -21,13 +22,13 @@
 	<div class="p-6">
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<!-- Export -->
-			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
 				<div class="flex items-start gap-3">
 					<div
-						class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-100"
+						class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900"
 					>
 						<svg
-							class="h-5 w-5 text-blue-600"
+							class="h-5 w-5 text-blue-600 dark:text-blue-400"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -41,13 +42,13 @@
 						</svg>
 					</div>
 					<div class="flex-1">
-						<h3 class="text-sm font-medium text-gray-900">Export Data</h3>
-						<p class="mt-1 text-sm text-gray-600">
+						<h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Export Data</h3>
+						<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
 							Download a JSON file with all your bills, buckets, debts, categories, and settings (payment history not included)
 						</p>
 						<button
 							onclick={onExport}
-							class="mt-3 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+							class="mt-3 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600"
 						>
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path
@@ -64,13 +65,13 @@
 			</div>
 
 			<!-- Import -->
-			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
 				<div class="flex items-start gap-3">
 					<div
-						class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100"
+						class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900"
 					>
 						<svg
-							class="h-5 w-5 text-green-600"
+							class="h-5 w-5 text-green-600 dark:text-green-400"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -84,8 +85,8 @@
 						</svg>
 					</div>
 					<div class="flex-1">
-						<h3 class="text-sm font-medium text-gray-900">Import Data</h3>
-						<p class="mt-1 text-sm text-gray-600">Restore from a previously exported backup file</p>
+						<h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Import Data</h3>
+						<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">Restore from a previously exported backup file</p>
 						<form
 							method="POST"
 							action="?/importData"
@@ -131,7 +132,7 @@
 									if (input) (input as HTMLInputElement).click();
 								}}
 								disabled={importing}
-								class="mt-3 inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+								class="mt-3 inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-green-700 dark:hover:bg-green-600"
 							>
 								{#if importing}
 									<svg
@@ -166,10 +167,10 @@
 			</div>
 		</div>
 
-		<div class="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4">
+		<div class="mt-4 rounded-lg bg-yellow-50 border border-yellow-200 p-4 dark:bg-yellow-900 dark:border-yellow-700">
 			<div class="flex">
 				<svg
-					class="h-5 w-5 text-yellow-600 flex-shrink-0"
+					class="h-5 w-5 text-yellow-600 dark:text-yellow-400 shrink-0"
 					fill="currentColor"
 					viewBox="0 0 20 20"
 				>
@@ -180,8 +181,8 @@
 					/>
 				</svg>
 				<div class="ml-3">
-					<h3 class="text-sm font-medium text-yellow-800">Important Notes</h3>
-					<div class="mt-2 text-sm text-yellow-700">
+					<h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Important Notes</h3>
+					<div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
 						<ul class="list-disc pl-5 space-y-1">
 							<li>Importing will <strong>replace all existing data</strong></li>
 							<li>Make sure to export your current data before importing</li>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import type { DebtWithDetails } from '$lib/types/debt';
 	import { format } from 'date-fns';
 

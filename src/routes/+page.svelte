@@ -4,6 +4,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import BillForm from '$lib/components/BillForm.svelte';
 	import PaymentModal from '$lib/components/PaymentModal.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import type { BillWithCategory } from '$lib/types/bill';
 	import { invalidateAll } from '$app/navigation';
 	import { format } from 'date-fns';
@@ -225,32 +226,32 @@
 <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 	<div class="mb-8">
 		<div>
-			<h1 class="text-3xl font-bold text-gray-900">Bills Dashboard</h1>
-			<p class="mt-2 text-gray-600 italic">I got bills, they're multiplying</p>
+			<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Bills Dashboard</h1>
+			<p class="mt-2 text-gray-600 dark:text-gray-400 italic">I got bills, they're multiplying</p>
 		</div>
 	</div>
 
 		<!-- Stats Dashboard -->
 		<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-			<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-				<p class="text-sm text-gray-500">Total Bills</p>
-				<p class="mt-1 text-2xl font-semibold text-gray-900">{data.stats.totalBills}</p>
+			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+				<p class="text-sm text-gray-500 dark:text-gray-400">Total Bills</p>
+				<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.totalBills}</p>
 			</div>
-			<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-				<p class="text-sm text-gray-500">Unpaid</p>
-				<p class="mt-1 text-2xl font-semibold text-gray-900">{data.stats.unpaidBills}</p>
+			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+				<p class="text-sm text-gray-500 dark:text-gray-400">Unpaid</p>
+				<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.unpaidBills}</p>
 			</div>
-			<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-				<p class="text-sm text-gray-500">Overdue</p>
-				<p class="mt-1 text-2xl font-semibold text-red-600">{data.stats.overdueBills}</p>
+			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+				<p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
+				<p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{data.stats.overdueBills}</p>
 			</div>
-			<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-				<p class="text-sm text-gray-500">Upcoming</p>
-				<p class="mt-1 text-2xl font-semibold text-yellow-600">{data.stats.upcomingBills}</p>
+			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+				<p class="text-sm text-gray-500 dark:text-gray-400">Upcoming</p>
+				<p class="mt-1 text-2xl font-semibold text-yellow-600 dark:text-yellow-400">{data.stats.upcomingBills}</p>
 			</div>
-			<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-				<p class="text-sm text-gray-500">Due Next 30 Days</p>
-				<p class="mt-1 text-2xl font-semibold text-gray-900">
+			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+				<p class="text-sm text-gray-500 dark:text-gray-400">Due Next 30 Days</p>
+				<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
 					${data.stats.totalAmount.toFixed(2)}
 				</p>
 			</div>
@@ -430,7 +431,7 @@
 				{/each}
 			</div>
 
-		<div class="mt-6 text-center text-sm text-gray-500">
+		<div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
 			Showing {filteredBills.length} of {data.bills.length} bills
 		</div>
 	{/if}

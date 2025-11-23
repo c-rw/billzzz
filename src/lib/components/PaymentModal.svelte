@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Modal from './Modal.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import type { BillWithCategory } from '$lib/types/bill';
 
 	interface Props {

@@ -33,13 +33,13 @@
 	}
 </script>
 
-<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
 	<div class="p-4">
 		<div class="mb-2 flex items-center gap-2">
-			<h3 class="text-lg font-semibold text-gray-900 truncate">{bill.name}</h3>
+			<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{bill.name}</h3>
 			{#if bill.isRecurring}
 				<span
-					class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
+					class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-950 dark:text-blue-400"
 					title={bill.recurrenceType ? getRecurrenceDescription(bill.recurrenceType as any, bill.recurrenceDay) : ''}
 				>
 					<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
@@ -54,7 +54,7 @@
 			{/if}
 			{#if bill.isAutopay}
 				<span
-					class="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-0.5 text-xs text-green-700"
+					class="inline-flex items-center gap-1 rounded-md bg-green-50 px-2 py-0.5 text-xs text-green-700 dark:bg-green-950 dark:text-green-400"
 					title="This bill is set to autopay"
 				>
 					<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
@@ -79,25 +79,25 @@
 
 		<div class="grid grid-cols-2 gap-3 text-sm">
 			<div>
-				<span class="text-gray-500">Amount:</span>
-				<span class="ml-2 font-semibold text-gray-900">${bill.amount.toFixed(2)}</span>
+				<span class="text-gray-500 dark:text-gray-400">Amount:</span>
+				<span class="ml-2 font-semibold text-gray-900 dark:text-gray-100">${bill.amount.toFixed(2)}</span>
 			</div>
 			<div>
-				<span class="text-gray-500">Due:</span>
-				<span class="ml-2 font-medium text-gray-900">{format(bill.dueDate, 'MMM d, yyyy')}</span>
+				<span class="text-gray-500 dark:text-gray-400">Due:</span>
+				<span class="ml-2 font-medium text-gray-900 dark:text-gray-100">{format(bill.dueDate, 'MMM d, yyyy')}</span>
 			</div>
 		</div>
 
 		{#if bill.notes}
-			<p class="mt-2 text-sm text-gray-600 line-clamp-2">{bill.notes}</p>
+			<p class="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{bill.notes}</p>
 		{/if}
 	</div>
 
 	<!-- Action Buttons -->
-	<div class="flex items-center justify-end gap-1 border-t border-gray-100 bg-gray-50 px-3 py-2">
+	<div class="flex items-center justify-end gap-1 border-t border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
 		<button
 			onclick={handleTogglePaid}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
 			title={bill.isPaid ? 'Mark as unpaid' : 'Mark as paid'}
 		>
 			{#if bill.isPaid}
@@ -136,7 +136,7 @@
 				href={bill.paymentLink}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="rounded-md p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+				class="rounded-md p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 				title="Pay bill"
 			>
 				<svg
@@ -158,7 +158,7 @@
 
 		<button
 			onclick={handleEdit}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 			title="Edit bill"
 		>
 			<svg
@@ -179,7 +179,7 @@
 
 		<button
 			onclick={handleDelete}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
 			title="Delete bill"
 		>
 			<svg

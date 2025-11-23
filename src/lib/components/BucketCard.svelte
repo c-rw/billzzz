@@ -81,7 +81,7 @@
 </script>
 
 <div
-	class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md cursor-pointer"
+	class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md cursor-pointer dark:border-gray-700 dark:bg-gray-800"
 	onclick={handleClick}
 	onkeydown={(e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
@@ -97,15 +97,15 @@
 			<div class="flex items-center gap-2">
 				{#if bucket.icon && iconMap[bucket.icon]}
 					{@const IconComponent = iconMap[bucket.icon]}
-					<div class="text-blue-600">
+					<div class="text-blue-600 dark:text-blue-400">
 						<IconComponent size={20} />
 					</div>
 				{/if}
-				<h3 class="text-lg font-semibold text-gray-900">{bucket.name}</h3>
+				<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{bucket.name}</h3>
 			</div>
 			{#if bucket.enableCarryover}
 				<span
-					class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
+					class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-950 dark:text-blue-400"
 					title="Carryover enabled"
 				>
 					<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
@@ -119,7 +119,7 @@
 		</div>
 
 		{#if currentCycle}
-			<div class="mb-3 text-xs text-gray-500">
+			<div class="mb-3 text-xs text-gray-500 dark:text-gray-400">
 				{format(currentCycle.startDate, 'MMM d')} – {format(currentCycle.endDate, 'MMM d, yyyy')}
 			</div>
 		{/if}
@@ -128,7 +128,7 @@
 		<div class="mb-3">
 			<div class="flex items-baseline justify-between">
 				<span class="text-2xl font-bold {statusColor}">${Math.abs(remaining).toFixed(2)}</span>
-				<span class="text-sm text-gray-500">remaining</span>
+				<span class="text-sm text-gray-500 dark:text-gray-400">remaining</span>
 			</div>
 			{#if remaining < 0}
 				<p class="mt-1 text-xs text-red-600">Overbudget</p>
@@ -137,7 +137,7 @@
 
 		<!-- Progress Bar -->
 		<div class="mb-3">
-			<div class="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+			<div class="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
 				<div
 					class="{progressColor} h-full transition-all"
 					style="width: {Math.min(percentSpent, 100)}%"
@@ -148,12 +148,12 @@
 		<!-- Spending Info -->
 		<div class="grid grid-cols-2 gap-3 text-sm">
 			<div>
-				<span class="text-gray-500">Spent:</span>
-				<span class="ml-2 font-semibold text-gray-900">${totalSpent.toFixed(2)}</span>
+				<span class="text-gray-500 dark:text-gray-400">Spent:</span>
+				<span class="ml-2 font-semibold text-gray-900 dark:text-gray-100">${totalSpent.toFixed(2)}</span>
 			</div>
 			<div>
-				<span class="text-gray-500">Budget:</span>
-				<span class="ml-2 font-medium text-gray-900">${startingBalance.toFixed(2)}</span>
+				<span class="text-gray-500 dark:text-gray-400">Budget:</span>
+				<span class="ml-2 font-medium text-gray-900 dark:text-gray-100">${startingBalance.toFixed(2)}</span>
 			</div>
 		</div>
 
@@ -165,13 +165,13 @@
 	</div>
 
 	<!-- Action Buttons -->
-	<div class="flex items-center justify-end gap-1 border-t border-gray-100 bg-gray-50 px-3 py-2">
+	<div class="flex items-center justify-end gap-1 border-t border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
 		<button
 			onclick={(e) => {
 				e.stopPropagation();
 				handleEdit();
 			}}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
 			title="Edit bucket"
 		>
 			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,7 +188,7 @@
 				e.stopPropagation();
 				handleDelete();
 			}}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-red-100 hover:text-red-700"
+			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
 			title="Delete bucket"
 		>
 			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

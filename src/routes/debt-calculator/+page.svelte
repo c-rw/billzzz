@@ -7,6 +7,7 @@
 	import StrategySelector from '$lib/components/StrategySelector.svelte';
 	import PayoffTimeline from '$lib/components/PayoffTimeline.svelte';
 	import StrategyComparison from '$lib/components/StrategyComparison.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import type { PageData } from './$types';
 	import type { DebtWithDetails } from '$lib/types/debt';
 	import type { StrategyComparison as ComparisonType } from '$lib/types/debt';
@@ -301,12 +302,9 @@
 			<div>
 				<div class="flex justify-between items-center mb-6">
 					<h2 class="text-xl font-semibold text-gray-900">Your Debts</h2>
-					<button
-						onclick={openAddDebt}
-						class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-					>
+					<Button onclick={openAddDebt}>
 						Add Debt
-					</button>
+					</Button>
 				</div>
 
 				{#if hasDebts}
@@ -338,12 +336,9 @@
 						<h3 class="mt-2 text-sm font-medium text-gray-900">No debts yet</h3>
 						<p class="mt-1 text-sm text-gray-500">Get started by adding your first debt.</p>
 						<div class="mt-6">
-							<button
-								onclick={openAddDebt}
-								class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-							>
+							<Button onclick={openAddDebt}>
 								Add Your First Debt
-							</button>
+							</Button>
 						</div>
 					</div>
 				{/if}
@@ -364,13 +359,9 @@
 					/>
 
 					<div class="mt-8">
-						<button
-							onclick={calculatePayoff}
-							disabled={isCalculating}
-							class="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 font-semibold"
-						>
+						<Button onclick={calculatePayoff} disabled={isCalculating} size="lg" fullWidth>
 							{isCalculating ? 'Calculating...' : 'Calculate Payoff Schedule'}
-						</button>
+						</Button>
 					</div>
 				{:else}
 					<div class="text-center py-12 bg-gray-50 rounded-lg">

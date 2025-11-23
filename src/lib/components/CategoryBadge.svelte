@@ -50,7 +50,7 @@
 		{category.name}
 	</span>
 {:else}
-	<span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">
+	<span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-0.5 text-xs text-gray-600 dark:text-gray-400">
 		Uncategorized
 	</span>
 {/if}

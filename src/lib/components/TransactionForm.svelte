@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { format } from 'date-fns';
+	import Button from '$lib/components/Button.svelte';
 
 	interface Props {
 		initialData?: {
@@ -56,10 +57,10 @@
 <form onsubmit={handleSubmit} class="space-y-4">
 	<!-- Amount -->
 	<div>
-		<label for="amount" class="block text-sm font-medium text-gray-700">Amount Spent</label>
+		<label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Amount Spent</label>
 		<div class="mt-1 relative rounded-md shadow-sm">
 			<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-				<span class="text-gray-500 sm:text-sm">$</span>
+				<span class="text-gray-500 sm:text-sm dark:text-gray-400">$</span>
 			</div>
 			<input
 				type="number"
@@ -68,7 +69,7 @@
 				required
 				min="0"
 				step="0.01"
-				class="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500"
+				class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 pl-7 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				placeholder="0.00"
 			/>
 		</div>
@@ -76,56 +77,47 @@
 
 	<!-- Timestamp -->
 	<div>
-		<label for="timestamp" class="block text-sm font-medium text-gray-700">Date & Time</label>
+		<label for="timestamp" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date & Time</label>
 		<input
 			type="datetime-local"
 			id="timestamp"
 			bind:value={timestamp}
 			required
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 		/>
 	</div>
 
 	<!-- Vendor -->
 	<div>
-		<label for="vendor" class="block text-sm font-medium text-gray-700">Vendor (Optional)</label>
+		<label for="vendor" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Vendor (Optional)</label>
 		<input
 			type="text"
 			id="vendor"
 			bind:value={vendor}
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 			placeholder="e.g., Walmart, Shell, McDonald's"
 		/>
 	</div>
 
 	<!-- Notes -->
 	<div>
-		<label for="notes" class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
+		<label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Notes (Optional)</label>
 		<textarea
 			id="notes"
 			bind:value={notes}
 			rows="3"
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 			placeholder="Add any additional details..."
 		></textarea>
 	</div>
 
 	<!-- Form Actions -->
 	<div class="flex justify-end gap-3 pt-4">
-		<button
-			type="button"
-			onclick={onCancel}
-			disabled={isSubmitting}
-			class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-		>
+		<Button variant="secondary" onclick={onCancel} disabled={isSubmitting}>
 			Cancel
-		</button>
-		<button
-			type="submit"
-			disabled={isSubmitting}
-			class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-		>
+		</Button>
+		<Button type="submit" disabled={isSubmitting}>
 			{isSubmitting ? 'Saving...' : submitLabel}
-		</button>
+		</Button>
 	</div>
 </form>

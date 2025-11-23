@@ -3,6 +3,7 @@
 	import BucketCard from '$lib/components/BucketCard.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import BucketForm from '$lib/components/BucketForm.svelte';
+	import Button from '$lib/components/Button.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 

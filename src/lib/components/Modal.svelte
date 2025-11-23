@@ -48,18 +48,18 @@
 	bind:this={dialog}
 	onclick={handleBackdropClick}
 	onkeydown={handleKeydown}
-	class="relative rounded-lg shadow-xl backdrop:bg-gray-900/50 backdrop:backdrop-blur-sm"
+	class="relative rounded-lg shadow-xl bg-white dark:bg-gray-800 backdrop:bg-gray-900/50 dark:backdrop:bg-black/70 backdrop:backdrop-blur-sm"
 	style="max-width: 90vw; max-height: 90vh; width: 640px;"
 >
 	<div class="flex min-h-0 flex-col">
 		<!-- Header -->
-		<div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-			<h2 class="text-xl font-semibold text-gray-900">{title}</h2>
+		<div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
 			<button
 				type="button"
 				onclick={onClose}
 				aria-label="Close modal"
-				class="rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-500"
+				class="rounded-md p-1 text-gray-400 dark:text-gray-500 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-500 dark:hover:text-gray-300"
 			>
 				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
+	import Button from '$lib/components/Button.svelte';
 	import { enhance } from '$app/forms';
 	import {
 		Upload,
@@ -48,7 +49,7 @@
 	let transactionMappings = $state<
 		Array<{
 			transactionId: number;
-			action: 'map_existing' | 'create_new' | 'map_to_bucket' | 'skip';
+			action: 'map_existing' | 'create_new' | 'map_to_bucket' | 'create_new_bucket' | 'skip';
 			billId?: number;
 			billName?: string;
 			amount: number;
@@ -57,6 +58,10 @@
 			isRecurring?: boolean;
 			recurrenceType?: string;
 			bucketId?: number;
+			bucketName?: string;
+			budgetAmount?: number;
+			frequency?: string;
+			anchorDate?: string;
 		}>
 	>([]);
 

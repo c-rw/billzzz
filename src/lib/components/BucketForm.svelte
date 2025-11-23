@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { FrequencyType } from '$lib/types/bucket';
 	import { format } from 'date-fns';
+	import Button from '$lib/components/Button.svelte';
 	import {
 		ShoppingCart,
 		Fuel,
@@ -114,25 +115,25 @@
 <form onsubmit={handleSubmit} class="space-y-4">
 	<!-- Name -->
 	<div>
-		<label for="name" class="block text-sm font-medium text-gray-700">Bucket Name</label>
+		<label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Bucket Name</label>
 		<input
 			type="text"
 			id="name"
 			bind:value={name}
 			required
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 			placeholder="e.g., Groceries, Petrol, Fast Food"
 		/>
 	</div>
 
 	<!-- Icon Selection -->
 	<div>
-		<div class="block text-sm font-medium text-gray-700 mb-2">Icon (Optional)</div>
+		<div class="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Icon (Optional)</div>
 		<input
 			type="text"
 			bind:value={iconSearchQuery}
 			placeholder="Search icons..."
-			class="mb-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+			class="mb-3 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 		/>
 		<div class="grid grid-cols-6 gap-2">
 			{#each filteredIconOptions as option}
@@ -141,8 +142,8 @@
 					type="button"
 					onclick={() => (icon = option.id)}
 					class="p-3 rounded-md border-2 transition-all {icon === option.id
-						? 'border-blue-500 bg-blue-50 text-blue-700'
-						: 'border-gray-200 hover:border-gray-300 text-gray-600'}"
+						? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
+						: 'border-gray-200 hover:border-gray-300 text-gray-600 dark:border-gray-700 dark:hover:border-gray-600 dark:text-gray-400'}"
 					title={option.label}
 				>
 					<IconComponent size={24} />
@@ -150,13 +151,13 @@
 			{/each}
 		</div>
 		{#if filteredIconOptions.length === 0}
-			<p class="mt-2 text-sm text-gray-500 text-center">No icons found</p>
+			<p class="mt-2 text-sm text-gray-500 text-center dark:text-gray-400">No icons found</p>
 		{/if}
 		{#if icon}
 			<button
 				type="button"
 				onclick={() => (icon = '')}
-				class="mt-2 text-xs text-gray-500 hover:text-gray-700"
+				class="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
 			>
 				Clear selection
 			</button>
@@ -165,26 +166,26 @@
 
 	<!-- Color -->
 	<div>
-		<label for="color" class="block text-sm font-medium text-gray-700">Color (Optional)</label>
+		<label for="color" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Color (Optional)</label>
 		<div class="mt-1 flex items-center gap-2">
 			<input
 				type="color"
 				id="color"
 				bind:value={color}
-				class="h-10 w-20 rounded-md border-gray-300"
+				class="h-10 w-20 rounded-md border border-gray-300 dark:border-gray-600"
 			/>
-			<span class="text-sm text-gray-500">{color}</span>
+			<span class="text-sm text-gray-500 dark:text-gray-400">{color}</span>
 		</div>
 	</div>
 
 	<!-- Frequency -->
 	<div>
-		<label for="frequency" class="block text-sm font-medium text-gray-700">Frequency</label>
+		<label for="frequency" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Frequency</label>
 		<select
 			id="frequency"
 			bind:value={frequency}
 			required
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 		>
 			<option value="weekly">Weekly</option>
 			<option value="biweekly">Biweekly</option>
@@ -196,10 +197,10 @@
 
 	<!-- Budget Amount -->
 	<div>
-		<label for="amount" class="block text-sm font-medium text-gray-700">Budget Amount</label>
+		<label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Budget Amount</label>
 		<div class="mt-1 relative rounded-md shadow-sm">
 			<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-				<span class="text-gray-500 sm:text-sm">$</span>
+				<span class="text-gray-500 sm:text-sm dark:text-gray-400">$</span>
 			</div>
 			<input
 				type="number"
@@ -208,7 +209,7 @@
 				required
 				min="0"
 				step="0.01"
-				class="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500"
+				class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 pl-7 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				placeholder="0.00"
 			/>
 		</div>
@@ -216,7 +217,7 @@
 
 	<!-- Anchor Date -->
 	<div>
-		<label for="anchorDate" class="block text-sm font-medium text-gray-700">
+		<label for="anchorDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
 			Start Date
 		</label>
 		<input
@@ -224,9 +225,9 @@
 			id="anchorDate"
 			bind:value={anchorDate}
 			required
-			class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+			class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 		/>
-		<p class="mt-1 text-xs text-gray-500">
+		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
 			This determines when your cycles start. For example, if you get paid on the 1st, set this to the 1st.
 		</p>
 	</div>
@@ -238,12 +239,12 @@
 				type="checkbox"
 				id="carryover"
 				bind:checked={enableCarryover}
-				class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+				class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
 			/>
 		</div>
 		<div class="ml-3">
-			<label for="carryover" class="text-sm font-medium text-gray-700">Enable Carryover</label>
-			<p class="text-xs text-gray-500">
+			<label for="carryover" class="text-sm font-medium text-gray-700 dark:text-gray-300">Enable Carryover</label>
+			<p class="text-xs text-gray-500 dark:text-gray-400">
 				Carry unused budget (or overspending) to the next cycle
 			</p>
 		</div>
@@ -251,20 +252,11 @@
 
 	<!-- Form Actions -->
 	<div class="flex justify-end gap-3 pt-4">
-		<button
-			type="button"
-			onclick={onCancel}
-			disabled={isSubmitting}
-			class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-		>
+		<Button variant="secondary" onclick={onCancel} disabled={isSubmitting}>
 			Cancel
-		</button>
-		<button
-			type="submit"
-			disabled={isSubmitting}
-			class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-		>
+		</Button>
+		<Button type="submit" disabled={isSubmitting}>
 			{isSubmitting ? 'Saving...' : submitLabel}
-		</button>
+		</Button>
 	</div>
 </form>
