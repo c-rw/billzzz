@@ -117,8 +117,8 @@
 	<div class="mb-8">
 		<div class="flex items-center justify-between">
 			<div>
-				<h1 class="text-3xl font-bold text-gray-900">Buckets</h1>
-				<p class="mt-2 text-gray-600">Track your variable spending categories</p>
+				<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Buckets</h1>
+				<p class="mt-2 text-gray-600 dark:text-gray-400">Track your variable spending categories</p>
 			</div>
 			<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
 				<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,20 +136,20 @@
 
 	<!-- Stats Dashboard -->
 	<div class="mb-8 grid gap-4 sm:grid-cols-3">
-		<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-			<p class="text-sm text-gray-500">Total Budget</p>
-			<p class="mt-1 text-2xl font-semibold text-gray-900">${totalBudget.toFixed(2)}</p>
+		<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+			<p class="text-sm text-gray-500 dark:text-gray-400">Total Budget</p>
+			<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">${totalBudget.toFixed(2)}</p>
 		</div>
-		<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-			<p class="text-sm text-gray-500">Total Spent</p>
-			<p class="mt-1 text-2xl font-semibold text-gray-900">${totalSpent.toFixed(2)}</p>
+		<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+			<p class="text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
+			<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">${totalSpent.toFixed(2)}</p>
 		</div>
-		<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-			<p class="text-sm text-gray-500">Total Remaining</p>
+		<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+			<p class="text-sm text-gray-500 dark:text-gray-400">Total Remaining</p>
 			<p
 				class="mt-1 text-2xl font-semibold {totalRemaining < 0
-					? 'text-red-600'
-					: 'text-green-600'}"
+					? 'text-red-600 dark:text-red-400'
+					: 'text-green-600 dark:text-green-400'}"
 			>
 				${totalRemaining.toFixed(2)}
 			</p>
@@ -158,9 +158,9 @@
 
 	<!-- Buckets List -->
 	{#if data.buckets.length === 0}
-		<div class="rounded-lg border-2 border-dashed border-gray-300 bg-white p-12 text-center">
+		<div class="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-12 text-center">
 			<svg
-				class="mx-auto h-12 w-12 text-gray-400"
+				class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
@@ -172,8 +172,8 @@
 					d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
 				/>
 			</svg>
-			<h3 class="mt-2 text-sm font-semibold text-gray-900">No buckets found</h3>
-			<p class="mt-1 text-sm text-gray-500">
+			<h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">No buckets found</h3>
+			<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
 				Get started by creating your first spending bucket.
 			</p>
 			<div class="mt-6">
