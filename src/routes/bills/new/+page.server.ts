@@ -2,6 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { getAllCategories, createBill } from '$lib/server/db/queries';
 import { redirect } from '@sveltejs/kit';
 import type { NewBill } from '$lib/server/db/schema';
+import { parseLocalDate } from '$lib/utils/dates';
 
 export const load: PageServerLoad = async () => {
 	const categories = getAllCategories();
@@ -16,7 +17,7 @@ export const actions: Actions = {
 		const newBill: NewBill = {
 			name: data.name as string,
 			amount: parseFloat(data.amount as string),
-			dueDate: new Date(data.dueDate as string),
+			dueDate: parseLocalDate(data.dueDate as string),
 			paymentLink: (data.paymentLink as string) || null,
 			categoryId: data.categoryId ? parseInt(data.categoryId as string) : null,
 			isRecurring: data.isRecurring === 'true',

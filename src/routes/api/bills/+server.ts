@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createBill, getAllBills } from '$lib/server/db/queries';
 import type { NewBill } from '$lib/server/db/schema';
+import { parseLocalDate } from '$lib/utils/dates';
 
 // GET /api/bills - Get all bills
 export const GET: RequestHandler = async ({ url }) => {
@@ -46,7 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const newBill: NewBill = {
 			name: data.name,
 			amount: parseFloat(data.amount),
-			dueDate: new Date(data.dueDate),
+			dueDate: parseLocalDate(data.dueDate),
 			paymentLink: data.paymentLink || null,
 			categoryId: data.categoryId || null,
 			isRecurring: data.isRecurring || false,

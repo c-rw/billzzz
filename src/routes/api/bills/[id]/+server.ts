@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getBillById, updateBill, deleteBill, markBillAsPaid, addPaymentHistory } from '$lib/server/db/queries';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
+import { parseLocalDate } from '$lib/utils/dates';
 
 // GET /api/bills/[id] - Get a single bill
 export const GET: RequestHandler = async ({ params }) => {
@@ -29,7 +30,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const updateData: any = {
 			name: data.name,
 			amount: data.amount ? parseFloat(data.amount) : undefined,
-			dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+			dueDate: data.dueDate ? parseLocalDate(data.dueDate) : undefined,
 			paymentLink: data.paymentLink,
 			categoryId: data.categoryId,
 			isRecurring: data.isRecurring,
