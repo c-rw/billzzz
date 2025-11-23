@@ -232,24 +232,24 @@
 	<!-- Page Header -->
 	<div class="mb-8">
 		<div>
-			<h1 class="text-3xl font-bold text-gray-900">Debt Reduction Calculator</h1>
-			<p class="mt-2 text-gray-600">
+			<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Debt Reduction Calculator</h1>
+			<p class="mt-2 text-gray-600 dark:text-gray-400">
 				Track your debts and calculate the fastest way to become debt-free
 			</p>
 		</div>
 
 		{#if hasDebts}
 			<div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-				<div class="bg-blue-50 p-4 rounded-lg">
-					<p class="text-sm text-blue-700 font-medium">Total Debt</p>
+				<div class="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+					<p class="text-sm text-blue-700 dark:text-blue-400 font-medium">Total Debt</p>
 					<p class="text-2xl font-bold text-blue-900">${totalBalance.toFixed(2)}</p>
 				</div>
-				<div class="bg-purple-50 p-4 rounded-lg">
-					<p class="text-sm text-purple-700 font-medium">Monthly Minimums</p>
+				<div class="bg-purple-50 dark:bg-purple-950 p-4 rounded-lg">
+					<p class="text-sm text-purple-700 dark:text-purple-400 font-medium">Monthly Minimums</p>
 					<p class="text-2xl font-bold text-purple-900">${totalMinimum.toFixed(2)}</p>
 				</div>
-				<div class="bg-green-50 p-4 rounded-lg">
-					<p class="text-sm text-green-700 font-medium">Extra Payment</p>
+				<div class="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+					<p class="text-sm text-green-700 dark:text-green-400 font-medium">Extra Payment</p>
 					<p class="text-2xl font-bold text-green-900">${extraPayment.toFixed(2)}</p>
 				</div>
 			</div>
@@ -257,7 +257,7 @@
 	</div>
 
 	<!-- Tabs -->
-	<div class="border-b border-gray-200 mb-6">
+	<div class="border-b border-gray-200 dark:border-gray-700 mb-6">
 		<nav class="-mb-px flex space-x-8">
 			<button
 				onclick={() => (activeTab = 'debts')}
@@ -301,7 +301,7 @@
 		{#if activeTab === 'debts'}
 			<div>
 				<div class="flex justify-between items-center mb-6">
-					<h2 class="text-xl font-semibold text-gray-900">Your Debts</h2>
+					<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Your Debts</h2>
 					<Button onclick={openAddDebt}>
 						Add Debt
 					</Button>
@@ -319,9 +319,9 @@
 						{/each}
 					</div>
 				{:else}
-					<div class="text-center py-12 bg-gray-50 rounded-lg">
+					<div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
 						<svg
-							class="mx-auto h-12 w-12 text-gray-400"
+							class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -333,8 +333,8 @@
 								d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 							/>
 						</svg>
-						<h3 class="mt-2 text-sm font-medium text-gray-900">No debts yet</h3>
-						<p class="mt-1 text-sm text-gray-500">Get started by adding your first debt.</p>
+						<h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No debts yet</h3>
+						<p class="mt-1 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">Get started by adding your first debt.</p>
 						<div class="mt-6">
 							<Button onclick={openAddDebt}>
 								Add Your First Debt
@@ -364,8 +364,8 @@
 						</Button>
 					</div>
 				{:else}
-					<div class="text-center py-12 bg-gray-50 rounded-lg">
-						<p class="text-gray-600">Add debts first to configure your payoff strategy.</p>
+					<div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+						<p class="text-gray-600 dark:text-gray-400">Add debts first to configure your payoff strategy.</p>
 					</div>
 				{/if}
 			</div>
@@ -375,7 +375,7 @@
 
 				{#if isCalculating}
 					<div class="text-center py-12">
-						<p class="text-gray-600">Calculating your payoff schedule...</p>
+						<p class="text-gray-600 dark:text-gray-400">Calculating your payoff schedule...</p>
 					</div>
 				{:else if currentSchedule()}
 					{@const schedule = currentSchedule()}
@@ -383,8 +383,8 @@
 						<PayoffTimeline {schedule} />
 					{/if}
 				{:else}
-					<div class="text-center py-12 bg-gray-50 rounded-lg">
-						<p class="text-gray-600">Click "Calculate Payoff Schedule" in the Strategy tab.</p>
+					<div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+						<p class="text-gray-600 dark:text-gray-400">Click "Calculate Payoff Schedule" in the Strategy tab.</p>
 					</div>
 				{/if}
 			</div>
@@ -394,7 +394,7 @@
 
 				{#if isCalculating}
 					<div class="text-center py-12">
-						<p class="text-gray-600">Calculating comparison...</p>
+						<p class="text-gray-600 dark:text-gray-400">Calculating comparison...</p>
 					</div>
 				{:else if calculations}
 					<StrategyComparison
@@ -402,8 +402,8 @@
 						recommended={calculations.recommended}
 					/>
 				{:else}
-					<div class="text-center py-12 bg-gray-50 rounded-lg">
-						<p class="text-gray-600">Click "Calculate Payoff Schedule" in the Strategy tab.</p>
+					<div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
+						<p class="text-gray-600 dark:text-gray-400">Click "Calculate Payoff Schedule" in the Strategy tab.</p>
 					</div>
 				{/if}
 			</div>

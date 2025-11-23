@@ -110,24 +110,24 @@
 	<title>Import Transactions - Billzzz</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50 py-8">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
 	<div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-gray-900">Import Transactions</h1>
-			<p class="mt-2 text-gray-600">Upload OFX or QFX files from your bank to import transactions</p>
+			<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Import Transactions</h1>
+			<p class="mt-2 text-gray-600 dark:text-gray-400">Upload OFX or QFX files from your bank to import transactions</p>
 		</div>
 
 		{#if form?.error}
-			<div class="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
-				<p class="text-sm text-red-800">{form.error}</p>
+			<div class="mb-6 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-4">
+				<p class="text-sm text-red-800 dark:text-red-200">{form.error}</p>
 			</div>
 		{/if}
 
 		{#if !data.sessionId}
 			<!-- Upload Form -->
-			<div class="rounded-lg bg-white shadow-sm border border-gray-200">
+			<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
 				<div class="p-6">
-					<h2 class="text-lg font-semibold text-gray-900 mb-4">Upload File</h2>
+					<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Upload File</h2>
 
 					<form method="POST" action="?/upload" enctype="multipart/form-data" use:enhance={() => {
 						uploading = true;
@@ -138,7 +138,7 @@
 					}}>
 						<div class="space-y-4">
 							<div>
-								<label for="ofxFile" class="block text-sm font-medium text-gray-700 mb-2">
+								<label for="ofxFile" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 									Select OFX/QFX File
 								</label>
 								<div class="flex items-center gap-4">
@@ -149,7 +149,7 @@
 										accept=".ofx,.qfx"
 										onchange={handleFileChange}
 										required
-										class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:border-blue-500"
+										class="block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none focus:border-blue-500"
 									/>
 									<Button
 										type="submit"
@@ -166,15 +166,15 @@
 									</Button>
 								</div>
 								{#if selectedFile}
-									<p class="mt-2 text-sm text-gray-600">
+									<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
 										Selected: {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
 									</p>
 								{/if}
 							</div>
 
-							<div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
-								<h3 class="text-sm font-medium text-blue-900 mb-2">Supported File Formats</h3>
-								<ul class="text-sm text-blue-800 space-y-1">
+							<div class="rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4">
+								<h3 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Supported File Formats</h3>
+								<ul class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
 									<li>• OFX (Open Financial Exchange) - .ofx files</li>
 									<li>• QFX (Quicken Financial Exchange) - .qfx files</li>
 									<li>• Maximum file size: 10 MB</li>
@@ -187,15 +187,15 @@
 		{:else}
 			<!-- Review Transactions -->
 			<div class="space-y-6">
-				<div class="rounded-lg bg-white shadow-sm border border-gray-200 p-6">
+				<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6">
 					<div class="flex items-center justify-between mb-4">
 						<div>
-							<h2 class="text-lg font-semibold text-gray-900">
+							<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
 								Review Transactions ({data.transactions.length})
 							</h2>
-							<p class="text-sm text-gray-600">Map transactions to bills or create new bills</p>
+							<p class="text-sm text-gray-600 dark:text-gray-400">Map transactions to bills or create new bills</p>
 							{#if data.session?.skippedCount && data.session.skippedCount > 0}
-								<p class="text-sm text-amber-600 mt-1">
+								<p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
 									{data.session.skippedCount} duplicate transaction{data.session.skippedCount > 1 ? 's' : ''} skipped (already imported)
 								</p>
 							{/if}
@@ -222,15 +222,15 @@
 
 						<div class="space-y-4">
 							{#each data.transactions as { transaction, bill, category }, index}
-								<div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+								<div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
 									<div class="grid grid-cols-12 gap-4">
 										<!-- Transaction Info -->
 										<div class="col-span-12 md:col-span-4">
 											<div class="flex items-start">
-												<FileText class="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
+												<FileText class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3 mt-0.5" />
 												<div>
-													<p class="font-medium text-gray-900">{transaction.payee}</p>
-													<p class="text-sm text-gray-600">
+													<p class="font-medium text-gray-900 dark:text-gray-100">{transaction.payee}</p>
+													<p class="text-sm text-gray-600 dark:text-gray-400">
 														{new Date(transaction.datePosted).toLocaleDateString()}
 													</p>
 													{#if transaction.memo}
@@ -257,7 +257,7 @@
 															onchange={() => updateMapping(index, { action: 'map_existing' })}
 															class="mr-2"
 														/>
-														<span class="text-sm">Map to Bill</span>
+														<span class="text-sm dark:text-gray-300">Map to Bill</span>
 													</label>
 													<label class="flex items-center">
 														<input
@@ -268,7 +268,7 @@
 															onchange={() => updateMapping(index, { action: 'create_new' })}
 															class="mr-2"
 														/>
-														<span class="text-sm">Create New Bill</span>
+														<span class="text-sm dark:text-gray-300">Create New Bill</span>
 													</label>
 													<label class="flex items-center">
 														<input
@@ -279,7 +279,7 @@
 															onchange={() => updateMapping(index, { action: 'skip' })}
 															class="mr-2"
 														/>
-														<span class="text-sm">Skip</span>
+														<span class="text-sm dark:text-gray-300">Skip</span>
 													</label>
 													<label class="flex items-center">
 														<input
@@ -290,7 +290,7 @@
 															onchange={() => updateMapping(index, { action: 'map_to_bucket' })}
 															class="mr-2"
 														/>
-														<span class="text-sm">Map to Bucket</span>
+														<span class="text-sm dark:text-gray-300">Map to Bucket</span>
 													</label>
 													<label class="flex items-center">
 														<input
@@ -301,14 +301,14 @@
 															onchange={() => updateMapping(index, { action: 'create_new_bucket', bucketName: transaction.payee, budgetAmount: transaction.amount, frequency: 'monthly', anchorDate: new Date(transaction.datePosted).toISOString().split('T')[0] })}
 															class="mr-2"
 														/>
-														<span class="text-sm">Create New Bucket</span>
+														<span class="text-sm dark:text-gray-300">Create New Bucket</span>
 													</label>
 												</div>
 
 												<!-- Map to Existing Bill -->
 												{#if transactionMappings[index]?.action === 'map_existing'}
 													<select
-														class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+														class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 														onchange={(e) =>
 															updateMapping(index, {
 																billId: parseInt((e.target as HTMLSelectElement).value)
@@ -326,7 +326,7 @@
 												<!-- Map to Bucket -->
 												{#if transactionMappings[index]?.action === 'map_to_bucket'}
 													<select
-														class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+														class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 														onchange={(e) =>
 															updateMapping(index, {
 																bucketId: parseInt((e.target as HTMLSelectElement).value)
@@ -351,7 +351,7 @@
 												{#if transactionMappings[index]?.action === 'create_new'}
 													<div class="grid grid-cols-2 gap-3">
 														<div>
-															<label for="billName_{index}" class="block text-xs text-gray-600 mb-1"
+															<label for="billName_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1"
 																>Bill Name</label
 															>
 															<input
@@ -362,16 +362,16 @@
 																	updateMapping(index, {
 																		billName: (e.target as HTMLInputElement).value
 																	})}
-																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 															/>
 														</div>
 														<div>
-															<label for="category_{index}" class="block text-xs text-gray-600 mb-1"
+															<label for="category_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1"
 																>Category</label
 															>
 															<select
 																id="category_{index}"
-																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 																onchange={(e) =>
 																	updateMapping(index, {
 																		categoryId: parseInt((e.target as HTMLSelectElement).value)
@@ -384,7 +384,7 @@
 															</select>
 														</div>
 														<div>
-															<label for="dueDate_{index}" class="block text-xs text-gray-600 mb-1"
+															<label for="dueDate_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1"
 																>Due Date</label
 															>
 															<input
@@ -395,7 +395,7 @@
 																	updateMapping(index, {
 																		dueDate: (e.target as HTMLInputElement).value
 																	})}
-																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 															/>
 														</div>
 														<div>
@@ -420,7 +420,7 @@
 												{#if transactionMappings[index]?.action === 'create_new_bucket'}
 													<div class="grid grid-cols-2 gap-3">
 														<div>
-															<label for="bucketName_{index}" class="block text-xs text-gray-600 mb-1"
+															<label for="bucketName_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1"
 																>Bucket Name</label
 															>
 															<input
@@ -431,11 +431,11 @@
 																	updateMapping(index, {
 																		bucketName: (e.target as HTMLInputElement).value
 																	})}
-																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 															/>
 														</div>
 														<div>
-															<label for="budgetAmount_{index}" class="block text-xs text-gray-600 mb-1"
+															<label for="budgetAmount_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1"
 																>Budget Amount</label
 															>
 															<input
@@ -447,17 +447,17 @@
 																	updateMapping(index, {
 																		budgetAmount: parseFloat((e.target as HTMLInputElement).value)
 																	})}
-																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 															/>
 														</div>
 														<div>
-															<label for="frequency_{index}" class="block text-xs text-gray-600 mb-1"
+															<label for="frequency_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1"
 																>Frequency</label
 															>
 															<select
 																id="frequency_{index}"
 																value={transactionMappings[index]?.frequency || 'monthly'}
-																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 																onchange={(e) =>
 																	updateMapping(index, {
 																		frequency: (e.target as HTMLSelectElement).value
@@ -471,7 +471,7 @@
 															</select>
 														</div>
 														<div>
-															<label for="anchorDate_{index}" class="block text-xs text-gray-600 mb-1"
+															<label for="anchorDate_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1"
 																>Start Date</label
 															>
 															<input
@@ -482,7 +482,7 @@
 																	updateMapping(index, {
 																		anchorDate: (e.target as HTMLInputElement).value
 																	})}
-																class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 															/>
 														</div>
 													</div>
@@ -497,7 +497,7 @@
 						<div class="mt-6 flex justify-end gap-3">
 							<a
 								href="/import"
-								class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+								class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
 							>
 								Cancel
 							</a>

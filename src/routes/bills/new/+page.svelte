@@ -28,10 +28,10 @@
 	<title>Add New Bill - Billzzz</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50 py-8">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
 	<div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
 		<div class="mb-6">
-			<a href="/" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-700">
+			<a href="/" class="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
 				<svg
 					class="mr-1 h-4 w-4"
 					fill="none"
@@ -50,8 +50,8 @@
 			</a>
 		</div>
 
-		<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-			<h1 class="mb-6 text-2xl font-bold text-gray-900">Add New Bill</h1>
+		<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+			<h1 class="mb-6 text-2xl font-bold text-gray-900 dark:text-gray-100">Add New Bill</h1>
 			<BillForm categories={data.categories} onSubmit={handleSubmit} onCancel={handleCancel} />
 		</div>
 	</div>
