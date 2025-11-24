@@ -1,21 +1,36 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
+	import { ChevronDown, ChevronUp } from 'lucide-svelte';
 
 	let {
 		onReset
 	}: {
 		onReset: () => void;
 	} = $props();
+
+	let isExpanded = $state(false);
 </script>
 
 <div class="mb-8 rounded-lg border border-red-200 bg-white shadow-sm dark:bg-gray-800 dark:border-red-700">
-	<div class="border-b border-red-200 px-6 py-4 dark:border-red-700">
-		<h2 class="text-xl font-semibold text-red-900 dark:text-red-200">Danger Zone</h2>
-		<p class="mt-1 text-sm text-red-600 dark:text-red-300">
-			Irreversible actions that will permanently delete your data
-		</p>
-	</div>
+	<button
+		type="button"
+		onclick={() => isExpanded = !isExpanded}
+		class="w-full border-b border-red-200 px-6 py-4 dark:border-red-700 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+	>
+		<div class="text-left">
+			<h2 class="text-xl font-semibold text-red-900 dark:text-red-200">Danger Zone</h2>
+			<p class="mt-1 text-sm text-red-600 dark:text-red-300">
+				Irreversible actions that will permanently delete your data
+			</p>
+		</div>
+		{#if isExpanded}
+			<ChevronUp class="h-5 w-5 text-red-400" />
+		{:else}
+			<ChevronDown class="h-5 w-5 text-red-400" />
+		{/if}
+	</button>
 
+	{#if isExpanded}
 	<div class="p-6">
 		<div class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-700 dark:bg-red-900">
 			<div class="flex items-start gap-3">
@@ -57,4 +72,5 @@
 			</div>
 		</div>
 	</div>
+	{/if}
 </div>

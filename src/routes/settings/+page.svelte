@@ -248,15 +248,6 @@
 			onDelete={handleDeletePaydaySettings}
 		/>
 
-		<ExportImportSection onExport={handleExport} />
-
-		<ResetDataSection onReset={() => (showResetModal = true)} />
-
-		<PaymentHistorySection
-			paymentHistory={data.paymentHistory}
-			onDelete={handleDeletePayment}
-		/>
-
 		<CategoriesSection
 			categories={data.categories}
 			{iconOptions}
@@ -264,6 +255,15 @@
 			onEdit={openEditCategoryModal}
 			onDelete={handleDeleteCategory}
 		/>
+
+		<PaymentHistorySection
+			paymentHistory={data.paymentHistory}
+			onDelete={handleDeletePayment}
+		/>
+
+		<ExportImportSection onExport={handleExport} />
+
+		<ResetDataSection onReset={() => (showResetModal = true)} />
 	</div>
 </div>
 

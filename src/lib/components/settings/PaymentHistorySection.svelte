@@ -18,7 +18,7 @@
 	} = $props();
 </script>
 
-<div class="rounded-lg border border-gray-200 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700">
+<div class="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700">
 	<div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
 		<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Payment History</h2>
 		<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">

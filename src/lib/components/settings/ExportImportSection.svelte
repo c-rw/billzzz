@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
 	import { enhance } from '$app/forms';
+	import { ChevronDown, ChevronUp } from 'lucide-svelte';
 
 	let {
 		onExport
@@ -9,16 +10,29 @@
 	} = $props();
 
 	let importing = $state(false);
+	let isExpanded = $state(false);
 </script>
 
 <div class="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700">
-	<div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-		<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Backup & Restore</h2>
-		<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-			Export all your data or import from a previous backup
-		</p>
-	</div>
+	<button
+		type="button"
+		onclick={() => isExpanded = !isExpanded}
+		class="w-full border-b border-gray-200 px-6 py-4 dark:border-gray-700 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+	>
+		<div class="text-left">
+			<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Backup & Restore</h2>
+			<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+				Export all your data or import from a previous backup
+			</p>
+		</div>
+		{#if isExpanded}
+			<ChevronUp class="h-5 w-5 text-gray-400" />
+		{:else}
+			<ChevronDown class="h-5 w-5 text-gray-400" />
+		{/if}
+	</button>
 
+	{#if isExpanded}
 	<div class="p-6">
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<!-- Export -->
@@ -192,4 +206,5 @@
 			</div>
 		</div>
 	</div>
+	{/if}
 </div>
