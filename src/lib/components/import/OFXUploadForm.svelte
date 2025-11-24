@@ -40,7 +40,7 @@
 					<label for="ofxFile" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 						Select OFX/QFX File
 					</label>
-					<div class="flex items-center gap-4">
+					<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
 						<input
 							type="file"
 							id="ofxFile"
@@ -48,9 +48,9 @@
 							accept=".ofx,.qfx"
 							onchange={handleFileChange}
 							required
-							class="block w-full text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none focus:border-blue-500"
+							class="block flex-1 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-950 dark:file:text-blue-400 dark:hover:file:bg-blue-900"
 						/>
-						<Button type="submit" variant="primary" size="md" disabled={uploading || !selectedFile}>
+						<Button type="submit" variant="primary" size="md" disabled={uploading || !selectedFile} class="sm:flex-shrink-0">
 							{#if uploading}
 								<span class="mr-2">Uploading...</span>
 							{:else}
