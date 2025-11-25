@@ -14,17 +14,28 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const data = Object.fromEntries(formData);
 
+		// Parse and validate due date
+		let dueDate: Date;
+		try {
+			dueDate = parseLocalDate(data.dueDate as string);
+		} catch (error) {
+			console.error('Error parsing due date:', { dueDate: data.dueDate, error });
+			// Fallback to current date if parsing fails
+			dueDate = new Date();
+		}
+
 		const newBill: NewBill = {
 			name: data.name as string,
 			amount: parseFloat(data.amount as string),
-			dueDate: parseLocalDate(data.dueDate as string),
+			dueDate,
 			paymentLink: (data.paymentLink as string) || null,
 			categoryId: data.categoryId ? parseInt(data.categoryId as string) : null,
 			isRecurring: data.isRecurring === 'true',
 			recurrenceType: (data.recurrenceType as any) || null,
 			recurrenceDay: data.recurrenceDay ? parseInt(data.recurrenceDay as string) : null,
 			isPaid: false,
-			notes: (data.notes as string) || null
+			notes: (data.notes as string) || null,
+			isAutopay: false
 		};
 
 		createBill(newBill);

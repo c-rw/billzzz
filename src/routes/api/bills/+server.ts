@@ -44,10 +44,25 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Missing required fields' }, { status: 400 });
 		}
 
+		// Parse and validate due date
+		let dueDate: Date;
+		try {
+			if (typeof data.dueDate === 'string' && data.dueDate.includes('T')) {
+				// ISO timestamp format: "2025-11-24T06:00:00.000Z"
+				dueDate = new Date(data.dueDate);
+			} else {
+				// YYYY-MM-DD format
+				dueDate = parseLocalDate(data.dueDate);
+			}
+		} catch (error) {
+			console.error('Error parsing due date:', { dueDate: data.dueDate, error });
+			return json({ error: 'Invalid due date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
+		}
+
 		const newBill: NewBill = {
 			name: data.name,
 			amount: parseFloat(data.amount),
-			dueDate: parseLocalDate(data.dueDate),
+			dueDate,
 			paymentLink: data.paymentLink || null,
 			categoryId: data.categoryId || null,
 			isRecurring: data.isRecurring || false,

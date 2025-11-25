@@ -30,12 +30,17 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		// Handle both ISO timestamp and YYYY-MM-DD formats for dueDate
 		let parsedDueDate: Date | undefined;
 		if (data.dueDate) {
-			if (data.dueDate.includes('T')) {
-				// ISO timestamp format: "2025-10-31T05:00:00.000Z"
-				parsedDueDate = new Date(data.dueDate.split('T')[0] + 'T00:00:00Z');
-			} else {
-				// YYYY-MM-DD format
-				parsedDueDate = parseLocalDate(data.dueDate);
+			try {
+				if (data.dueDate.includes('T')) {
+					// ISO timestamp format: "2025-10-31T05:00:00.000Z"
+					parsedDueDate = new Date(data.dueDate.split('T')[0] + 'T00:00:00Z');
+				} else {
+					// YYYY-MM-DD format
+					parsedDueDate = parseLocalDate(data.dueDate);
+				}
+			} catch (error) {
+				console.error('Error parsing due date:', { dueDate: data.dueDate, error });
+				return json({ error: 'Invalid due date format. Expected YYYY-MM-DD' }, { status: 400 });
 			}
 		}
 

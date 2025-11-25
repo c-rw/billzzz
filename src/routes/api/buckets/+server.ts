@@ -22,8 +22,24 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Missing required fields' }, { status: 400 });
 		}
 
-		// Convert date string to Date object
-		const anchorDate = data.anchorDate ? parseLocalDate(data.anchorDate) : new Date();
+		// Parse and validate anchor date
+		let anchorDate: Date;
+		if (data.anchorDate) {
+			try {
+				if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
+					// ISO timestamp format: "2025-11-24T06:00:00.000Z"
+					anchorDate = new Date(data.anchorDate);
+				} else {
+					// YYYY-MM-DD format
+					anchorDate = parseLocalDate(data.anchorDate);
+				}
+			} catch (error) {
+				console.error('Error parsing anchor date:', { anchorDate: data.anchorDate, error });
+				return json({ error: 'Invalid anchor date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
+			}
+		} else {
+			anchorDate = new Date();
+		}
 
 		const bucket = await createBucket({
 			name: data.name,

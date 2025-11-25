@@ -8,13 +8,44 @@
  *
  * @param dateString - Date string in YYYY-MM-DD format
  * @returns Date object set to local midnight
+ * @throws Error if dateString is invalid or results in an invalid Date
  *
  * @example
  * parseLocalDate('2025-01-15') // Returns Jan 15, 2025 00:00:00 in local timezone
  */
 export function parseLocalDate(dateString: string): Date {
-	const [year, month, day] = dateString.split('-').map(Number);
-	return new Date(year, month - 1, day);
+	// Validate input
+	if (!dateString || typeof dateString !== 'string') {
+		throw new Error(`Invalid date string: expected non-empty string, got ${typeof dateString}`);
+	}
+
+	const trimmed = dateString.trim();
+	if (trimmed === '') {
+		throw new Error('Invalid date string: empty string');
+	}
+
+	// Parse the date
+	const parts = trimmed.split('-');
+	if (parts.length !== 3) {
+		throw new Error(`Invalid date format: expected YYYY-MM-DD, got "${trimmed}"`);
+	}
+
+	const [year, month, day] = parts.map(Number);
+
+	// Check for NaN values
+	if (isNaN(year) || isNaN(month) || isNaN(day)) {
+		throw new Error(`Invalid date components: year=${year}, month=${month}, day=${day}`);
+	}
+
+	// Create the date
+	const date = new Date(year, month - 1, day);
+
+	// Validate that the date is valid (not Invalid Date)
+	if (isNaN(date.getTime())) {
+		throw new Error(`Invalid date: ${trimmed} resulted in Invalid Date`);
+	}
+
+	return date;
 }
 
 /**

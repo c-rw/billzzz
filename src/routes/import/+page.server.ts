@@ -263,7 +263,23 @@ export const actions: Actions = {
 					const normalizedBillName = billName.toLowerCase().trim();
 					let billIdToUse: number;
 					let wasNewlyCreated = false;
-					const billDueDate = parseLocalDate(dueDate);
+
+					// Validate due date before creating bill
+					let billDueDate: Date;
+					try {
+						if (!dueDate || (typeof dueDate === 'string' && dueDate.trim() === '')) {
+							// Fallback to transaction date if no due date provided
+							console.log(`No due date provided for bill "${billName}", using transaction date as fallback`);
+							billDueDate = transactionData.transaction.datePosted;
+						} else {
+							billDueDate = parseLocalDate(dueDate);
+						}
+					} catch (error) {
+						console.error('Error parsing bill due date:', { billName, dueDate, error });
+						// Fallback to transaction date on parsing error
+						billDueDate = transactionData.transaction.datePosted;
+					}
+
 					const paymentDate = transactionData.transaction.datePosted;
 
 					// Check if payment is for current billing cycle
@@ -273,25 +289,31 @@ export const actions: Actions = {
 						// Reuse existing bill
 						billIdToUse = billNameMap.get(normalizedBillName)!;
 					} else {
-						// Create new bill
-						const newBill = createBill({
-							name: billName,
-							amount,
-							dueDate: billDueDate,
-							categoryId: categoryId || null,
-							isRecurring: isRecurring || false,
-							recurrenceType: recurrenceType || null,
-							recurrenceDay: (isRecurring && recurrenceType === 'monthly') ? billDueDate.getDate() : null,
-							isPaid: shouldMarkAsPaid,
-							isAutopay: false,
-							notes: null,
-							paymentLink: null
-						});
-						billIdToUse = newBill.id;
-						wasNewlyCreated = true;
+						// Create new bill with error handling
+						try {
+							const newBill = createBill({
+								name: billName,
+								amount,
+								dueDate: billDueDate,
+								categoryId: categoryId || null,
+								isRecurring: isRecurring || false,
+								recurrenceType: recurrenceType || null,
+								recurrenceDay: (isRecurring && recurrenceType === 'monthly') ? billDueDate.getDate() : null,
+								isPaid: shouldMarkAsPaid,
+								isAutopay: false,
+								notes: null,
+								paymentLink: null
+							});
+							billIdToUse = newBill.id;
+							wasNewlyCreated = true;
 
-						// Add to cache for subsequent transactions in this import session
-						billNameMap.set(normalizedBillName, newBill.id);
+							// Add to cache for subsequent transactions in this import session
+							billNameMap.set(normalizedBillName, newBill.id);
+						} catch (error) {
+							console.error('Error creating bill:', error);
+							// Skip this transaction and continue with others
+							continue;
+						}
 					}
 
 					// Add payment history for the imported transaction (existing or newly created bill)
@@ -357,20 +379,42 @@ export const actions: Actions = {
 						// Reuse existing bucket
 						bucketIdToUse = bucketNameMap.get(normalizedBucketName)!;
 					} else {
-						// Create new bucket
-						const newBucket = await createBucket({
-							name: bucketName,
-							frequency: frequency || 'monthly',
-							budgetAmount: budgetAmount || amount,
-							anchorDate: anchorDate ? parseLocalDate(anchorDate) : transactionData.transaction.datePosted,
-							enableCarryover: true,
-							icon: 'shopping-cart',
-							color: null
-						});
-						bucketIdToUse = newBucket.id;
+						// Validate anchor date before creating bucket
+						let bucketAnchorDate: Date;
+						try {
+							if (anchorDate && typeof anchorDate === 'string' && anchorDate.trim() !== '') {
+								bucketAnchorDate = parseLocalDate(anchorDate);
+							} else {
+								// Fallback to transaction date if no anchor date provided
+								console.log(`No anchor date provided for bucket "${bucketName}", using transaction date as fallback`);
+								bucketAnchorDate = transactionData.transaction.datePosted;
+							}
+						} catch (error) {
+							console.error('Error parsing bucket anchor date:', { bucketName, anchorDate, error });
+							// Fallback to transaction date on parsing error
+							bucketAnchorDate = transactionData.transaction.datePosted;
+						}
 
-						// Add to cache for subsequent transactions in this import session
-						bucketNameMap.set(normalizedBucketName, newBucket.id);
+						// Create new bucket with error handling
+						try {
+							const newBucket = await createBucket({
+								name: bucketName,
+								frequency: frequency || 'monthly',
+								budgetAmount: budgetAmount || amount,
+								anchorDate: bucketAnchorDate,
+								enableCarryover: true,
+								icon: 'shopping-cart',
+								color: null
+							});
+							bucketIdToUse = newBucket.id;
+
+							// Add to cache for subsequent transactions in this import session
+							bucketNameMap.set(normalizedBucketName, newBucket.id);
+						} catch (error) {
+							console.error('Error creating bucket:', error);
+							// Skip this transaction and continue with others
+							continue;
+						}
 					}
 
 					// Create transaction in the bucket (existing or newly created)

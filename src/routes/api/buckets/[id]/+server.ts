@@ -30,7 +30,18 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		// Convert date string to Date object if present
 		if (data.anchorDate) {
-			data.anchorDate = parseLocalDate(data.anchorDate);
+			try {
+				if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
+					// ISO timestamp format: "2025-11-24T06:00:00.000Z"
+					data.anchorDate = new Date(data.anchorDate);
+				} else {
+					// YYYY-MM-DD format
+					data.anchorDate = parseLocalDate(data.anchorDate);
+				}
+			} catch (error) {
+				console.error('Error parsing anchor date:', { anchorDate: data.anchorDate, error });
+				return json({ error: 'Invalid anchor date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
+			}
 		}
 
 		const bucket = await updateBucket(id, data);
@@ -53,7 +64,18 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 
 		// Convert date string to Date object if present
 		if (data.anchorDate) {
-			data.anchorDate = parseLocalDate(data.anchorDate);
+			try {
+				if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
+					// ISO timestamp format: "2025-11-24T06:00:00.000Z"
+					data.anchorDate = new Date(data.anchorDate);
+				} else {
+					// YYYY-MM-DD format
+					data.anchorDate = parseLocalDate(data.anchorDate);
+				}
+			} catch (error) {
+				console.error('Error parsing anchor date:', { anchorDate: data.anchorDate, error });
+				return json({ error: 'Invalid anchor date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
+			}
 		}
 
 		const bucket = await updateBucket(id, data);
