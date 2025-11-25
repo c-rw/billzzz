@@ -98,101 +98,99 @@
 	<title>Import Transactions - Billzzz</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Import Transactions</h1>
-			<p class="mt-2 text-gray-600 dark:text-gray-400">
-				Upload OFX or QFX files from your bank to import transactions
-			</p>
+<div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+	<div class="mb-8">
+		<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Import Transactions</h1>
+		<p class="mt-2 text-gray-600 dark:text-gray-400">
+			Upload OFX or QFX files from your bank to import transactions
+		</p>
+	</div>
+
+	{#if form?.error}
+		<div class="mb-6 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-4">
+			<p class="text-sm text-red-800 dark:text-red-200">{form.error}</p>
 		</div>
+	{/if}
 
-		{#if form?.error}
-			<div class="mb-6 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-4">
-				<p class="text-sm text-red-800 dark:text-red-200">{form.error}</p>
-			</div>
-		{/if}
-
-		{#if !data.sessionId}
-			<!-- Upload Form -->
-			<OFXUploadForm bind:uploading bind:selectedFile />
-		{:else}
-			<!-- Review Transactions -->
-			<div class="space-y-6">
-				<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-					<div class="flex items-center justify-between mb-4">
-						<div>
-							<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-								Review Transactions ({data.transactions.length})
-							</h2>
-							<p class="text-sm text-gray-600 dark:text-gray-400">
-								Map transactions to bills or create new bills
+	{#if !data.sessionId}
+		<!-- Upload Form -->
+		<OFXUploadForm bind:uploading bind:selectedFile />
+	{:else}
+		<!-- Review Transactions -->
+		<div class="space-y-6">
+			<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+				<div class="flex items-center justify-between mb-4">
+					<div>
+						<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+							Review Transactions ({data.transactions.length})
+						</h2>
+						<p class="text-sm text-gray-600 dark:text-gray-400">
+							Map transactions to bills or create new bills
+						</p>
+						{#if data.session?.skippedCount && data.session.skippedCount > 0}
+							<p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
+								{data.session.skippedCount} duplicate transaction{data.session.skippedCount >
+								1
+									? 's'
+									: ''} skipped (already imported)
 							</p>
-							{#if data.session?.skippedCount && data.session.skippedCount > 0}
-								<p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
-									{data.session.skippedCount} duplicate transaction{data.session.skippedCount >
-									1
-										? 's'
-										: ''} skipped (already imported)
-								</p>
+						{/if}
+					</div>
+					<div class="flex gap-2">
+						<Button variant="secondary" size="sm" onclick={selectAllUnmapped}>
+							Select All Unmapped
+						</Button>
+						<Button variant="secondary" size="sm" onclick={deselectAll}> Deselect All </Button>
+					</div>
+				</div>
+
+				<form
+					method="POST"
+					action="?/processTransactions"
+					use:enhance={() => {
+						processing = true;
+						return async ({ update }) => {
+							processing = false;
+							await update();
+						};
+					}}
+				>
+					<input type="hidden" name="sessionId" value={data.sessionId} />
+					<input type="hidden" name="mappings" value={JSON.stringify(transactionMappings)} />
+
+					<div class="space-y-4">
+						{#each data.transactions as { transaction }, index}
+							{#if transactionMappings[index]}
+								<TransactionCard
+									{transaction}
+									{index}
+									bind:mapping={transactionMappings[index]}
+									existingBills={data.existingBills}
+									buckets={data.buckets}
+									categories={data.categories}
+									{iconMap}
+								/>
 							{/if}
-						</div>
-						<div class="flex gap-2">
-							<Button variant="secondary" size="sm" onclick={selectAllUnmapped}>
-								Select All Unmapped
-							</Button>
-							<Button variant="secondary" size="sm" onclick={deselectAll}> Deselect All </Button>
-						</div>
+						{/each}
 					</div>
 
-					<form
-						method="POST"
-						action="?/processTransactions"
-						use:enhance={() => {
-							processing = true;
-							return async ({ update }) => {
-								processing = false;
-								await update();
-							};
-						}}
-					>
-						<input type="hidden" name="sessionId" value={data.sessionId} />
-						<input type="hidden" name="mappings" value={JSON.stringify(transactionMappings)} />
-
-						<div class="space-y-4">
-							{#each data.transactions as { transaction }, index}
-								{#if transactionMappings[index]}
-									<TransactionCard
-										{transaction}
-										{index}
-										bind:mapping={transactionMappings[index]}
-										existingBills={data.existingBills}
-										buckets={data.buckets}
-										categories={data.categories}
-										{iconMap}
-									/>
-								{/if}
-							{/each}
-						</div>
-
-						<div class="mt-6 flex justify-end gap-3">
-							<a
-								href="/import"
-								class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-							>
-								Cancel
-							</a>
-							<Button type="submit" variant="primary" size="md" disabled={processing}>
-								{#if processing}
-									Processing...
-								{:else}
-									Import {transactionMappings.filter((m) => m.action !== 'skip').length} Transactions
-								{/if}
-							</Button>
-						</div>
-					</form>
-				</div>
+					<div class="mt-6 flex justify-end gap-3">
+						<a
+							href="/import"
+							class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+						>
+							Cancel
+						</a>
+						<Button type="submit" variant="primary" size="md" disabled={processing}>
+							{#if processing}
+								Processing...
+							{:else}
+								Import {transactionMappings.filter((m) => m.action !== 'skip').length} Transactions
+							{/if}
+						</Button>
+					</div>
+				</form>
 			</div>
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>

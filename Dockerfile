@@ -27,15 +27,14 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy built application from builder
+# Copy built application and migrations from builder
 COPY --from=builder /app/build ./build
+COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/package.json ./
 
 # Create data directory for SQLite database
-RUN mkdir -p /app/data && chown -R node:node /app/data
-
-# Switch to non-root user
-USER node
+# Note: Permissions will be handled by the mounted volume from Unraid
+RUN mkdir -p /app/data
 
 # Expose the port
 EXPOSE 3000
@@ -44,6 +43,18 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
+ENV DATA_DIR=/app/data
 
-# Start the application
-CMD ["node", "build"]
+# Create a startup script that handles permissions dynamically
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'set -e' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Ensure data directory exists and is writable' >> /app/start.sh && \
+    echo 'mkdir -p /app/data' >> /app/start.sh && \
+    echo '' >> /app/start.sh && \
+    echo '# Start the application' >> /app/start.sh && \
+    echo 'exec node build' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Start the application using the startup script
+CMD ["/app/start.sh"]

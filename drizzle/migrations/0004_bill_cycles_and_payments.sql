@@ -1,7 +1,5 @@
--- Drop old payment_history table
 DROP TABLE IF EXISTS payment_history;
-
--- Create bill_cycles table
+--> statement-breakpoint
 CREATE TABLE `bill_cycles` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`bill_id` integer NOT NULL,
@@ -14,8 +12,7 @@ CREATE TABLE `bill_cycles` (
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	FOREIGN KEY (`bill_id`) REFERENCES `bills`(`id`) ON DELETE cascade
 );
-
--- Create bill_payments table
+--> statement-breakpoint
 CREATE TABLE `bill_payments` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`bill_id` integer NOT NULL,
