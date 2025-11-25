@@ -5,6 +5,7 @@
 	import BillForm from '$lib/components/BillForm.svelte';
 	import PaymentModal from '$lib/components/PaymentModal.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import FloatingActionButton from '$lib/components/FloatingActionButton.svelte';
 	import type { BillWithCategory } from '$lib/types/bill';
 	import { invalidateAll } from '$app/navigation';
 	import { format } from 'date-fns';
@@ -232,42 +233,71 @@
 	</div>
 
 		<!-- Stats Dashboard -->
-		<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-				<p class="text-sm text-gray-500 dark:text-gray-400">Total Bills</p>
-				<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.totalBills}</p>
+		<div class="mb-8">
+			<!-- Mobile: Horizontal scroll -->
+			<div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 no-scrollbar md:hidden">
+				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Total Bills</p>
+					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.totalBills}</p>
+				</div>
+				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Unpaid</p>
+					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.unpaidBills}</p>
+				</div>
+				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
+					<p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{data.stats.overdueBills}</p>
+				</div>
+				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Upcoming</p>
+					<p class="mt-1 text-2xl font-semibold text-yellow-600 dark:text-yellow-400">{data.stats.upcomingBills}</p>
+				</div>
+				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Due Next 30 Days</p>
+					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+						${data.stats.totalAmount.toFixed(2)}
+					</p>
+				</div>
 			</div>
-			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-				<p class="text-sm text-gray-500 dark:text-gray-400">Unpaid</p>
-				<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.unpaidBills}</p>
-			</div>
-			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-				<p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
-				<p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{data.stats.overdueBills}</p>
-			</div>
-			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-				<p class="text-sm text-gray-500 dark:text-gray-400">Upcoming</p>
-				<p class="mt-1 text-2xl font-semibold text-yellow-600 dark:text-yellow-400">{data.stats.upcomingBills}</p>
-			</div>
-			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-				<p class="text-sm text-gray-500 dark:text-gray-400">Due Next 30 Days</p>
-				<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-					${data.stats.totalAmount.toFixed(2)}
-				</p>
+
+			<!-- Desktop: Grid -->
+			<div class="hidden md:grid md:gap-4 md:grid-cols-2 lg:grid-cols-5">
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Total Bills</p>
+					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.totalBills}</p>
+				</div>
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Unpaid</p>
+					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.unpaidBills}</p>
+				</div>
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
+					<p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{data.stats.overdueBills}</p>
+				</div>
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Upcoming</p>
+					<p class="mt-1 text-2xl font-semibold text-yellow-600 dark:text-yellow-400">{data.stats.upcomingBills}</p>
+				</div>
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm text-gray-500 dark:text-gray-400">Due Next 30 Days</p>
+					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+						${data.stats.totalAmount.toFixed(2)}
+					</p>
+				</div>
 			</div>
 		</div>
 
 		<!-- Payday Info (if configured) -->
 		{#if data.stats.hasPaydayConfigured && data.stats.nextPayday}
-			<div class="mb-6 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-6 shadow-sm">
+			<div class="mb-6 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-4 md:p-6 shadow-sm">
 				<div class="flex items-start justify-between">
 					<div class="flex-1">
-						<h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100">Next Payday: {format(data.stats.nextPayday, 'MMM d, yyyy')}</h3>
-						<div class="mt-4 grid gap-4 sm:grid-cols-2">
+						<h3 class="text-base md:text-lg font-semibold text-blue-900 dark:text-blue-100">Next Payday: {format(data.stats.nextPayday, 'MMM d, yyyy')}</h3>
+						<div class="mt-4 space-y-4 md:space-y-0 md:grid md:gap-4 md:grid-cols-2">
 							<div>
 								<p class="text-sm text-blue-700 dark:text-blue-300">Due Before Next Payday</p>
 								<div class="mt-1 flex items-baseline gap-2">
-									<p class="text-3xl font-bold text-blue-900 dark:text-blue-100">
+									<p class="text-2xl md:text-3xl font-bold text-blue-900 dark:text-blue-100">
 										${data.stats.amountDueBeforeNextPayday.toFixed(2)}
 									</p>
 									<p class="text-sm text-blue-600 dark:text-blue-400">({data.stats.dueBeforeNextPayday} bills)</p>
@@ -277,7 +307,7 @@
 								<div>
 									<p class="text-sm text-blue-700 dark:text-blue-300">Due Before Following Payday ({format(data.stats.followingPayday, 'MMM d')})</p>
 									<div class="mt-1 flex items-baseline gap-2">
-										<p class="text-3xl font-bold text-blue-900 dark:text-blue-100">
+										<p class="text-2xl md:text-3xl font-bold text-blue-900 dark:text-blue-100">
 											${data.stats.amountDueBeforeFollowingPayday.toFixed(2)}
 										</p>
 										<p class="text-sm text-blue-600 dark:text-blue-400">({data.stats.dueBeforeFollowingPayday} bills)</p>
@@ -292,7 +322,89 @@
 
 		<!-- Filters and Actions -->
 		<div class="mb-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-			<div class="flex flex-wrap items-center justify-between gap-4">
+			<!-- Mobile layout -->
+			<div class="space-y-3 md:hidden">
+				<!-- Row 1: Search full width -->
+				<input
+					type="text"
+					bind:value={searchQuery}
+					placeholder="Search bills..."
+					class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 text-sm focus:border-blue-500 focus:ring-blue-500"
+				/>
+
+				<!-- Row 2: Status and Category filters -->
+				<div class="grid grid-cols-2 gap-2">
+					<select
+						bind:value={filterStatus}
+						class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm focus:border-blue-500 focus:ring-blue-500"
+					>
+						<option value="all">All Bills</option>
+						<option value="unpaid">Unpaid</option>
+						<option value="paid">Paid</option>
+						<option value="overdue">Overdue</option>
+						<option value="upcoming">Upcoming</option>
+					</select>
+
+					<select
+						bind:value={filterCategory}
+						class="rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm focus:border-blue-500 focus:ring-blue-500"
+					>
+						<option value={null}>All Categories</option>
+						<option value="uncategorized">Uncategorized</option>
+						{#each data.categories as category}
+							<option value={category.id}>{category.icon} {category.name}</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Row 3: Sort controls -->
+				<div class="flex gap-2">
+					<select
+						bind:value={sortField}
+						class="flex-1 rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-sm focus:border-blue-500 focus:ring-blue-500"
+					>
+						<option value="dueDate">Sort: Due Date</option>
+						<option value="amount">Sort: Amount</option>
+						<option value="name">Sort: Name</option>
+					</select>
+
+					<button
+						onclick={() => (sortDirection = sortDirection === 'asc' ? 'desc' : 'asc')}
+						class="rounded-md border border-gray-300 px-3 min-w-11 min-h-11 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600"
+						title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+					>
+						{#if sortDirection === 'asc'}
+							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+								/>
+							</svg>
+						{:else}
+							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
+								/>
+							</svg>
+						{/if}
+					</button>
+				</div>
+
+				<!-- Row 4: Reset button if needed -->
+				{#if filterStatus !== 'all' || filterCategory !== null || searchQuery}
+					<Button variant="secondary" fullWidth onclick={resetFilters}>
+						Reset Filters
+					</Button>
+				{/if}
+			</div>
+
+			<!-- Desktop layout -->
+			<div class="hidden md:flex md:flex-wrap md:items-center md:justify-between md:gap-4">
 				<div class="flex flex-wrap items-center gap-3">
 					<!-- Status Filter -->
 					<select
@@ -370,6 +482,7 @@
 					{/if}
 				</div>
 
+				<!-- Desktop Add Bill button -->
 				<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -383,6 +496,18 @@
 				</Button>
 			</div>
 		</div>
+
+		<!-- Mobile FAB for Add Bill -->
+		<FloatingActionButton onclick={() => (showAddModal = true)} title="Add Bill">
+			<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 4v16m8-8H4"
+				/>
+			</svg>
+		</FloatingActionButton>
 
 		<!-- Bills List -->
 		{#if filteredBills.length === 0}
@@ -417,7 +542,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 				{#each filteredBills as bill (bill.id)}
 					<BillCard {bill} onTogglePaid={handleTogglePaid} onEdit={handleEdit} onDelete={handleDelete} />
 				{/each}

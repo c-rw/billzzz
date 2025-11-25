@@ -19,7 +19,7 @@
 	const billWithCycle = $derived('currentCycle' in bill ? bill as BillWithCycle : null);
 	const currentCycle = $derived(billWithCycle?.currentCycle);
 
-	function handleCardClick(e: MouseEvent) {
+	function handleCardClick(e: MouseEvent | KeyboardEvent) {
 		// Don't navigate if clicking on a button
 		const target = e.target as HTMLElement;
 		if (target.closest('button') || target.closest('a')) {
@@ -94,7 +94,7 @@
 
 		<div class="mb-3 flex items-center gap-3">
 			<StatusIndicator dueDate={bill.dueDate} isPaid={bill.isPaid} />
-			<CategoryBadge category={bill.category} />
+			<CategoryBadge category={'category' in bill ? bill.category : undefined} />
 		</div>
 
 		<div class="grid grid-cols-2 gap-3 text-sm">
@@ -141,7 +141,7 @@
 	<div class="flex items-center justify-end gap-1 border-t border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
 		<button
 			onclick={handleTogglePaid}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+			class="rounded-md p-3 min-h-11 min-w-11 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
 			title={bill.isPaid ? 'Mark as unpaid' : 'Mark as paid'}
 		>
 			{#if bill.isPaid}
@@ -180,7 +180,7 @@
 				href={bill.paymentLink}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="rounded-md p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+				class="rounded-md p-3 min-h-11 min-w-11 flex items-center justify-center text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 				title="Pay bill"
 			>
 				<svg
@@ -202,7 +202,7 @@
 
 		<button
 			onclick={handleEdit}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+			class="rounded-md p-3 min-h-11 min-w-11 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 			title="Edit bill"
 		>
 			<svg
@@ -223,7 +223,7 @@
 
 		<button
 			onclick={handleDelete}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
+			class="rounded-md p-3 min-h-11 min-w-11 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
 			title="Delete bill"
 		>
 			<svg

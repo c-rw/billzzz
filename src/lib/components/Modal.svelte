@@ -56,7 +56,7 @@
 		<!-- Header -->
 		<div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
 			<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
-			<Button variant="ghost" size="sm" onclick={onClose} title="Close modal" class="p-1">
+			<Button variant="ghost" size="sm" onclick={onClose} title="Close modal" class="min-h-11 min-w-11">
 				<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"

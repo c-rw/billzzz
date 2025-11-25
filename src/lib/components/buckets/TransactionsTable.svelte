@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { format } from 'date-fns';
+	import TransactionCard from './TransactionCard.svelte';
 
 	interface Transaction {
 		id: number;
@@ -18,9 +19,30 @@
 		onEdit: (id: number) => void;
 		onDelete: (id: number) => void;
 	} = $props();
+
+	// Viewport detection for mobile
+	let isMobile = $state(false);
+
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		isMobile = window.innerWidth < 768;
+		const handleResize = () => {
+			isMobile = window.innerWidth < 768;
+		};
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
+	});
 </script>
 
-<div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+<!-- Mobile: Card view -->
+<div class="space-y-3 md:hidden">
+	{#each transactions as transaction (transaction.id)}
+		<TransactionCard {transaction} {onEdit} {onDelete} />
+	{/each}
+</div>
+
+<!-- Desktop: Table view -->
+<div class="hidden overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block">
 	<table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
 		<thead class="bg-gray-50 dark:bg-gray-900">
 			<tr>

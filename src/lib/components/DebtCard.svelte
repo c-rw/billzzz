@@ -34,7 +34,7 @@
 		<div class="flex gap-2">
 			<button
 				onclick={() => onEdit(debt)}
-				class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
+				class="p-3 min-h-11 min-w-11 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors dark:text-gray-400 dark:hover:bg-blue-950 dark:hover:text-blue-400"
 				title="Edit debt"
 			>
 				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,7 @@
 			</button>
 			<button
 				onclick={() => onDelete(debt)}
-				class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
+				class="p-3 min-h-11 min-w-11 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
 				title="Delete debt"
 			>
 				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

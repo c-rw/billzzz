@@ -171,10 +171,10 @@
 				e.stopPropagation();
 				handleEdit();
 			}}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+			class="rounded-md p-3 min-h-11 min-w-11 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
 			title="Edit bucket"
 		>
-			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
 					stroke-linecap="round"
 					stroke-linejoin="round"
@@ -188,10 +188,10 @@
 				e.stopPropagation();
 				handleDelete();
 			}}
-			class="rounded-md p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
+			class="rounded-md p-3 min-h-11 min-w-11 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-950 dark:hover:text-red-400"
 			title="Delete bucket"
 		>
-			<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path
 					stroke-linecap="round"
 					stroke-linejoin="round"

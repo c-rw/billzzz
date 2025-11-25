@@ -4,3 +4,43 @@
 
 /* Tailwind v4 dark mode configuration - class-based toggle */
 @custom-variant dark (&:where(.dark, .dark *));
+
+@layer utilities {
+	.pb-safe {
+		padding-bottom: max(1rem, env(safe-area-inset-bottom));
+	}
+
+	.touch-target {
+		min-height: 44px;
+		min-width: 44px;
+	}
+
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+}
+
+/* Mobile input fixes - prevents iOS zoom and ensures touch-friendly sizing */
+@media (max-width: 767px) {
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='number'],
+	input[type='date'],
+	select,
+	textarea {
+		min-height: 44px;
+		font-size: 16px; /* Prevents iOS zoom on focus */
+	}
+
+	input[type='checkbox'],
+	input[type='radio'] {
+		height: 24px;
+		width: 24px;
+	}
+}

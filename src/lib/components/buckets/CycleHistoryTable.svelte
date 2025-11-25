@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { format } from 'date-fns';
+	import CycleHistoryCard from './CycleHistoryCard.svelte';
 
 	interface Cycle {
 		id: number;
@@ -15,12 +16,34 @@
 	}: {
 		cycles: Cycle[];
 	} = $props();
+
+	// Viewport detection for mobile
+	let isMobile = $state(false);
+
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+		isMobile = window.innerWidth < 768;
+		const handleResize = () => {
+			isMobile = window.innerWidth < 768;
+		};
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
+	});
 </script>
 
 {#if cycles.length > 1}
 	<div class="mb-8">
 		<h2 class="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Cycle History</h2>
-		<div class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+
+		<!-- Mobile: Card view -->
+		<div class="space-y-3 md:hidden">
+			{#each cycles as cycle (cycle.id)}
+				<CycleHistoryCard {cycle} />
+			{/each}
+		</div>
+
+		<!-- Desktop: Table view -->
+		<div class="hidden overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800 md:block">
 			<table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
 				<thead class="bg-gray-50 dark:bg-gray-900">
 					<tr>
