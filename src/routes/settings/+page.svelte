@@ -7,7 +7,6 @@
 	import ExportImportSection from '$lib/components/settings/ExportImportSection.svelte';
 	import ResetDataSection from '$lib/components/settings/ResetDataSection.svelte';
 	import ResetDataModal from '$lib/components/settings/ResetDataModal.svelte';
-	import PaymentHistorySection from '$lib/components/settings/PaymentHistorySection.svelte';
 	import CategoriesSection from '$lib/components/settings/CategoriesSection.svelte';
 	import CategoryFormModal from '$lib/components/settings/CategoryFormModal.svelte';
 	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
@@ -54,27 +53,6 @@
 		{ id: 'dog', component: Dog, label: 'Pets' },
 		{ id: 'heart', component: Heart, label: 'Health' }
 	];
-
-	async function handleDeletePayment(id: number, billName: string) {
-		if (!confirm(`Are you sure you want to remove this payment for "${billName}"?`)) {
-			return;
-		}
-
-		try {
-			const response = await fetch(`/api/payment-history/${id}`, {
-				method: 'DELETE'
-			});
-
-			if (response.ok) {
-				await invalidateAll();
-			} else {
-				alert('Failed to delete payment history. Please try again.');
-			}
-		} catch (error) {
-			console.error('Error deleting payment history:', error);
-			alert('Failed to delete payment history. Please try again.');
-		}
-	}
 
 	async function handleSavePaydaySettings(settingsData: any) {
 		try {
@@ -254,11 +232,6 @@
 			onAdd={openAddCategoryModal}
 			onEdit={openEditCategoryModal}
 			onDelete={handleDeleteCategory}
-		/>
-
-		<PaymentHistorySection
-			paymentHistory={data.paymentHistory}
-			onDelete={handleDeletePayment}
 		/>
 
 		<ExportImportSection onExport={handleExport} />

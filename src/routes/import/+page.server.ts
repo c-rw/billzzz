@@ -9,7 +9,6 @@ import {
 	getAllCategories,
 	getAllBills,
 	createBill,
-	addPaymentHistory,
 	updateImportedTransaction,
 	markTransactionsAsProcessed,
 	checkDuplicateFitId,
@@ -17,6 +16,7 @@ import {
 	updateBill
 } from '$lib/server/db/queries';
 import { getAllBucketsWithCurrentCycle, getAllBuckets, createTransaction, createBucket } from '$lib/server/db/bucket-queries';
+import { createPayment } from '$lib/server/db/bill-queries';
 import { parseLocalDate } from '$lib/utils/dates';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
 
@@ -228,8 +228,13 @@ export const actions: Actions = {
 				const transactionData = sessionTransactions.find(t => t.transaction.id === transactionId);
 
 				if (action === 'map_existing' && billId && transactionData) {
-					// Map to existing bill - add as payment history
-					addPaymentHistory(billId, amount, transactionData.transaction.datePosted);
+					// Map to existing bill - create payment
+					await createPayment({
+						billId,
+						amount,
+						paymentDate: transactionData.transaction.datePosted,
+						notes: 'Payment recorded from import'
+					});
 
 					// Check if this payment is for the current billing cycle
 					const existingBill = existingBills.find(b => b.id === billId);
@@ -316,8 +321,13 @@ export const actions: Actions = {
 						}
 					}
 
-					// Add payment history for the imported transaction (existing or newly created bill)
-					addPaymentHistory(billIdToUse, amount, transactionData.transaction.datePosted, 'Payment recorded from import');
+					// Add payment for the imported transaction (existing or newly created bill)
+					await createPayment({
+						billId: billIdToUse,
+						amount,
+						paymentDate: transactionData.transaction.datePosted,
+						notes: 'Payment recorded from import'
+					});
 
 					// If reusing existing bill and payment is for current cycle, mark as paid
 					if (!wasNewlyCreated && shouldMarkAsPaid) {

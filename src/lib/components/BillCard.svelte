@@ -1,18 +1,32 @@
 <script lang="ts">
-	import type { BillWithCategory } from '$lib/types/bill';
+	import type { BillWithCategory, BillWithCycle } from '$lib/types/bill';
 	import StatusIndicator from './StatusIndicator.svelte';
 	import CategoryBadge from './CategoryBadge.svelte';
 	import { format } from 'date-fns';
 	import { getRecurrenceDescription } from '$lib/utils/recurrence';
+	import { goto } from '$app/navigation';
 
 	interface Props {
-		bill: BillWithCategory;
+		bill: BillWithCategory | BillWithCycle;
 		onTogglePaid?: (id: number, isPaid: boolean) => void;
 		onEdit?: (id: number) => void;
 		onDelete?: (id: number) => void;
 	}
 
 	let { bill, onTogglePaid, onEdit, onDelete }: Props = $props();
+
+	// Check if bill has cycle info
+	const billWithCycle = $derived('currentCycle' in bill ? bill as BillWithCycle : null);
+	const currentCycle = $derived(billWithCycle?.currentCycle);
+
+	function handleCardClick(e: MouseEvent) {
+		// Don't navigate if clicking on a button
+		const target = e.target as HTMLElement;
+		if (target.closest('button') || target.closest('a')) {
+			return;
+		}
+		goto(`/bills/${bill.id}`);
+	}
 
 	async function handleTogglePaid() {
 		if (onTogglePaid) {
@@ -33,7 +47,13 @@
 	}
 </script>
 
-<div class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
+<div
+	class="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800 cursor-pointer"
+	onclick={handleCardClick}
+	role="button"
+	tabindex="0"
+	onkeydown={(e) => e.key === 'Enter' && handleCardClick(e)}
+>
 	<div class="p-4">
 		<div class="mb-2 flex items-center gap-2">
 			<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">{bill.name}</h3>
@@ -90,6 +110,30 @@
 
 		{#if bill.notes}
 			<p class="mt-2 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{bill.notes}</p>
+		{/if}
+
+		<!-- Cycle Progress (if available) -->
+		{#if currentCycle}
+			<div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+				<div class="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+					<span>Current Cycle</span>
+					<span>{currentCycle.percentPaid.toFixed(0)}% paid</span>
+				</div>
+				<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+					<div
+						class="h-2 rounded-full transition-all {currentCycle.isPaid || currentCycle.totalPaid >= currentCycle.expectedAmount
+							? 'bg-green-500'
+							: currentCycle.totalPaid > 0
+							? 'bg-yellow-500'
+							: 'bg-gray-300 dark:bg-gray-600'}"
+						style="width: {currentCycle.percentPaid}%"
+					></div>
+				</div>
+				<div class="flex justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
+					<span>${currentCycle.totalPaid.toFixed(2)} paid</span>
+					<span>${currentCycle.remaining.toFixed(2)} remaining</span>
+				</div>
+			</div>
 		{/if}
 	</div>
 

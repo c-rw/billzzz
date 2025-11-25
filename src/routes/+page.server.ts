@@ -1,8 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { getAllBills, getAllCategories, getDashboardStats } from '$lib/server/db/queries';
+import { getAllCategories, getDashboardStats } from '$lib/server/db/queries';
+import { getAllBillsWithCurrentCycle } from '$lib/server/db/bill-queries';
 
 export const load: PageServerLoad = async () => {
-	const bills = getAllBills();
+	const bills = await getAllBillsWithCurrentCycle();
 	const categories = getAllCategories();
 	const stats = getDashboardStats();
 

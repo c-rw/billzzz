@@ -3,6 +3,8 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db/index';
 import {
 	bills,
+	billCycles,
+	billPayments,
 	categories,
 	buckets,
 	bucketCycles,
@@ -15,13 +17,15 @@ import {
 
 export const GET: RequestHandler = async () => {
 	try {
-		// Export all data (excluding payment history)
+		// Export all data
 		const exportData = {
 			version: '1.0',
 			exportDate: new Date().toISOString(),
 			data: {
 				categories: db.select().from(categories).all(),
 				bills: db.select().from(bills).all(),
+				billCycles: db.select().from(billCycles).all(),
+				billPayments: db.select().from(billPayments).all(),
 				buckets: db.select().from(buckets).all(),
 				bucketCycles: db.select().from(bucketCycles).all(),
 				bucketTransactions: db.select().from(bucketTransactions).all(),

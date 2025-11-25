@@ -3,6 +3,8 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db/index';
 import {
 	bills,
+	billCycles,
+	billPayments,
 	categories,
 	buckets,
 	bucketCycles,
@@ -10,8 +12,7 @@ import {
 	debts,
 	debtPayments,
 	debtStrategySettings,
-	paydaySettings,
-	paymentHistory
+	paydaySettings
 } from '$lib/server/db/schema';
 
 interface ImportData {
@@ -20,6 +21,8 @@ interface ImportData {
 	data: {
 		categories: any[];
 		bills: any[];
+		billCycles: any[];
+		billPayments: any[];
 		buckets: any[];
 		bucketCycles: any[];
 		bucketTransactions: any[];
@@ -27,8 +30,6 @@ interface ImportData {
 		debtPayments: any[];
 		debtStrategySettings: any[];
 		paydaySettings: any[];
-		// paymentHistory is intentionally excluded from backups
-		paymentHistory?: any[];
 	};
 }
 
@@ -68,7 +69,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		db.delete(bucketTransactions).run();
 		db.delete(bucketCycles).run();
 		db.delete(buckets).run();
-		db.delete(paymentHistory).run();
+		db.delete(billPayments).run();
+		db.delete(billCycles).run();
 		db.delete(bills).run();
 		db.delete(debtPayments).run();
 		db.delete(debts).run();
@@ -79,6 +81,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		let importedCounts = {
 			categories: 0,
 			bills: 0,
+			billCycles: 0,
+			billPayments: 0,
 			buckets: 0,
 			bucketCycles: 0,
 			bucketTransactions: 0,
@@ -104,7 +108,15 @@ export const POST: RequestHandler = async ({ request }) => {
 			importedCounts.bills = importData.data.bills.length;
 		}
 
-		// Payment history is intentionally not imported from backups
+		if (importData.data.billCycles?.length > 0) {
+			db.insert(billCycles).values(importData.data.billCycles).run();
+			importedCounts.billCycles = importData.data.billCycles.length;
+		}
+
+		if (importData.data.billPayments?.length > 0) {
+			db.insert(billPayments).values(importData.data.billPayments).run();
+			importedCounts.billPayments = importData.data.billPayments.length;
+		}
 
 		if (importData.data.buckets?.length > 0) {
 			db.insert(buckets).values(importData.data.buckets).run();

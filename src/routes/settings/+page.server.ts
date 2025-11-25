@@ -1,9 +1,11 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getAllPaymentHistory, getAllCategories, getPaydaySettings } from '$lib/server/db/queries';
+import { getAllCategories, getPaydaySettings } from '$lib/server/db/queries';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import {
 	bills,
+	billCycles,
+	billPayments,
 	categories,
 	buckets,
 	bucketCycles,
@@ -12,7 +14,6 @@ import {
 	debtPayments,
 	debtStrategySettings,
 	paydaySettings,
-	paymentHistory,
 	importSessions,
 	importedTransactions,
 	userPreferences
@@ -24,7 +25,8 @@ interface ImportData {
 	data: {
 		categories: any[];
 		bills: any[];
-		paymentHistory: any[];
+		billCycles: any[];
+		billPayments: any[];
 		buckets: any[];
 		bucketCycles: any[];
 		bucketTransactions: any[];
@@ -56,12 +58,10 @@ function convertDatesToObjects(data: any[]): any[] {
 }
 
 export const load: PageServerLoad = async () => {
-	const paymentHistoryData = getAllPaymentHistory();
 	const categoriesData = getAllCategories();
 	const paydaySettingsData = getPaydaySettings();
 
 	return {
-		paymentHistory: paymentHistoryData,
 		categories: categoriesData,
 		paydaySettings: paydaySettingsData
 	};
@@ -103,7 +103,8 @@ export const actions: Actions = {
 			db.delete(bucketTransactions).run();
 			db.delete(bucketCycles).run();
 			db.delete(buckets).run();
-			db.delete(paymentHistory).run();
+			db.delete(billPayments).run();
+			db.delete(billCycles).run();
 			db.delete(bills).run();
 			db.delete(debtPayments).run();
 			db.delete(debts).run();
@@ -114,7 +115,8 @@ export const actions: Actions = {
 			let importedCounts = {
 				categories: 0,
 				bills: 0,
-				paymentHistory: 0,
+				billCycles: 0,
+				billPayments: 0,
 				buckets: 0,
 				bucketCycles: 0,
 				bucketTransactions: 0,
@@ -143,10 +145,16 @@ export const actions: Actions = {
 				importedCounts.bills = importData.data.bills.length;
 			}
 
-			if (importData.data.paymentHistory?.length > 0) {
-				const convertedPaymentHistory = convertDatesToObjects(importData.data.paymentHistory);
-				db.insert(paymentHistory).values(convertedPaymentHistory).run();
-				importedCounts.paymentHistory = importData.data.paymentHistory.length;
+			if (importData.data.billCycles?.length > 0) {
+				const convertedBillCycles = convertDatesToObjects(importData.data.billCycles);
+				db.insert(billCycles).values(convertedBillCycles).run();
+				importedCounts.billCycles = importData.data.billCycles.length;
+			}
+
+			if (importData.data.billPayments?.length > 0) {
+				const convertedBillPayments = convertDatesToObjects(importData.data.billPayments);
+				db.insert(billPayments).values(convertedBillPayments).run();
+				importedCounts.billPayments = importData.data.billPayments.length;
 			}
 
 			if (importData.data.buckets?.length > 0) {
@@ -220,7 +228,8 @@ export const actions: Actions = {
 			db.delete(bucketTransactions).run();
 			db.delete(bucketCycles).run();
 			db.delete(buckets).run();
-			db.delete(paymentHistory).run();
+			db.delete(billPayments).run();
+			db.delete(billCycles).run();
 			db.delete(bills).run();
 			db.delete(debtPayments).run();
 			db.delete(debts).run();

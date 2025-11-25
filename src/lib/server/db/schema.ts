@@ -34,15 +34,41 @@ export const bills = sqliteTable('bills', {
 		.default(sql`(unixepoch())`)
 });
 
-export const paymentHistory = sqliteTable('payment_history', {
+// Bill cycles - generated periods for tracking billing periods
+export const billCycles = sqliteTable('bill_cycles', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	billId: integer('bill_id')
 		.notNull()
 		.references(() => bills.id, { onDelete: 'cascade' }),
+	startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
+	endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
+	expectedAmount: real('expected_amount').notNull(), // Snapshot of bill amount when cycle created
+	totalPaid: real('total_paid').notNull().default(0),
+	isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
+
+// Bill payments - payment transactions within billing cycles
+export const billPayments = sqliteTable('bill_payments', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	billId: integer('bill_id')
+		.notNull()
+		.references(() => bills.id, { onDelete: 'cascade' }),
+	cycleId: integer('cycle_id')
+		.notNull()
+		.references(() => billCycles.id, { onDelete: 'cascade' }),
 	amount: real('amount').notNull(),
 	paymentDate: integer('payment_date', { mode: 'timestamp' }).notNull(),
 	notes: text('notes'),
 	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`)
 });
@@ -119,8 +145,11 @@ export type NewCategory = typeof categories.$inferInsert;
 export type Bill = typeof bills.$inferSelect;
 export type NewBill = typeof bills.$inferInsert;
 
-export type PaymentHistory = typeof paymentHistory.$inferSelect;
-export type NewPaymentHistory = typeof paymentHistory.$inferInsert;
+export type BillCycle = typeof billCycles.$inferSelect;
+export type NewBillCycle = typeof billCycles.$inferInsert;
+
+export type BillPayment = typeof billPayments.$inferSelect;
+export type NewBillPayment = typeof billPayments.$inferInsert;
 
 export type PaydaySettings = typeof paydaySettings.$inferSelect;
 export type NewPaydaySettings = typeof paydaySettings.$inferInsert;

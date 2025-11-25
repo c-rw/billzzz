@@ -2,7 +2,6 @@ import { db } from './index';
 import {
 	bills,
 	categories,
-	paymentHistory,
 	paydaySettings,
 	importSessions,
 	importedTransactions,
@@ -188,52 +187,6 @@ export function markBillAsPaid(id: number, paid: boolean) {
 		.where(eq(bills.id, id))
 		.returning()
 		.get();
-}
-
-// ===== PAYMENT HISTORY QUERIES =====
-
-export function getPaymentHistoryForBill(billId: number) {
-	return db
-		.select()
-		.from(paymentHistory)
-		.where(eq(paymentHistory.billId, billId))
-		.orderBy(desc(paymentHistory.paymentDate))
-		.all();
-}
-
-export function addPaymentHistory(billId: number, amount: number, paymentDate?: Date, notes?: string) {
-	return db
-		.insert(paymentHistory)
-		.values({
-			billId,
-			amount,
-			paymentDate: paymentDate || new Date(),
-			notes
-		})
-		.returning()
-		.get();
-}
-
-export function getAllPaymentHistory() {
-	return db
-		.select({
-			id: paymentHistory.id,
-			billId: paymentHistory.billId,
-			amount: paymentHistory.amount,
-			paymentDate: paymentHistory.paymentDate,
-			notes: paymentHistory.notes,
-			createdAt: paymentHistory.createdAt,
-			billName: bills.name,
-			bill: bills
-		})
-		.from(paymentHistory)
-		.innerJoin(bills, eq(paymentHistory.billId, bills.id))
-		.orderBy(desc(paymentHistory.paymentDate))
-		.all();
-}
-
-export function deletePaymentHistory(id: number) {
-	return db.delete(paymentHistory).where(eq(paymentHistory.id, id)).returning().get();
 }
 
 // ===== DASHBOARD STATS =====

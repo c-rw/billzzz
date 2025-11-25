@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getBillById, updateBill, deleteBill, markBillAsPaid, addPaymentHistory } from '$lib/server/db/queries';
+import { getBillById, updateBill, deleteBill, markBillAsPaid } from '$lib/server/db/queries';
+import { createPayment } from '$lib/server/db/bill-queries';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
 import { parseLocalDate } from '$lib/utils/dates';
 
@@ -104,13 +105,18 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Bill not found' }, { status: 404 });
 		}
 
-		// If marking as paid, record payment history with actual amount paid
+		// If marking as paid, create payment in the current cycle
 		if (isPaid) {
 			const amountPaid = paymentAmount !== undefined ? parseFloat(paymentAmount) : currentBill.amount;
 			const note = amountPaid !== currentBill.amount
 				? `Payment recorded. Original amount: $${currentBill.amount.toFixed(2)}`
 				: 'Payment recorded';
-			addPaymentHistory(id, amountPaid, undefined, note);
+			await createPayment({
+				billId: id,
+				amount: amountPaid,
+				paymentDate: new Date(),
+				notes: note
+			});
 		}
 
 		// If marking as paid and bill is recurring, calculate next due date
