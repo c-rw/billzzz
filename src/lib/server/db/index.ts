@@ -31,8 +31,25 @@ function initializeDatabase() {
 	// Run Drizzle migrations
 	try {
 		const drizzleDb = drizzle(sqlite, { schema });
-		migrate(drizzleDb, { migrationsFolder: './drizzle/migrations' });
-		console.log('Database migrations completed successfully');
+
+		// Check if migration metadata is empty but tables exist
+		const migrationCount = sqlite
+			.prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
+			.get() as { count: number };
+
+		const tablesExist = sqlite
+			.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='bills'")
+			.get() as { count: number };
+
+		// If migrations metadata is empty but tables exist, skip migration
+		// This handles the case where the database was created before migration tracking
+		if (migrationCount.count === 0 && tablesExist.count > 0) {
+			console.log('Database tables already exist but migration metadata is empty. Skipping migrations to prevent conflicts.');
+		} else {
+			// Run migrations normally
+			migrate(drizzleDb, { migrationsFolder: './drizzle/migrations' });
+			console.log('Database migrations completed successfully');
+		}
 	} catch (error) {
 		console.error('Migration error:', error);
 		throw error;

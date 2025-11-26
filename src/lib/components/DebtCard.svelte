@@ -1,14 +1,15 @@
 <script lang="ts">
 	import type { DebtWithDetails } from '$lib/types/debt';
+	import { format } from 'date-fns';
 
 	interface Props {
 		debt: DebtWithDetails;
+		payoffDate?: Date;
 		onEdit: (debt: DebtWithDetails) => void;
 		onDelete: (debt: DebtWithDetails) => void;
-		onAddPayment: (debt: DebtWithDetails) => void;
 	}
 
-	let { debt, onEdit, onDelete, onAddPayment }: Props = $props();
+	let { debt, payoffDate, onEdit, onDelete }: Props = $props();
 
 	const percentPaid = $derived(
 		debt.originalBalance > 0
@@ -90,6 +91,21 @@
 			</div>
 		</div>
 
+		<!-- Projected Payoff Date -->
+		{#if payoffDate}
+			<div class="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+						</svg>
+						<span class="text-xs font-medium text-blue-700 dark:text-blue-300">Projected Payoff</span>
+					</div>
+					<span class="text-sm font-bold text-blue-900 dark:text-blue-100">{format(payoffDate, 'MMM yyyy')}</span>
+				</div>
+			</div>
+		{/if}
+
 		<!-- Financial Details -->
 		<div class="grid grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
 			<div>
@@ -106,29 +122,11 @@
 			</div>
 		</div>
 
-		<!-- Total Paid -->
-		{#if debt.totalPaid && debt.totalPaid > 0}
-			<div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-				<p class="text-xs text-gray-500 dark:text-gray-400">Total Extra Payments</p>
-				<p class="text-sm font-semibold text-green-600 dark:text-green-400">${debt.totalPaid.toFixed(2)}</p>
-			</div>
-		{/if}
-
 		<!-- Notes -->
 		{#if debt.notes}
 			<div class="pt-4 border-t border-gray-200 dark:border-gray-700">
 				<p class="text-sm text-gray-600 dark:text-gray-300 italic">{debt.notes}</p>
 			</div>
 		{/if}
-
-		<!-- Actions -->
-		<div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-			<button
-				onclick={() => onAddPayment(debt)}
-				class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors font-medium dark:bg-green-700 dark:hover:bg-green-600 dark:focus:ring-green-400"
-			>
-				Make Extra Payment
-			</button>
-		</div>
 	</div>
 </div>

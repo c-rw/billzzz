@@ -1,31 +1,69 @@
 # Billzzz - Personal Finance Management
 
-A comprehensive personal finance management application built with SvelteKit 5, SQLite, and Tailwind CSS. Track bills, manage spending buckets, and analyze debt payoff strategies all in one place.
+A comprehensive personal finance management application built with SvelteKit 5, SQLite, and Tailwind CSS. Track bills, manage spending buckets, analyze debt payoff strategies, and forecast your cash flow all in one place.
 
 ## Features
 
 ### 💵 Bills Management
+
 - Track bills with due dates, amounts, and payment links
 - Recurring bills (weekly, biweekly, monthly, quarterly, yearly)
 - Categories with custom colors and Lucide icons
-- Payment history tracking
-- Mark bills as paid/unpaid
-- Filter and search bills
+- Cycle-based payment tracking for accurate billing history
+- Mark bills as paid/unpaid with payment date tracking
+- Bill cycle history and total paid amounts
 - Payday integration for expense planning
+- Link bills to debts to avoid double-counting in cash flow
 
 ### 🪣 Spending Buckets
+
 - Create budget categories for variable spending (groceries, gas, dining, etc.)
 - Automatic cycle generation based on your schedule
 - True carryover (positive and negative balances roll forward)
 - Transaction tracking with vendor and notes
-- Visual progress indicators
-- Cycle history and analysis
+- Visual progress indicators with spending bars
+- Cycle history and detailed transaction logs
+- Soft delete with recovery capability
+- Import transactions from OFX/QFX files
 
 ### 📊 Debt Calculator
-- Track multiple debts with customizable interest rates
-- Multiple payoff strategies (snowball, avalanche, custom)
-- Visual timeline and comparison tools
-- Linked bill tracking for minimum payments
+
+- Track multiple debts with interest rates and minimum payments
+- Multiple payoff strategies:
+  - **Snowball** - Pay off smallest balances first for psychological wins
+  - **Avalanche** - Pay off highest interest rates first to save money
+  - **Custom** - Define your own priority order
+- Real-time automatic recalculation when strategy changes
+- Visual timeline showing month-by-month payoff progress
+- Side-by-side strategy comparison with savings analysis
+- Projected payoff dates displayed on each debt card
+- Debts automatically sorted by payoff date
+- Link debts to bills for integrated payment tracking
+- Recommendations based on your financial situation
+
+### 📈 Analytics & Forecasting
+
+- 90-day cash flow projection with balance tracking
+- Key metrics dashboard:
+  - Current balance with daily updates
+  - Savings per paycheck after all obligations
+  - Daily burn rate calculation
+  - Financial runway (days until $0)
+  - Total monthly obligations (bills + buckets + debts)
+  - Next payday countdown
+- Spending breakdown by category
+- Critical alerts for potential overdrafts
+- Balance and income input for accurate forecasting
+- Smart debt/bill integration prevents double-counting
+
+### 📱 Import & Export
+
+- Import transactions from OFX/QFX bank files
+- Automatic payee matching and categorization
+- Map transactions to existing bills or buckets
+- Create new bills from recurring transactions
+- Income detection and handling
+- Full data export to JSON for backup
 
 ## Tech Stack
 
@@ -34,7 +72,32 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - **ORM**: Drizzle ORM
 - **Styling**: Tailwind CSS 4
 - **Icons**: Lucide (via lucide-svelte)
+- **Date Handling**: date-fns
+- **Charts**: Chart.js with chartjs-adapter-date-fns
 - **Language**: TypeScript
+
+## Key Features
+
+### 🌙 Dark Mode Support
+
+- Full dark mode implementation across all pages
+- System preference detection
+- Manual theme toggle in settings
+- Persistent theme preference
+
+### 📊 Intelligent Cash Flow
+
+- Prevents double-counting of linked debts/bills
+- Accurate 90-day forecasting
+- Payday-aware projections
+- Real-time balance updates
+
+### 🔄 Automatic Calculations
+
+- Debt strategies recalculate on-the-fly
+- No manual "Calculate" buttons needed
+- Instant feedback on strategy changes
+- Real-time payoff date updates
 
 ## Docker Deployment
 
@@ -126,20 +189,33 @@ The app will be available at `http://localhost:5173`
 The application uses SQLite with the following main tables:
 
 ### Bills System
+
 - **categories** - Bill categories with colors and icons
 - **bills** - Bill information including recurring settings
-- **payment_history** - Record of all payments made
+- **bill_cycles** - Generated billing periods for tracking
+- **bill_payments** - Cycle-based payment tracking
 - **payday_settings** - Payday schedule configuration
 
 ### Buckets System
+
 - **buckets** - Budget categories for variable spending
-- **bucket_cycles** - Generated spending periods
+- **bucket_cycles** - Generated spending periods with carryover
 - **bucket_transactions** - Individual transactions within buckets
 
 ### Debt Calculator
-- **debts** - Debt accounts with interest rates
-- **debt_payments** - Payment history
+
+- **debts** - Debt accounts with interest rates and linked bills
+- **debt_payments** - Payment history tracking
 - **debt_strategy_settings** - Payoff strategy configuration
+
+### Import/Export
+
+- **import_sessions** - OFX/QFX import tracking
+- **imported_transactions** - Pending transactions for review
+
+### Settings
+
+- **user_preferences** - Theme, balance, and income settings
 
 ### Database Configuration
 
@@ -147,44 +223,65 @@ The application uses SQLite with the following main tables:
 - **WAL Mode:** Enabled for better concurrency
 - **Foreign Keys:** Enabled for referential integrity
 - **Auto-initialization:** Tables are created automatically on first run
+- **Migrations:** Managed via Drizzle Kit
 
 ## API Endpoints
 
 ### Bills
-- `GET /api/bills` - List all bills
+
+- `GET /api/bills` - List all bills with cycle information
 - `POST /api/bills` - Create a new bill
-- `GET /api/bills/[id]` - Get a single bill
+- `GET /api/bills/[id]` - Get bill details with payment history
 - `PATCH /api/bills/[id]` - Update a bill
 - `DELETE /api/bills/[id]` - Delete a bill
+- `POST /api/bills/[id]/payments` - Record a payment for a bill cycle
 
 ### Buckets
-- `GET /api/buckets` - List all buckets
+
+- `GET /api/buckets` - List all active buckets
 - `POST /api/buckets` - Create a new bucket
-- `GET /api/buckets/[id]` - Get a bucket with current cycle
+- `GET /api/buckets/[id]` - Get bucket with current cycle and history
 - `PUT /api/buckets/[id]` - Update a bucket
 - `DELETE /api/buckets/[id]` - Soft delete a bucket
 
 ### Transactions
+
 - `GET /api/buckets/[id]/transactions` - List transactions for a bucket
 - `POST /api/buckets/[id]/transactions` - Create a transaction
 - `PUT /api/transactions/[id]` - Update a transaction
 - `DELETE /api/transactions/[id]` - Delete a transaction
 
 ### Debts
-- `GET /api/debts` - List all debts
+
+- `GET /api/debts` - List all debts with details
 - `POST /api/debts` - Create a debt
-- `PUT /api/debts/[id]` - Update a debt
+- `PATCH /api/debts/[id]` - Update a debt
 - `DELETE /api/debts/[id]` - Delete a debt
-- `POST /api/debts/[id]/payment` - Record a payment
+- `POST /api/debt-calculator/calculate` - Calculate payoff schedules
+- `POST /api/debt-strategy` - Update payoff strategy settings
 
 ### Categories
+
 - `GET /api/categories` - List all categories
 - `POST /api/categories` - Create a category
 - `PUT /api/categories/[id]` - Update a category
 - `DELETE /api/categories/[id]` - Delete a category
 
-### Payment History
-- `DELETE /api/payment-history/[id]` - Remove a payment record
+### Settings
+
+- `GET /api/preferences` - Get user preferences
+- `POST /api/preferences` - Update user preferences
+- `GET /api/payday-settings` - Get payday settings
+- `POST /api/payday-settings` - Update payday settings
+
+### Import/Export
+
+- `POST /api/import` - Import OFX/QFX transactions
+- `GET /api/export` - Export all data to JSON
+
+### Payments
+
+- `DELETE /api/payments/[id]` - Delete a payment record
 
 ## License
 

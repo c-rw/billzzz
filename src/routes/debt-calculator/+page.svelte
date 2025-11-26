@@ -2,7 +2,6 @@
 	import { invalidateAll } from '$app/navigation';
 	import DebtCard from '$lib/components/DebtCard.svelte';
 	import DebtForm from '$lib/components/DebtForm.svelte';
-	import DebtPaymentModal from '$lib/components/DebtPaymentModal.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import StrategySelector from '$lib/components/StrategySelector.svelte';
 	import PayoffTimeline from '$lib/components/PayoffTimeline.svelte';
@@ -17,9 +16,7 @@
 	// State
 	let activeTab = $state<'debts' | 'strategy' | 'timeline' | 'compare'>('debts');
 	let isFormOpen = $state(false);
-	let isPaymentModalOpen = $state(false);
 	let editingDebt = $state<DebtWithDetails | null>(null);
-	let payingDebt = $state<DebtWithDetails | null>(null);
 
 	// Strategy state
 	let selectedStrategy = $state<'snowball' | 'avalanche' | 'custom'>(
@@ -57,16 +54,6 @@
 	function closeForm() {
 		isFormOpen = false;
 		editingDebt = null;
-	}
-
-	function openPaymentModal(debt: DebtWithDetails) {
-		payingDebt = debt;
-		isPaymentModalOpen = true;
-	}
-
-	function closePaymentModal() {
-		isPaymentModalOpen = false;
-		payingDebt = null;
 	}
 
 	// CRUD operations
@@ -110,32 +97,6 @@
 			await invalidateAll();
 		} catch (error) {
 			alert('Failed to delete debt');
-		}
-	}
-
-	async function handleRecordPayment(amount: number, date: Date, notes: string) {
-		if (!payingDebt) return;
-
-		try {
-			const response = await fetch(`/api/debts/${payingDebt.id}/payment`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					amount,
-					paymentDate: date.toISOString(),
-					notes
-				})
-			});
-
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.error || 'Failed to record payment');
-			}
-
-			await invalidateAll();
-			closePaymentModal();
-		} catch (error) {
-			alert(error instanceof Error ? error.message : 'Failed to record payment');
 		}
 	}
 
@@ -207,6 +168,20 @@
 		}
 	});
 
+	// Auto-calculate when strategy settings change
+	$effect(() => {
+		// Track dependencies: selectedStrategy, extraPayment, customOrder, data.debts.length
+		selectedStrategy;
+		extraPayment;
+		customOrder;
+		data.debts.length;
+
+		// Only recalculate if we have debts
+		if (hasDebts) {
+			calculatePayoff();
+		}
+	});
+
 	// Get current strategy schedule for timeline
 	const currentSchedule = $derived(() => {
 		if (!calculations) return null;
@@ -221,6 +196,51 @@
 			default:
 				return calculations.comparison.snowball;
 		}
+	});
+
+	// Get payoff dates for each debt based on current strategy
+	const debtPayoffDates = $derived(() => {
+		const schedule = currentSchedule();
+		if (!schedule) return new Map<number, Date>();
+
+		const payoffDates = new Map<number, Date>();
+
+		// Go through timeline and find when each debt reaches $0 balance
+		for (const month of schedule.timeline) {
+			for (const debt of month.debts) {
+				// If this debt reaches 0 and we haven't recorded its payoff date yet
+				if (debt.remainingBalance === 0 && !payoffDates.has(debt.debtId)) {
+					// Ensure date is a Date object (convert from string if needed)
+					const date = month.date instanceof Date ? month.date : new Date(month.date);
+					payoffDates.set(debt.debtId, date);
+				}
+			}
+		}
+
+		return payoffDates;
+	});
+
+	// Sort debts by payoff date (earliest first)
+	const sortedDebts = $derived(() => {
+		const dates = debtPayoffDates();
+		if (dates.size === 0) return data.debts;
+
+		return [...data.debts].sort((a, b) => {
+			const dateA = dates.get(a.id);
+			const dateB = dates.get(b.id);
+
+			// If both have payoff dates, sort by date
+			if (dateA && dateB) {
+				return dateA.getTime() - dateB.getTime();
+			}
+
+			// Debts with payoff dates come before those without
+			if (dateA && !dateB) return -1;
+			if (!dateA && dateB) return 1;
+
+			// If neither have payoff dates, maintain original order
+			return 0;
+		});
 	});
 </script>
 
@@ -309,12 +329,12 @@
 
 				{#if hasDebts}
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-						{#each data.debts as debt}
+						{#each sortedDebts() as debt}
 							<DebtCard
 								{debt}
+								payoffDate={debtPayoffDates().get(debt.id)}
 								onEdit={openEditDebt}
 								onDelete={handleDeleteDebt}
-								onAddPayment={openPaymentModal}
 							/>
 						{/each}
 					</div>
@@ -334,7 +354,7 @@
 							/>
 						</svg>
 						<h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No debts yet</h3>
-						<p class="mt-1 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">Get started by adding your first debt.</p>
+						<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding your first debt.</p>
 						<div class="mt-6">
 							<Button onclick={openAddDebt}>
 								Add Your First Debt
@@ -358,11 +378,17 @@
 						onCustomOrderChange={handleCustomOrderChange}
 					/>
 
-					<div class="mt-8">
-						<Button onclick={calculatePayoff} disabled={isCalculating} size="lg" fullWidth>
-							{isCalculating ? 'Calculating...' : 'Calculate Payoff Schedule'}
-						</Button>
-					</div>
+					{#if isCalculating}
+						<div class="mt-8 text-center">
+							<div class="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+								<svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+								</svg>
+								<span>Calculating payoff schedules...</span>
+							</div>
+						</div>
+					{/if}
 				{:else}
 					<div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
 						<p class="text-gray-600 dark:text-gray-400">Add debts first to configure your payoff strategy.</p>
@@ -384,7 +410,7 @@
 					{/if}
 				{:else}
 					<div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-						<p class="text-gray-600 dark:text-gray-400">Click "Calculate Payoff Schedule" in the Strategy tab.</p>
+						<p class="text-gray-600 dark:text-gray-400">Configure your strategy to see results here.</p>
 					</div>
 				{/if}
 			</div>
@@ -403,7 +429,7 @@
 					/>
 				{:else}
 					<div class="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-						<p class="text-gray-600 dark:text-gray-400">Click "Calculate Payoff Schedule" in the Strategy tab.</p>
+						<p class="text-gray-600 dark:text-gray-400">Configure your strategy to see results here.</p>
 					</div>
 				{/if}
 			</div>
@@ -413,27 +439,22 @@
 
 <!-- Modals -->
 <Modal isOpen={isFormOpen} onClose={closeForm} title={editingDebt ? 'Edit Debt' : 'Add Debt'}>
-	<DebtForm
-		bills={data.bills}
-		initialData={editingDebt ? {
-			name: editingDebt.name,
-			originalBalance: editingDebt.originalBalance,
-			currentBalance: editingDebt.currentBalance,
-			interestRate: editingDebt.interestRate,
-			minimumPayment: editingDebt.minimumPayment,
-			linkedBillId: editingDebt.linkedBillId,
-			priority: editingDebt.priority,
-			notes: editingDebt.notes || undefined
-		} : undefined}
-		onSubmit={handleSaveDebt}
-		onCancel={closeForm}
-		submitLabel={editingDebt ? 'Update Debt' : 'Add Debt'}
-	/>
+	{#key editingDebt?.id ?? 'new'}
+		<DebtForm
+			bills={data.bills}
+			initialData={editingDebt ? {
+				name: editingDebt.name,
+				originalBalance: editingDebt.originalBalance,
+				currentBalance: editingDebt.currentBalance,
+				interestRate: editingDebt.interestRate,
+				minimumPayment: editingDebt.minimumPayment,
+				linkedBillId: editingDebt.linkedBillId,
+				priority: editingDebt.priority,
+				notes: editingDebt.notes || undefined
+			} : undefined}
+			onSubmit={handleSaveDebt}
+			onCancel={closeForm}
+			submitLabel={editingDebt ? 'Update Debt' : 'Add Debt'}
+		/>
+	{/key}
 </Modal>
-
-<DebtPaymentModal
-	debt={payingDebt}
-	isOpen={isPaymentModalOpen}
-	onClose={closePaymentModal}
-	onSubmit={handleRecordPayment}
-/>

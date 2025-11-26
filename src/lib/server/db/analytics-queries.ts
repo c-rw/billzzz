@@ -122,8 +122,10 @@ async function calculateMonthlyObligations() {
 		}
 	}
 
-	// Calculate monthly debt payments
-	const monthlyDebts = allDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+	// Calculate monthly debt payments (exclude debts linked to bills to avoid double-counting)
+	const monthlyDebts = allDebts
+		.filter(debt => debt.linkedBillId === null)
+		.reduce((sum, debt) => sum + debt.minimumPayment, 0);
 
 	return {
 		totalMonthlyBills: monthlyBills,
@@ -333,8 +335,10 @@ async function projectCashFlow(
 		}
 
 		// Check for debt payments (assume monthly on the 1st)
+		// Exclude debts linked to bills to avoid double-counting
 		if (currentDate.getDate() === 1) {
-			const totalDebtPayment = allDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+			const unlinkedDebts = allDebts.filter(debt => debt.linkedBillId === null);
+			const totalDebtPayment = unlinkedDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
 			if (totalDebtPayment > 0) {
 				dailyExpenses += totalDebtPayment;
 				runningBalance -= totalDebtPayment;

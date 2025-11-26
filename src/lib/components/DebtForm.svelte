@@ -186,8 +186,21 @@
 			{/each}
 		</select>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Link this debt to a recurring bill for automatic minimum payment tracking
+			Link this debt to a recurring bill for automatic tracking. The bill amount will be used for cash flow projections instead of the minimum payment.
 		</p>
+		{#if linkedBillId !== null && minimumPayment > 0}
+			{@const linkedBill = bills.find(b => b.id === linkedBillId)}
+			{#if linkedBill && linkedBill.amount < minimumPayment}
+				<p class="mt-1 text-xs text-orange-600 dark:text-orange-400">
+					⚠️ Notice: The linked bill amount (${linkedBill.amount.toFixed(2)}) is less than the minimum payment (${minimumPayment.toFixed(2)}). Cash flow will use the bill amount.
+				</p>
+			{/if}
+			{#if linkedBill && !linkedBill.isRecurring}
+				<p class="mt-1 text-xs text-orange-600 dark:text-orange-400">
+					⚠️ Warning: This bill is not recurring. Consider linking to a recurring bill for accurate cash flow tracking.
+				</p>
+			{/if}
+		{/if}
 	</div>
 
 	<div>
