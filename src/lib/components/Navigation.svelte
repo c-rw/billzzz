@@ -28,6 +28,14 @@
 						Buckets
 					</a>
 					<a
+						href="/analytics"
+						class="rounded-md px-3 py-2 text-sm font-medium transition-colors {isActive('/analytics')
+							? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
+							: 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}"
+					>
+						Analytics
+					</a>
+					<a
 						href="/debt-calculator"
 						class="rounded-md px-3 py-2 text-sm font-medium transition-colors {isActive('/debt-calculator')
 							? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'

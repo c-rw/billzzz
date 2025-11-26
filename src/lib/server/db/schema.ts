@@ -293,6 +293,9 @@ export const userPreferences = sqliteTable('user_preferences', {
 	themePreference: text('theme_preference', { enum: ['light', 'dark', 'system'] })
 		.notNull()
 		.default('system'),
+	expectedIncomeAmount: real('expected_income_amount'), // Expected income per paycheck for forecasting
+	currentBalance: real('current_balance'), // Current account balance for cash flow projection
+	lastBalanceUpdate: integer('last_balance_update', { mode: 'timestamp' }), // When balance was last updated
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`),

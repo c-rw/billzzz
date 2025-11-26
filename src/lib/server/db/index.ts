@@ -95,6 +95,27 @@ function initializeDatabase() {
 		);
 		console.log(`Reset ${orphanedBucketTxns.count} orphaned bucket transactions to allow re-import`);
 	}
+
+	// Check if analytics columns exist in user_preferences table
+	const userPrefColumns = sqlite.prepare("PRAGMA table_info(user_preferences)").all() as Array<{ name: string }>;
+	const hasExpectedIncome = userPrefColumns.some(col => col.name === 'expected_income_amount');
+	const hasCurrentBalance = userPrefColumns.some(col => col.name === 'current_balance');
+	const hasLastBalanceUpdate = userPrefColumns.some(col => col.name === 'last_balance_update');
+
+	if (!hasExpectedIncome) {
+		sqlite.exec('ALTER TABLE user_preferences ADD COLUMN expected_income_amount REAL');
+		console.log('Added expected_income_amount column to user_preferences table');
+	}
+
+	if (!hasCurrentBalance) {
+		sqlite.exec('ALTER TABLE user_preferences ADD COLUMN current_balance REAL');
+		console.log('Added current_balance column to user_preferences table');
+	}
+
+	if (!hasLastBalanceUpdate) {
+		sqlite.exec('ALTER TABLE user_preferences ADD COLUMN last_balance_update INTEGER');
+		console.log('Added last_balance_update column to user_preferences table');
+	}
 	} catch (error) {
 		console.error('Migration error:', error);
 	}
