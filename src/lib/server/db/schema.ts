@@ -250,6 +250,21 @@ export const importSessions = sqliteTable('import_sessions', {
 		.default(sql`(unixepoch())`)
 });
 
+export const accounts = sqliteTable('accounts', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	name: text('name').notNull().unique(),
+	isExternal: integer('is_external', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
+
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+
 // Imported transactions - temporary storage for OFX transactions before mapping
 export const importedTransactions = sqliteTable('imported_transactions', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -266,6 +281,14 @@ export const importedTransactions = sqliteTable('imported_transactions', {
 	// Mapping fields
 	mappedBillId: integer('mapped_bill_id').references(() => bills.id, { onDelete: 'set null' }),
 	mappedBucketId: integer('mapped_bucket_id').references(() => buckets.id, {
+		onDelete: 'set null'
+	}),
+	// Transfer fields (import-only)
+	isTransfer: integer('is_transfer', { mode: 'boolean' }).notNull().default(false),
+	counterpartyAccountId: integer('counterparty_account_id').references(() => accounts.id, {
+		onDelete: 'set null'
+	}),
+	transferCategoryId: integer('transfer_category_id').references(() => categories.id, {
 		onDelete: 'set null'
 	}),
 	createNewBill: integer('create_new_bill', { mode: 'boolean' }).default(false),

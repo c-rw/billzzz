@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { StrategyComparison as ComparisonType } from '$lib/types/debt';
-	import { format, differenceInMonths } from 'date-fns';
+	import { format } from 'date-fns';
 
 	interface Props {
 		comparison: ComparisonType;

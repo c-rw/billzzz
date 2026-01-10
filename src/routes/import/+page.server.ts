@@ -45,16 +45,19 @@ export const load: PageServerLoad = async ({ url }) => {
 		const transactions = allTransactions.filter(t => !t.transaction.isProcessed);
 		const categories = getAllCategories();
 		const existingBills = getAllBills();
-		const buckets = await getAllBucketsWithCurrentCycle();
+			const buckets = await getAllBucketsWithCurrentCycle();
+			const { getAllAccounts } = await import('$lib/server/db/queries');
+			const accounts = getAllAccounts();
 
-		return {
-			sessionId: parseInt(sessionId),
-			session,
-			transactions,
-			categories,
-			existingBills,
-			buckets
-		};
+			return {
+				sessionId: parseInt(sessionId),
+				session,
+				transactions,
+				categories,
+				existingBills,
+				buckets,
+				accounts
+			};
 	}
 
 	return {
@@ -62,7 +65,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		transactions: [],
 		categories: [],
 		existingBills: [],
-		buckets: []
+		buckets: [],
+		accounts: []
 	};
 };
 
@@ -120,11 +124,20 @@ export const actions: Actions = {
 			// Check for duplicate transactions by fitId
 			const newTransactions = [];
 			let skippedCount = 0;
+			const seenFitIds = new Set<string>(); // Track fitIds in current batch
 
 			for (const txn of parseResult.transactions) {
+				// Check if already seen in current batch (prevents duplicates within same file)
+				if (seenFitIds.has(txn.fitId)) {
+					skippedCount++;
+					continue;
+				}
+
+				// Check if already exists in database (processed OR unprocessed)
 				const duplicate = checkDuplicateFitId(txn.fitId);
 				if (!duplicate) {
 					newTransactions.push(txn);
+					seenFitIds.add(txn.fitId);
 				} else {
 					skippedCount++;
 				}
@@ -221,7 +234,9 @@ export const actions: Actions = {
 					categoryId,
 					isRecurring,
 					recurrenceType,
-					bucketId
+					bucketId,
+					counterpartyAccountId,
+					transferCategoryId
 				} = mapping;
 
 				// Find the full transaction data
@@ -439,6 +454,18 @@ export const actions: Actions = {
 					updateImportedTransaction(transactionId, {
 						mappedBucketId: bucketIdToUse,
 						createNewBill: false,
+						isProcessed: true
+					});
+					importedCount++;
+				} else if (action === 'mark_transfer' && transactionData) {
+					if (!counterpartyAccountId) {
+						continue;
+					}
+
+					updateImportedTransaction(transactionId, {
+						isTransfer: true,
+						counterpartyAccountId,
+						transferCategoryId: transferCategoryId || null,
 						isProcessed: true
 					});
 					importedCount++;

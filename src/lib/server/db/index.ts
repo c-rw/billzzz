@@ -34,32 +34,46 @@ function initializeDatabase() {
 
 		// Check if migration metadata table exists
 		const migrationTableExists = sqlite
-			.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'")
+			.prepare(
+				"SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
+			)
 			.get() as { count: number };
 
 		// Check if business tables exist
-		const tablesExist = sqlite
+		const billsTableExists = sqlite
 			.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='bills'")
+			.get() as { count: number };
+
+		const accountsTableExists = sqlite
+			.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='accounts'")
 			.get() as { count: number };
 
 		// Decide whether to run migrations
 		let shouldRunMigrations = false;
 
 		if (migrationTableExists.count === 0) {
-			// Migration table doesn't exist - need to run migrations
-			shouldRunMigrations = true;
-		} else if (tablesExist.count === 0) {
+			// Migration tracking doesn't exist; if tables already exist, skip to avoid conflicts
+			if (billsTableExists.count > 0 && accountsTableExists.count > 0) {
+				console.log(
+					'Database tables already exist but migration metadata is missing. Skipping migrations to prevent conflicts.'
+				);
+				shouldRunMigrations = false;
+			} else {
+				shouldRunMigrations = true;
+			}
+		} else if (billsTableExists.count === 0) {
 			// Migration table exists but no business tables - run migrations
 			shouldRunMigrations = true;
 		} else {
 			// Both migration table and business tables exist - check if migrations are complete
 			const migrationCount = sqlite
-				.prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
+				.prepare('SELECT COUNT(*) as count FROM __drizzle_migrations')
 				.get() as { count: number };
 
-			if (migrationCount.count === 0) {
-				// Tables exist but migration metadata is empty - skip to avoid conflicts
-				console.log('Database tables already exist but migration metadata is empty. Skipping migrations to prevent conflicts.');
+			if (migrationCount.count === 0 && billsTableExists.count > 0 && accountsTableExists.count > 0) {
+				console.log(
+					'Database tables already exist but migration metadata is empty. Skipping migrations to prevent conflicts.'
+				);
 				shouldRunMigrations = false;
 			} else {
 				// Run migrations to catch any new ones
@@ -68,7 +82,7 @@ function initializeDatabase() {
 		}
 
 		if (shouldRunMigrations) {
-			migrate(drizzleDb, { migrationsFolder: './drizzle/migrations' });
+			migrate(drizzleDb, { migrationsFolder: join(process.cwd(), 'drizzle', 'migrations') });
 			console.log('Database migrations completed successfully');
 		}
 	} catch (error) {

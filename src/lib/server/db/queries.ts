@@ -5,16 +5,84 @@ import {
 	paydaySettings,
 	importSessions,
 	importedTransactions,
+	accounts,
 	type NewBill,
 	type NewCategory,
 	type Category,
 	type NewPaydaySettings,
 	type NewImportSession,
-	type NewImportedTransaction
+	type NewImportedTransaction,
+	type Account,
+	type NewAccount
 } from './schema';
 import { eq, and, gte, lte, desc, asc, like, or, sql } from 'drizzle-orm';
 import type { BillFilters, BillSort } from '$lib/types/bill';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
+
+// ===== ACCOUNT QUERIES =====
+
+export function getAllAccounts(): (Account & { balance: number })[] {
+	const allAccounts = db.select().from(accounts).orderBy(accounts.name).all();
+
+	// Calculate balance for each account based on transfers
+	return allAccounts.map(account => {
+		// For internal accounts, calculate balance from transfers
+		// DEBIT transactions to this account = money IN (positive)
+		// CREDIT transactions from this account = money OUT (negative)
+		const balanceResult = db
+			.select({
+				balance: sql<number>`
+					COALESCE(
+						SUM(
+							CASE
+								WHEN ${importedTransactions.transactionType} = 'DEBIT' THEN ${importedTransactions.amount}
+								WHEN ${importedTransactions.transactionType} = 'CREDIT' THEN -${importedTransactions.amount}
+								ELSE 0
+							END
+						),
+						0
+					)
+				`
+			})
+			.from(importedTransactions)
+			.where(
+				and(
+					eq(importedTransactions.isTransfer, true),
+					eq(importedTransactions.counterpartyAccountId, account.id)
+				)
+			)
+			.get();
+
+		return {
+			...account,
+			balance: balanceResult?.balance ?? 0
+		};
+	});
+}
+
+export function getAccountById(id: number) {
+	return db.select().from(accounts).where(eq(accounts.id, id)).get();
+}
+
+export function createAccount(data: NewAccount) {
+	return db.insert(accounts).values(data).returning().get();
+}
+
+export function updateAccount(id: number, data: Partial<NewAccount>) {
+	return db
+		.update(accounts)
+		.set({
+			...data,
+			updatedAt: new Date()
+		})
+		.where(eq(accounts.id, id))
+		.returning()
+		.get();
+}
+
+export function deleteAccount(id: number) {
+	return db.delete(accounts).where(eq(accounts.id, id)).returning().get();
+}
 
 // ===== CATEGORY QUERIES =====
 
@@ -348,6 +416,9 @@ export function deleteImportedTransaction(id: number) {
 }
 
 export function checkDuplicateFitId(fitId: string) {
+	// Check if transaction exists and has been processed
+	// This prevents re-importing already processed transactions
+	// Unprocessed transactions from old sessions won't block new imports
 	return db
 		.select()
 		.from(importedTransactions)
@@ -357,6 +428,16 @@ export function checkDuplicateFitId(fitId: string) {
 				eq(importedTransactions.isProcessed, true)
 			)
 		)
+		.get();
+}
+
+export function checkAnyDuplicateFitId(fitId: string) {
+	// Check if transaction exists at all (processed OR unprocessed)
+	// Used during import to prevent importing same file multiple times
+	return db
+		.select()
+		.from(importedTransactions)
+		.where(eq(importedTransactions.fitId, fitId))
 		.get();
 }
 

@@ -9,6 +9,8 @@
 	import ResetDataModal from '$lib/components/settings/ResetDataModal.svelte';
 	import CategoriesSection from '$lib/components/settings/CategoriesSection.svelte';
 	import CategoryFormModal from '$lib/components/settings/CategoryFormModal.svelte';
+	import AccountsSection from '$lib/components/settings/AccountsSection.svelte';
+	import AccountFormModal from '$lib/components/settings/AccountFormModal.svelte';
 	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
 	import {
 		ShoppingCart,
@@ -29,13 +31,20 @@
 
 	let showAddCategoryModal = $state(false);
 	let showEditCategoryModal = $state(false);
+	let showAddAccountModal = $state(false);
+	let showEditAccountModal = $state(false);
 	let showPaydaySettingsModal = $state(false);
 	let showResetModal = $state(false);
 	let editingCategoryId = $state<number | null>(null);
+	let editingAccountId = $state<number | null>(null);
 	let categoryForm = $state({
 		name: '',
 		color: '#3B82F6',
 		icon: ''
+	});
+	let accountForm = $state({
+		name: '',
+		isExternal: false
 	});
 
 	// Icon options for categories (same as buckets)
@@ -194,6 +203,102 @@
 		}
 	}
 
+	function openAddAccountModal() {
+		accountForm = {
+			name: '',
+			isExternal: false
+		};
+		showAddAccountModal = true;
+	}
+
+	function openEditAccountModal(id: number) {
+		const account = data.accounts.find((a) => a.id === id);
+		if (account) {
+			accountForm = {
+				name: account.name,
+				isExternal: account.isExternal
+			};
+			editingAccountId = id;
+			showEditAccountModal = true;
+		}
+	}
+
+	async function handleAddAccount() {
+		if (!accountForm.name.trim()) {
+			alert('Please enter an account name');
+			return;
+		}
+
+		try {
+			const response = await fetch('/api/accounts', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(accountForm)
+			});
+
+			if (response.ok) {
+				showAddAccountModal = false;
+				await invalidateAll();
+			} else {
+				alert('Failed to create account. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error creating account:', error);
+			alert('Failed to create account. Please try again.');
+		}
+	}
+
+	async function handleUpdateAccount() {
+		if (!accountForm.name.trim() || editingAccountId === null) {
+			alert('Please enter an account name');
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/accounts/${editingAccountId}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(accountForm)
+			});
+
+			if (response.ok) {
+				showEditAccountModal = false;
+				editingAccountId = null;
+				await invalidateAll();
+			} else {
+				alert('Failed to update account. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error updating account:', error);
+			alert('Failed to update account. Please try again.');
+		}
+	}
+
+	async function handleDeleteAccount(id: number, name: string) {
+		if (
+			!confirm(
+				`Are you sure you want to delete the account "${name}"? This will remove all transfer associations with this account.`
+			)
+		) {
+			return;
+		}
+
+		try {
+			const response = await fetch(`/api/accounts/${id}`, {
+				method: 'DELETE'
+			});
+
+			if (response.ok) {
+				await invalidateAll();
+			} else {
+				alert('Failed to delete account. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error deleting account:', error);
+			alert('Failed to delete account. Please try again.');
+		}
+	}
+
 	async function handleExport() {
 		try {
 			window.location.href = '/api/export';
@@ -233,6 +338,13 @@
 		onDelete={handleDeleteCategory}
 	/>
 
+	<AccountsSection
+		accounts={data.accounts}
+		onAdd={openAddAccountModal}
+		onEdit={openEditAccountModal}
+		onDelete={handleDeleteAccount}
+	/>
+
 	<ExportImportSection onExport={handleExport} />
 
 	<ResetDataSection onReset={() => (showResetModal = true)} />
@@ -258,6 +370,27 @@
 	onCancel={() => {
 		showEditCategoryModal = false;
 		editingCategoryId = null;
+	}}
+/>
+
+<!-- Add Account Modal -->
+<AccountFormModal
+	bind:isOpen={showAddAccountModal}
+	mode="add"
+	bind:accountForm
+	onSubmit={handleAddAccount}
+	onCancel={() => (showAddAccountModal = false)}
+/>
+
+<!-- Edit Account Modal -->
+<AccountFormModal
+	bind:isOpen={showEditAccountModal}
+	mode="edit"
+	bind:accountForm
+	onSubmit={handleUpdateAccount}
+	onCancel={() => {
+		showEditAccountModal = false;
+		editingAccountId = null;
 	}}
 />
 

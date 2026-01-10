@@ -1,5 +1,11 @@
 <script lang="ts">
-	type MappingAction = 'map_existing' | 'create_new' | 'map_to_bucket' | 'create_new_bucket' | 'skip';
+	export type MappingAction =
+		| 'map_existing'
+		| 'create_new'
+		| 'map_to_bucket'
+		| 'create_new_bucket'
+		| 'mark_transfer'
+		| 'skip';
 
 	let {
 		index,
@@ -67,5 +73,16 @@
 			class="mr-2"
 		/>
 		<span class="text-sm dark:text-gray-300">Create New Bucket</span>
+	</label>
+	<label class="flex items-center">
+		<input
+			type="radio"
+			name="action_{index}"
+			value="mark_transfer"
+			checked={selectedAction === 'mark_transfer'}
+			onchange={() => onActionChange('mark_transfer')}
+			class="mr-2"
+		/>
+		<span class="text-sm dark:text-gray-300">Transfer</span>
 	</label>
 </div>

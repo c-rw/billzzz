@@ -2,7 +2,7 @@ import { db } from './index';
 import { bills, buckets, debts, paydaySettings, userPreferences, importedTransactions } from './schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
-import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays, isSameDay } from 'date-fns';
+import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays } from 'date-fns';
 
 export interface CashFlowDataPoint {
 	date: Date;
