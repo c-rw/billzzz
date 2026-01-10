@@ -46,7 +46,13 @@
 	let transactionMappings = $state<
 		Array<{
 			transactionId: number;
-			action: 'map_existing' | 'create_new' | 'map_to_bucket' | 'create_new_bucket' | 'skip';
+			action:
+				| 'map_existing'
+				| 'create_new'
+				| 'map_to_bucket'
+				| 'create_new_bucket'
+				| 'mark_transfer'
+				| 'skip';
 			billId?: number;
 			billName?: string;
 			amount: number;
@@ -59,6 +65,8 @@
 			budgetAmount?: number;
 			frequency?: string;
 			anchorDate?: string;
+			counterpartyAccountId?: number;
+			transferCategoryId?: number;
 		}>
 	>([]);
 
@@ -107,7 +115,9 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mb-6 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-4">
+		<div
+			class="mb-6 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-4"
+		>
 			<p class="text-sm text-red-800 dark:text-red-200">{form.error}</p>
 		</div>
 	{/if}
@@ -118,7 +128,9 @@
 	{:else}
 		<!-- Review Transactions -->
 		<div class="space-y-6">
-			<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+			<div
+				class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+			>
 				<div class="flex items-center justify-between mb-4">
 					<div>
 						<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -129,8 +141,7 @@
 						</p>
 						{#if data.session?.skippedCount && data.session.skippedCount > 0}
 							<p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
-								{data.session.skippedCount} duplicate transaction{data.session.skippedCount >
-								1
+								{data.session.skippedCount} duplicate transaction{data.session.skippedCount > 1
 									? 's'
 									: ''} skipped (already imported)
 							</p>
@@ -140,7 +151,7 @@
 						<Button variant="secondary" size="sm" onclick={selectAllUnmapped}>
 							Select All Unmapped
 						</Button>
-						<Button variant="secondary" size="sm" onclick={deselectAll}> Deselect All </Button>
+						<Button variant="secondary" size="sm" onclick={deselectAll}>Deselect All</Button>
 					</div>
 				</div>
 
@@ -168,6 +179,7 @@
 									existingBills={data.existingBills}
 									buckets={data.buckets}
 									categories={data.categories}
+									accounts={data.accounts}
 									{iconMap}
 								/>
 							{/if}

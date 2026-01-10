@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getAllCategories, getPaydaySettings } from '$lib/server/db/queries';
+import { getAllCategories, getPaydaySettings, getAllAccounts } from '$lib/server/db/queries';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import {
@@ -16,6 +16,7 @@ import {
 	paydaySettings,
 	importSessions,
 	importedTransactions,
+	accounts,
 	userPreferences
 } from '$lib/server/db/schema';
 
@@ -60,10 +61,12 @@ function convertDatesToObjects(data: any[]): any[] {
 export const load: PageServerLoad = async () => {
 	const categoriesData = getAllCategories();
 	const paydaySettingsData = getPaydaySettings();
+	const accountsData = getAllAccounts();
 
 	return {
 		categories: categoriesData,
-		paydaySettings: paydaySettingsData
+		paydaySettings: paydaySettingsData,
+		accounts: accountsData
 	};
 };
 
@@ -225,6 +228,7 @@ export const actions: Actions = {
 			// Delete all data (in reverse order due to foreign key constraints)
 			db.delete(importedTransactions).run();
 			db.delete(importSessions).run();
+			db.delete(accounts).run();
 			db.delete(bucketTransactions).run();
 			db.delete(bucketCycles).run();
 			db.delete(buckets).run();

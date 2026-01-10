@@ -36,6 +36,20 @@
       "when": 1732413600000,
       "tag": "0004_bill_cycles_and_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1763218329045,
+      "tag": "0005_add_analytics_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1767192500000,
+      "tag": "0006_accounts_and_transfers",
+      "breakpoints": true
     }
   ]
 }

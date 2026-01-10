@@ -37,17 +37,26 @@ function initializeDatabase() {
 			.prepare("SELECT COUNT(*) as count FROM __drizzle_migrations")
 			.get() as { count: number };
 
-		const tablesExist = sqlite
+		const billsTableExists = sqlite
 			.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='bills'")
 			.get() as { count: number };
 
-		// If migrations metadata is empty but tables exist, skip migration
+		const accountsTableExists = sqlite
+			.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='accounts'")
+			.get() as { count: number };
+
+		const shouldSkipMigrations =
+			migrationCount.count === 0 && billsTableExists.count > 0 && accountsTableExists.count > 0;
+
+		// If migration metadata is empty but tables exist, skip migration
 		// This handles the case where the database was created before migration tracking
-		if (migrationCount.count === 0 && tablesExist.count > 0) {
-			console.log('Database tables already exist but migration metadata is empty. Skipping migrations to prevent conflicts.');
+		if (shouldSkipMigrations) {
+			console.log(
+				'Database tables already exist but migration metadata is empty. Skipping migrations to prevent conflicts.'
+			);
 		} else {
 			// Run migrations normally
-			migrate(drizzleDb, { migrationsFolder: './drizzle/migrations' });
+			migrate(drizzleDb, { migrationsFolder: join(process.cwd(), 'drizzle', 'migrations') });
 			console.log('Database migrations completed successfully');
 		}
 	} catch (error) {
