@@ -4,14 +4,14 @@ services:
     container_name: billzzz
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3333:3333"
     volumes:
       # Persist SQLite database
       - ./data:/app/data
     user: "1000:1000"  # Run as UID 1000 (typical first user on Linux)
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3333
       - HOST=0.0.0.0
       - TZ=America/Chicago
     healthcheck:
