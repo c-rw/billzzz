@@ -56,11 +56,19 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - Balance and income input for accurate forecasting
 - Smart debt/bill integration prevents double-counting
 
+### 🏦 Accounts & Transfers
+
+- Create and manage accounts (internal and external)
+- Mark imported transactions as transfers and link a counterparty account
+- Optional category assignment for transfers
+
 ### 📱 Import & Export
 
 - Import transactions from OFX/QFX bank files
+- Duplicate detection (skips transactions that were already imported)
 - Automatic payee matching and categorization
 - Map transactions to existing bills or buckets
+- Mark transactions as transfers between accounts
 - Create new bills from recurring transactions
 - Income detection and handling
 - Full data export to JSON for backup
@@ -211,7 +219,8 @@ The application uses SQLite with the following main tables:
 ### Import/Export
 
 - **import_sessions** - OFX/QFX import tracking
-- **imported_transactions** - Pending transactions for review
+- **imported_transactions** - Pending transactions for review (including transfer metadata)
+- **accounts** - Accounts used for transfer tracking
 
 ### Settings
 
@@ -278,6 +287,13 @@ The application uses SQLite with the following main tables:
 
 - `POST /api/import` - Import OFX/QFX transactions
 - `GET /api/export` - Export all data to JSON
+
+### Accounts
+
+- `GET /api/accounts` - List all accounts
+- `POST /api/accounts` - Create a new account
+- `PUT /api/accounts/[id]` - Update an account
+- `DELETE /api/accounts/[id]` - Delete an account
 
 ### Payments
 
