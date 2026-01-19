@@ -27,6 +27,7 @@ export interface AnalyticsData {
 		currentBalance: number | null;
 		expectedIncome: number | null;
 		nextPayday: Date | null;
+		lastBalanceUpdate: Date | null;
 		savingsPerPaycheck: number;
 		burnRate: number;
 		runway: number;
@@ -402,6 +403,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
 
 	const currentBalance = userPref?.currentBalance ?? null;
 	const expectedIncome = userPref?.expectedIncomeAmount ?? null;
+	const lastBalanceUpdate = userPref?.lastBalanceUpdate ?? null;
 
 	// Get payday info
 	const paydayConfig = await db.select().from(paydaySettings).limit(1);
@@ -439,6 +441,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
 			currentBalance,
 			expectedIncome,
 			nextPayday,
+			lastBalanceUpdate,
 			savingsPerPaycheck,
 			burnRate,
 			runway,

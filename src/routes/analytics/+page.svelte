@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
-	import { format } from 'date-fns';
+	import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
 	import CashFlowChart from '$lib/components/CashFlowChart.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import BalanceInputForm from '$lib/components/BalanceInputForm.svelte';
@@ -18,6 +18,19 @@
 	// Group warnings by severity (reactive)
 	const highWarnings = $derived(analytics.warnings.filter((w) => w.severity === 'high'));
 	const mediumWarnings = $derived(analytics.warnings.filter((w) => w.severity === 'medium'));
+
+	// Calculate balance staleness
+	const balanceLastUpdated = $derived(analytics.metrics.lastBalanceUpdate);
+	const balanceDaysOld = $derived(
+		balanceLastUpdated ? differenceInDays(new Date(), balanceLastUpdated) : null
+	);
+	const isBalanceStale = $derived(balanceDaysOld !== null && balanceDaysOld >= 7);
+	const balanceSubtitle = $derived(() => {
+		if (!balanceLastUpdated) return 'Click above to set';
+		if (balanceDaysOld === 0) return 'Updated today';
+		if (balanceDaysOld === 1) return 'Updated yesterday';
+		return `Updated ${formatDistanceToNow(balanceLastUpdated, { addSuffix: true })}`;
+	});
 
 	async function handlePreferencesUpdate() {
 		await invalidateAll();
@@ -47,6 +60,23 @@
 					<h3 class="text-lg font-semibold text-yellow-900 dark:text-yellow-100">Setup Required</h3>
 					<p class="mt-1 text-sm text-yellow-800 dark:text-yellow-200">
 						To enable cash flow forecasting, please enter your current balance and expected income below.
+					</p>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Stale balance warning -->
+	{#if isBalanceStale && !needsSetup}
+		<div class="mb-8 rounded-lg border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950 p-6">
+			<div class="flex items-start gap-3">
+				<svg class="h-6 w-6 text-orange-600 dark:text-orange-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+				</svg>
+				<div>
+					<h3 class="text-lg font-semibold text-orange-900 dark:text-orange-100">Balance Update Recommended</h3>
+					<p class="mt-1 text-sm text-orange-800 dark:text-orange-200">
+						Your balance hasn't been updated in {balanceDaysOld} days. Consider updating it for more accurate cash flow projections.
 					</p>
 				</div>
 			</div>
@@ -92,8 +122,8 @@
 					value={analytics.metrics.currentBalance !== null
 						? `$${analytics.metrics.currentBalance.toFixed(2)}`
 						: 'Not set'}
-					subtitle={analytics.metrics.currentBalance !== null ? 'Updated today' : 'Click above to set'}
-					variant={analytics.metrics.currentBalance !== null && analytics.metrics.currentBalance > 0 ? 'default' : 'danger'}
+					subtitle={balanceSubtitle()}
+					variant={isBalanceStale ? 'warning' : analytics.metrics.currentBalance !== null && analytics.metrics.currentBalance > 0 ? 'default' : 'danger'}
 				/>
 			</div>
 			<div class="min-w-[280px] snap-center shrink-0">
@@ -148,8 +178,8 @@
 				value={analytics.metrics.currentBalance !== null
 					? `$${analytics.metrics.currentBalance.toFixed(2)}`
 					: 'Not set'}
-				subtitle={analytics.metrics.currentBalance !== null ? 'Updated today' : 'Click above to set'}
-				variant={analytics.metrics.currentBalance !== null && analytics.metrics.currentBalance > 0 ? 'default' : 'danger'}
+				subtitle={balanceSubtitle()}
+				variant={isBalanceStale ? 'warning' : analytics.metrics.currentBalance !== null && analytics.metrics.currentBalance > 0 ? 'default' : 'danger'}
 			/>
 			<MetricCard
 				title="Savings Per Paycheck"
