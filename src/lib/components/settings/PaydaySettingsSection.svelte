@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
 	import type { PaydaySettings } from '$lib/server/db/schema';
+	import { calculateNextPayday, daysUntil } from '$lib/utils/payday';
 
 	let {
 		paydaySettings,
@@ -11,6 +12,39 @@
 		onEdit: () => void;
 		onDelete: () => void;
 	} = $props();
+
+	function ordinal(n: number): string {
+		const s = ['th', 'st', 'nd', 'rd'];
+		const v = n % 100;
+		return n + (s[(v - 20) % 10] || s[v] || s[0]);
+	}
+
+	const nextPayday = $derived(
+		paydaySettings
+			? (() => {
+					try {
+						return calculateNextPayday(paydaySettings);
+					} catch {
+						return null;
+					}
+				})()
+			: null
+	);
+
+	const daysAway = $derived(nextPayday ? daysUntil(nextPayday) : null);
+
+	const nextPaydayLabel = $derived(
+		nextPayday && daysAway !== null
+			? {
+					date: nextPayday.toLocaleDateString(undefined, {
+						weekday: 'long',
+						month: 'long',
+						day: 'numeric'
+					}),
+					note: daysAway === 0 ? 'Today!' : daysAway === 1 ? 'Tomorrow' : `in ${daysAway} days`
+				}
+			: null
+	);
 </script>
 
 <div class="mb-8 rounded-lg border border-gray-200 bg-white shadow-sm dark:bg-gray-800 dark:border-gray-700">
@@ -25,54 +59,37 @@
 		{#if paydaySettings}
 			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
 				<div class="flex items-start justify-between">
-					<div>
-						<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Current Schedule</p>
-						<p class="mt-1 text-lg text-gray-900 dark:text-gray-100">
-							{#if paydaySettings.frequency === 'weekly'}
-								Every {[
-									'Sunday',
-									'Monday',
-									'Tuesday',
-									'Wednesday',
-									'Thursday',
-									'Friday',
-									'Saturday'
-								][paydaySettings.dayOfWeek ?? 0]}
-							{:else if paydaySettings.frequency === 'biweekly'}
-								Every other {[
-									'Sunday',
-									'Monday',
-									'Tuesday',
-									'Wednesday',
-									'Thursday',
-									'Friday',
-									'Saturday'
-								][paydaySettings.dayOfWeek ?? 0]}
-							{:else if paydaySettings.frequency === 'semi-monthly'}
-								{paydaySettings.dayOfMonth}{paydaySettings.dayOfMonth === 1
-									? 'st'
-									: paydaySettings.dayOfMonth === 2
-										? 'nd'
-										: paydaySettings.dayOfMonth === 3
-											? 'rd'
-											: 'th'} and {paydaySettings.dayOfMonth2}{paydaySettings.dayOfMonth2 === 1
-									? 'st'
-									: paydaySettings.dayOfMonth2 === 2
-										? 'nd'
-										: paydaySettings.dayOfMonth2 === 3
-											? 'rd'
-											: 'th'} of each month
-							{:else if paydaySettings.frequency === 'monthly'}
-								{paydaySettings.dayOfMonth}{paydaySettings.dayOfMonth === 1
-									? 'st'
-									: paydaySettings.dayOfMonth === 2
-										? 'nd'
-										: paydaySettings.dayOfMonth === 3
-											? 'rd'
-											: 'th'} of each month
-							{/if}
-						</p>
+					<div class="space-y-3">
+						<div>
+							<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Current Schedule</p>
+							<p class="mt-1 text-lg text-gray-900 dark:text-gray-100">
+								{#if paydaySettings.frequency === 'weekly'}
+									Every week
+								{:else if paydaySettings.frequency === 'biweekly'}
+									Every other week
+								{:else if paydaySettings.frequency === 'semi-monthly'}
+									{ordinal(paydaySettings.dayOfMonth ?? 1)} and {ordinal(paydaySettings.dayOfMonth2 ?? 15)} of each month
+								{:else if paydaySettings.frequency === 'monthly'}
+									{ordinal(paydaySettings.dayOfMonth ?? 1)} of each month
+								{/if}
+							</p>
+						</div>
+
+						{#if nextPaydayLabel}
+							<div>
+								<p class="text-sm font-medium text-gray-700 dark:text-gray-300">Next Payday</p>
+								<div class="mt-1 flex items-baseline gap-2">
+									<p class="text-lg font-semibold text-green-700 dark:text-green-400">
+										{nextPaydayLabel.date}
+									</p>
+									<span class="text-sm text-gray-500 dark:text-gray-400">
+										{nextPaydayLabel.note}
+									</span>
+								</div>
+							</div>
+						{/if}
 					</div>
+
 					<div class="flex gap-2">
 						<Button variant="primary" size="sm" onclick={onEdit}>
 							Edit

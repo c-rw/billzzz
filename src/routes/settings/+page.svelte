@@ -65,7 +65,12 @@
 
 	async function handleSavePaydaySettings(settingsData: any) {
 		try {
-			const method = data.paydaySettings ? 'PUT' : 'POST';
+			// Always check the current server state before deciding POST vs PUT
+			// to avoid stale client-side data causing a method mismatch
+			const checkResponse = await fetch('/api/payday-settings');
+			const currentSettings = checkResponse.ok ? await checkResponse.json() : null;
+			const method = currentSettings ? 'PUT' : 'POST';
+
 			const response = await fetch('/api/payday-settings', {
 				method,
 				headers: { 'Content-Type': 'application/json' },
@@ -76,11 +81,13 @@
 				showPaydaySettingsModal = false;
 				await invalidateAll();
 			} else {
-				alert('Failed to save payday settings. Please try again.');
+				const body = await response.json().catch(() => ({}));
+				const msg = body?.error || `Server error ${response.status}`;
+				alert(`Failed to save payday settings: ${msg}`);
 			}
 		} catch (error) {
 			console.error('Error saving payday settings:', error);
-			alert('Failed to save payday settings. Please try again.');
+			alert(`Failed to save payday settings: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
 	}
 
@@ -105,10 +112,28 @@
 		}
 	}
 
+	function randomCategoryColor(usedColors: Set<string>): string {
+		const palette = [
+			'#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+			'#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16',
+			'#06B6D4', '#A855F7', '#22C55E', '#FB923C', '#E11D48'
+		];
+		const available = palette.filter((color) => !usedColors.has(color));
+		if (available.length > 0) {
+			return available[Math.floor(Math.random() * available.length)];
+		}
+		let color = '#000000';
+		while (usedColors.has(color)) {
+			color = `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0')}`.toUpperCase();
+		}
+		return color;
+	}
+
 	function openAddCategoryModal() {
+		const usedColors = new Set(data.categories.map((category) => category.color));
 		categoryForm = {
 			name: '',
-			color: '#3B82F6',
+			color: randomCategoryColor(usedColors),
 			icon: ''
 		};
 		showAddCategoryModal = true;

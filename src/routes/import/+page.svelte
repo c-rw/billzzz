@@ -42,17 +42,13 @@
 		heart: Heart
 	};
 
+	import type { MappingAction } from '$lib/types/import';
+
 	// Transaction mapping state
 	let transactionMappings = $state<
 		Array<{
 			transactionId: number;
-			action:
-				| 'map_existing'
-				| 'create_new'
-				| 'map_to_bucket'
-				| 'create_new_bucket'
-				| 'mark_transfer'
-				| 'skip';
+			action: MappingAction;
 			billId?: number;
 			billName?: string;
 			amount: number;
@@ -67,15 +63,27 @@
 			anchorDate?: string;
 			counterpartyAccountId?: number;
 			transferCategoryId?: number;
+			refundedBucketId?: number;
+			refundedBillId?: number;
 		}>
 	>([]);
 
 	// Initialize mappings when transactions load
+	// Smart defaults based on transaction type:
+	//   CREDIT  → mark_income (can be changed to refund or transfer)
+	//   XFER    → mark_transfer (bank-flagged as inter-account transfer)
+	//   DEBIT   → skip (user must choose a mapping)
+	function defaultActionForTransaction(txn: typeof data.transactions[0]['transaction']): MappingAction {
+		if (txn.transactionType === 'CREDIT') return 'mark_income';
+		if (txn.transactionType === 'XFER' || txn.isPotentialTransfer) return 'mark_transfer';
+		return 'skip';
+	}
+
 	$effect(() => {
 		if (data.transactions.length > 0 && transactionMappings.length === 0) {
 			transactionMappings = data.transactions.map((t) => ({
 				transactionId: t.transaction.id,
-				action: 'skip' as const,
+				action: defaultActionForTransaction(t.transaction),
 				amount: t.transaction.amount,
 				billName: t.transaction.payee,
 				dueDate: formatDateForInput(new Date(t.transaction.datePosted)),
@@ -86,9 +94,12 @@
 	});
 
 	function selectAllUnmapped() {
-		transactionMappings = transactionMappings.map((mapping) => {
+		transactionMappings = transactionMappings.map((mapping, i) => {
 			if (mapping.action === 'skip') {
-				return { ...mapping, action: 'create_new' };
+				const txn = data.transactions[i]?.transaction;
+				const defaultAction = txn ? defaultActionForTransaction(txn) : 'create_new';
+				// For debits with skip, default to create_new when bulk-selecting
+				return { ...mapping, action: defaultAction === 'skip' ? 'create_new' : defaultAction };
 			}
 			return mapping;
 		});
@@ -137,7 +148,7 @@
 							Review Transactions ({data.transactions.length})
 						</h2>
 						<p class="text-sm text-gray-600 dark:text-gray-400">
-							Map transactions to bills or create new bills
+							Review and classify each transaction — map to bills/buckets, mark as income, record refunds, or flag transfers
 						</p>
 						{#if data.session?.skippedCount && data.session.skippedCount > 0}
 							<p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
@@ -170,10 +181,18 @@
 					<input type="hidden" name="mappings" value={JSON.stringify(transactionMappings)} />
 
 					<div class="space-y-4">
-						{#each data.transactions as { transaction }, index}
+					{#each data.transactions as { transaction }, index}
 							{#if transactionMappings[index]}
 								<TransactionCard
-									{transaction}
+									transaction={{
+										id: transaction.id,
+										payee: transaction.payee,
+										amount: transaction.amount,
+										datePosted: transaction.datePosted,
+										memo: transaction.memo,
+										transactionType: transaction.transactionType,
+										isPotentialTransfer: transaction.isPotentialTransfer ?? false
+									}}
 									{index}
 									bind:mapping={transactionMappings[index]}
 									existingBills={data.existingBills}

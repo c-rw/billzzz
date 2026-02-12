@@ -107,24 +107,26 @@
 			{/if}
 		</div>
 
-		<div>
-			<label for="{mode}-category-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-				Color
-			</label>
-			<div class="mt-1 flex gap-2">
-				<input
-					id="{mode}-category-color"
-					type="color"
-					bind:value={categoryForm.color}
-					class="h-10 w-20 rounded-md border border-gray-300 dark:border-gray-600"
-				/>
-				<input
-					type="text"
-					bind:value={categoryForm.color}
-					class="flex-1 rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
-				/>
+		{#if mode === 'edit'}
+			<div>
+				<label for="{mode}-category-color" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+					Color
+				</label>
+				<div class="mt-1 flex gap-2">
+					<input
+						id="{mode}-category-color"
+						type="color"
+						bind:value={categoryForm.color}
+						class="h-10 w-20 rounded-md border border-gray-300 dark:border-gray-600"
+					/>
+					<input
+						type="text"
+						bind:value={categoryForm.color}
+						class="flex-1 rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
+					/>
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<div class="flex gap-3 pt-4">
 			<Button type="submit" variant="primary" size="md" fullWidth={true}>

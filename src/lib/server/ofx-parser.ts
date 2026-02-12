@@ -9,7 +9,7 @@ export interface ParsedTransaction {
 	payee: string;
 	memo?: string;
 	checkNumber?: string;
-	isIncome: boolean;
+	isPotentialTransfer: boolean; // True when TRNTYPE = 'XFER'
 }
 
 export interface OFXParseResult {
@@ -61,7 +61,11 @@ export async function parseOfxFile(fileBuffer: Buffer): Promise<OFXParseResult> 
 				}
 
 				const transactionType = txn.TRNTYPE;
-				const isIncome = transactionType === 'CREDIT';
+
+				// XFER = inter-account transfer (bank-flagged)
+				// We no longer auto-classify any transaction type here —
+				// income, refund, and transfer classification happens in the import review UI.
+				const isPotentialTransfer = transactionType === 'XFER';
 
 				transactions.push({
 					fitId: txn.FITID,
@@ -71,7 +75,7 @@ export async function parseOfxFile(fileBuffer: Buffer): Promise<OFXParseResult> 
 					payee: txn.NAME || txn.MEMO || 'Unknown',
 					memo: txn.MEMO || undefined,
 					checkNumber: txn.CHECKNUM || undefined,
-					isIncome
+					isPotentialTransfer
 				});
 			}
 		}
