@@ -285,6 +285,10 @@ export const importedTransactions = sqliteTable('imported_transactions', {
 	}),
 	// Transfer fields (import-only)
 	isTransfer: integer('is_transfer', { mode: 'boolean' }).notNull().default(false),
+	isPotentialTransfer: integer('is_potential_transfer', { mode: 'boolean' }).notNull().default(false), // True when OFX TRNTYPE = 'XFER'
+	ownerAccountId: integer('owner_account_id').references(() => accounts.id, {
+		onDelete: 'set null'
+	}),
 	counterpartyAccountId: integer('counterparty_account_id').references(() => accounts.id, {
 		onDelete: 'set null'
 	}),
@@ -298,6 +302,9 @@ export const importedTransactions = sqliteTable('imported_transactions', {
 	isRecurringCandidate: integer('is_recurring_candidate', { mode: 'boolean' }).default(false),
 	recurrencePattern: text('recurrence_pattern'), // JSON with detected pattern info
 	isIncome: integer('is_income', { mode: 'boolean' }).notNull().default(false),
+	isRefund: integer('is_refund', { mode: 'boolean' }).notNull().default(false),
+	refundedBucketId: integer('refunded_bucket_id').references(() => buckets.id, { onDelete: 'set null' }),
+	refundedBillId: integer('refunded_bill_id').references(() => bills.id, { onDelete: 'set null' }),
 	isProcessed: integer('is_processed', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()

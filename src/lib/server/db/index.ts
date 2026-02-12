@@ -148,6 +148,49 @@ function initializeDatabase() {
 		console.log(`Reset ${orphanedBucketTxns.count} orphaned bucket transactions to allow re-import`);
 	}
 
+	// Check if owner_account_id column exists in imported_transactions table
+	const hasOwnerAccountId = importedTxnColumns.some(col => col.name === 'owner_account_id');
+	if (!hasOwnerAccountId) {
+		sqlite.exec('ALTER TABLE imported_transactions ADD COLUMN owner_account_id INTEGER REFERENCES accounts(id) ON DELETE SET NULL');
+		console.log('Added owner_account_id column to imported_transactions table');
+	}
+
+	// Check if is_potential_transfer column exists in imported_transactions table
+	const hasPotentialTransfer = importedTxnColumns.some(col => col.name === 'is_potential_transfer');
+	if (!hasPotentialTransfer) {
+		sqlite.exec('ALTER TABLE imported_transactions ADD COLUMN is_potential_transfer INTEGER NOT NULL DEFAULT 0');
+		console.log('Added is_potential_transfer column to imported_transactions table');
+		// Backfill existing XFER transactions
+		sqlite.exec("UPDATE imported_transactions SET is_potential_transfer = 1 WHERE transaction_type = 'XFER'");
+		console.log('Backfilled existing XFER transactions as potential transfers');
+	}
+
+	// Check if is_refund column exists in imported_transactions table
+	const hasIsRefund = importedTxnColumns.some(col => col.name === 'is_refund');
+	if (!hasIsRefund) {
+		sqlite.exec('ALTER TABLE imported_transactions ADD COLUMN is_refund INTEGER NOT NULL DEFAULT 0');
+		sqlite.exec('ALTER TABLE imported_transactions ADD COLUMN refunded_bucket_id INTEGER REFERENCES buckets(id) ON DELETE SET NULL');
+		sqlite.exec('ALTER TABLE imported_transactions ADD COLUMN refunded_bill_id INTEGER REFERENCES bills(id) ON DELETE SET NULL');
+		console.log('Added refund columns to imported_transactions table');
+	}
+
+	// Re-read columns after potential additions for the is_income backfill check below
+	const importedTxnColumnsRefreshed = sqlite.prepare("PRAGMA table_info(imported_transactions)").all() as Array<{ name: string }>;
+	const hasIsIncomeNow = importedTxnColumnsRefreshed.some(col => col.name === 'is_income');
+	// Fix: CREDITs that are XFER type should NOT be auto-marked as income
+	// This is a one-time data fix for existing databases
+	const wasXferIncomeFixed = sqlite
+		.prepare("SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='_xfer_income_fix_applied'")
+		.get() as { count: number };
+	if (wasXferIncomeFixed.count === 0 && hasIsIncomeNow) {
+		// Un-mark XFER transactions that were incorrectly marked as income
+		sqlite.exec("UPDATE imported_transactions SET is_income = 0, is_potential_transfer = 1, is_processed = 0 WHERE transaction_type = 'XFER' AND is_income = 1");
+		// Create a marker table so we don't re-run this fix
+		sqlite.exec("CREATE TABLE _xfer_income_fix_applied (applied_at INTEGER DEFAULT (unixepoch()))");
+		sqlite.exec("INSERT INTO _xfer_income_fix_applied VALUES ((unixepoch()))");
+		console.log('Fixed XFER transactions incorrectly marked as income');
+	}
+
 	// Check if analytics columns exist in user_preferences table
 	const userPrefColumns = sqlite.prepare("PRAGMA table_info(user_preferences)").all() as Array<{ name: string }>;
 	const hasExpectedIncome = userPrefColumns.some(col => col.name === 'expected_income_amount');

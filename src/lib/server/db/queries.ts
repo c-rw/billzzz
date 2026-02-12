@@ -24,19 +24,33 @@ import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
 export function getAllAccounts(): (Account & { balance: number })[] {
 	const allAccounts = db.select().from(accounts).orderBy(accounts.name).all();
 
-	// Calculate balance for each account based on transfers
+	// Calculate balance for each account based on transfer transactions.
+	// Owner account (OFX file) uses normal sign logic; counterparty account uses inverted sign logic.
+	// From the owner account's perspective:
+	//   DEBIT = money left this account (money out, negative)
+	//   CREDIT = money arrived in this account (money in, positive)
+	//   XFER (is_potential_transfer) = same logic as DEBIT unless otherwise specified
 	return allAccounts.map(account => {
-		// For internal accounts, calculate balance from transfers
-		// DEBIT transactions to this account = money IN (positive)
-		// CREDIT transactions from this account = money OUT (negative)
 		const balanceResult = db
 			.select({
 				balance: sql<number>`
 					COALESCE(
 						SUM(
 							CASE
-								WHEN ${importedTransactions.transactionType} = 'DEBIT' THEN ${importedTransactions.amount}
-								WHEN ${importedTransactions.transactionType} = 'CREDIT' THEN -${importedTransactions.amount}
+								WHEN ${importedTransactions.ownerAccountId} = ${account.id} THEN
+									CASE
+										WHEN ${importedTransactions.transactionType} = 'CREDIT' THEN ${importedTransactions.amount}
+										WHEN ${importedTransactions.transactionType} = 'DEBIT' THEN -${importedTransactions.amount}
+										WHEN ${importedTransactions.transactionType} = 'XFER' THEN -${importedTransactions.amount}
+										ELSE 0
+									END
+								WHEN ${importedTransactions.counterpartyAccountId} = ${account.id} THEN
+									CASE
+										WHEN ${importedTransactions.transactionType} = 'CREDIT' THEN -${importedTransactions.amount}
+										WHEN ${importedTransactions.transactionType} = 'DEBIT' THEN ${importedTransactions.amount}
+										WHEN ${importedTransactions.transactionType} = 'XFER' THEN ${importedTransactions.amount}
+										ELSE 0
+									END
 								ELSE 0
 							END
 						),
@@ -48,7 +62,10 @@ export function getAllAccounts(): (Account & { balance: number })[] {
 			.where(
 				and(
 					eq(importedTransactions.isTransfer, true),
-					eq(importedTransactions.counterpartyAccountId, account.id)
+					or(
+						eq(importedTransactions.ownerAccountId, account.id),
+						eq(importedTransactions.counterpartyAccountId, account.id)
+					)
 				)
 			)
 			.get();

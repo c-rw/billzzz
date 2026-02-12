@@ -13,7 +13,9 @@ import {
 	markTransactionsAsProcessed,
 	checkDuplicateFitId,
 	markBillAsPaid,
-	updateBill
+	updateBill,
+	getAllAccounts,
+	createAccount
 } from '$lib/server/db/queries';
 import { getAllBucketsWithCurrentCycle, getAllBuckets, createTransaction, createBucket } from '$lib/server/db/bucket-queries';
 import { createPayment } from '$lib/server/db/bill-queries';
@@ -41,7 +43,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		// Load existing import session for review
 		const session = getImportSession(parseInt(sessionId));
 		const allTransactions = getImportedTransactionsBySession(parseInt(sessionId));
-		// Filter out already processed transactions (e.g., income that was auto-processed)
+		// Filter out already processed transactions
 		const transactions = allTransactions.filter(t => !t.transaction.isProcessed);
 		const categories = getAllCategories();
 		const existingBills = getAllBills();
@@ -153,8 +155,30 @@ export const actions: Actions = {
 				status: 'pending'
 			});
 
+			// Resolve owner account from OFX account number
+			// Look up existing account or create one from the OFX file's ACCTID
+			let ownerAccountId: number | null = null;
+			if (parseResult.accountNumber) {
+				const existingAccounts = getAllAccounts();
+				const matchedAccount = existingAccounts.find(
+					a => a.name === parseResult.accountNumber || a.name.includes(parseResult.accountNumber!)
+				);
+				if (matchedAccount) {
+					ownerAccountId = matchedAccount.id;
+				} else {
+					// Auto-create an account entry for this OFX account number
+					const newAccount = createAccount({
+						name: parseResult.accountNumber,
+						isExternal: false
+					});
+					ownerAccountId = newAccount.id;
+				}
+			}
+
 			// Insert only non-duplicate transactions into database
-			let autoProcessedCount = 0;
+			// NOTE: We no longer auto-process any transactions.
+			// All transactions (including CREDITs) surface to the review screen
+			// so the user can classify them as income, refund, or transfer.
 			if (newTransactions.length > 0) {
 				const transactionData = newTransactions.map((txn) => ({
 					sessionId: session.id,
@@ -165,22 +189,13 @@ export const actions: Actions = {
 					payee: txn.payee,
 					memo: txn.memo || null,
 					checkNumber: txn.checkNumber || null,
-					isIncome: txn.isIncome,
-					isProcessed: txn.isIncome // Auto-process income immediately
+					ownerAccountId,
+					isPotentialTransfer: txn.isPotentialTransfer,
+					isIncome: false, // Never auto-classify; user decides during review
+					isProcessed: false
 				}));
 
 				createImportedTransactionsBatch(transactionData);
-
-				// Count auto-processed income transactions
-				autoProcessedCount = newTransactions.filter(txn => txn.isIncome).length;
-			}
-
-			// Update session with auto-processed income count
-			if (autoProcessedCount > 0) {
-				const { updateImportSession } = await import('$lib/server/db/queries');
-				updateImportSession(session.id, {
-					importedCount: autoProcessedCount
-				});
 			}
 
 			// Redirect to review page
@@ -224,7 +239,7 @@ export const actions: Actions = {
 			);
 
 			for (const mapping of mappings) {
-				const {
+			const {
 					transactionId,
 					action,
 					billId,
@@ -236,7 +251,9 @@ export const actions: Actions = {
 					recurrenceType,
 					bucketId,
 					counterpartyAccountId,
-					transferCategoryId
+					transferCategoryId,
+					refundedBucketId,
+					refundedBillId
 				} = mapping;
 
 				// Find the full transaction data
@@ -457,7 +474,7 @@ export const actions: Actions = {
 						isProcessed: true
 					});
 					importedCount++;
-				} else if (action === 'mark_transfer' && transactionData) {
+			} else if (action === 'mark_transfer' && transactionData) {
 					if (!counterpartyAccountId) {
 						continue;
 					}
@@ -469,6 +486,49 @@ export const actions: Actions = {
 						isProcessed: true
 					});
 					importedCount++;
+				} else if (action === 'mark_income' && transactionData) {
+					// Mark as income — no further mapping needed
+					updateImportedTransaction(transactionId, {
+						isIncome: true,
+						isProcessed: true
+					});
+					importedCount++;
+				} else if (action === 'mark_refund' && transactionData) {
+					// A refund credits back a bucket or bill, reducing what was spent
+					if (refundedBucketId) {
+						// Create a negative-amount bucket transaction to reduce totalSpent
+						await createTransaction({
+							bucketId: refundedBucketId,
+							amount: -Math.abs(transactionData.transaction.amount),
+							timestamp: transactionData.transaction.datePosted,
+							vendor: transactionData.transaction.payee,
+							notes: `Refund: ${transactionData.transaction.memo || transactionData.transaction.payee}`
+						});
+
+						updateImportedTransaction(transactionId, {
+							isRefund: true,
+							refundedBucketId,
+							mappedBucketId: refundedBucketId,
+							isProcessed: true
+						});
+						importedCount++;
+					} else if (refundedBillId) {
+						// Create a negative-amount bill payment to reduce totalPaid
+						await createPayment({
+							billId: refundedBillId,
+							amount: -Math.abs(transactionData.transaction.amount),
+							paymentDate: transactionData.transaction.datePosted,
+							notes: `Refund: ${transactionData.transaction.memo || transactionData.transaction.payee}`
+						});
+
+						updateImportedTransaction(transactionId, {
+							isRefund: true,
+							refundedBillId,
+							mappedBillId: refundedBillId,
+							isProcessed: true
+						});
+						importedCount++;
+					}
 				}
 				// If action is 'skip', we just don't process it
 			}

@@ -64,11 +64,11 @@
 		</select>
 	</div>
 
-	<!-- Weekly/Biweekly: Day of Week -->
-	{#if frequency === 'weekly' || frequency === 'biweekly'}
+	<!-- Weekly only: Day of Week -->
+	{#if frequency === 'weekly'}
 		<div>
 			<label for="dayOfWeek" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-				What day of the week? <span class="text-red-500 dark:text-red-400">*</span>
+				Which day do you get paid? <span class="text-red-500 dark:text-red-400">*</span>
 			</label>
 			<select
 				id="dayOfWeek"
@@ -85,8 +85,8 @@
 	<!-- Biweekly: Start Date -->
 	{#if frequency === 'biweekly'}
 		<div>
-			<label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-				Next Payday <span class="text-red-500 dark:text-red-400">*</span>
+		<label for="startDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+				When is your next payday? <span class="text-red-500 dark:text-red-400">*</span>
 			</label>
 			<input
 				type="date"
@@ -96,7 +96,7 @@
 				class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
 			/>
 			<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-				Enter your next payday so we can calculate the biweekly schedule
+				We'll use this to anchor the every-other-week schedule
 			</p>
 		</div>
 	{/if}

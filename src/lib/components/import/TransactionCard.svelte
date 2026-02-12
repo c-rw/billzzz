@@ -1,19 +1,13 @@
 <script lang="ts">
 	import { FileText } from 'lucide-svelte';
 	import MappingActionSelector from './MappingActionSelector.svelte';
+	import type { MappingAction } from '$lib/types/import';
 	import BillMappingForm from './BillMappingForm.svelte';
 	import BucketMappingForm from './BucketMappingForm.svelte';
 	import TransferMappingForm from './TransferMappingForm.svelte';
+	import RefundMappingForm from './RefundMappingForm.svelte';
 	import type { Category, BillWithCategory } from '$lib/types/bill';
 	import { formatDateForInput } from '$lib/utils/dates';
-
-	type MappingAction =
-		| 'map_existing'
-		| 'create_new'
-		| 'map_to_bucket'
-		| 'create_new_bucket'
-		| 'mark_transfer'
-		| 'skip';
 
 	interface Transaction {
 		id: number;
@@ -21,7 +15,8 @@
 		amount: number;
 		datePosted: Date;
 		memo?: string | null;
-		isIncome: boolean;
+		transactionType: string; // Raw OFX TRNTYPE: 'DEBIT', 'CREDIT', 'XFER', etc.
+		isPotentialTransfer: boolean;
 	}
 
 	interface Bucket {
@@ -58,6 +53,8 @@
 		anchorDate?: string;
 		counterpartyAccountId?: number;
 		transferCategoryId?: number;
+		refundedBucketId?: number;
+		refundedBillId?: number;
 	}
 
 	let {
@@ -80,6 +77,9 @@
 		iconMap: Record<string, any>;
 	} = $props();
 
+	// Determine default action based on transaction type
+	const isCredit = $derived(transaction.transactionType === 'CREDIT');
+
 	function handleActionChange(action: MappingAction) {
 		if (action === 'create_new_bucket') {
 			mapping = {
@@ -94,6 +94,15 @@
 			mapping = { ...mapping, action };
 		}
 	}
+
+	// Badge label for transaction type
+	const typeBadge = $derived(
+		transaction.transactionType === 'CREDIT'
+			? { label: 'Credit / Income', cls: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' }
+			: transaction.transactionType === 'XFER'
+				? { label: 'Transfer', cls: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' }
+				: null
+	);
 </script>
 
 <div
@@ -105,13 +114,11 @@
 			<div class="flex items-start">
 				<FileText class="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3 mt-0.5" />
 				<div class="flex-1">
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-2 flex-wrap">
 						<p class="font-medium text-gray-900 dark:text-gray-100">{transaction.payee}</p>
-						{#if transaction.isIncome}
-							<span
-								class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-							>
-								Income
+						{#if typeBadge}
+							<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {typeBadge.cls}">
+								{typeBadge.label}
 							</span>
 						{/if}
 					</div>
@@ -121,8 +128,8 @@
 					{#if transaction.memo}
 						<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{transaction.memo}</p>
 					{/if}
-					<p class="text-lg font-semibold text-gray-900 dark:text-gray-100 mt-1">
-						${transaction.amount.toFixed(2)}
+					<p class="text-lg font-semibold mt-1 {isCredit ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}">
+						{isCredit ? '+' : '-'}${transaction.amount.toFixed(2)}
 					</p>
 				</div>
 			</div>
@@ -130,92 +137,103 @@
 
 		<!-- Action Selection -->
 		<div class="col-span-12 md:col-span-8">
-			{#if transaction.isIncome}
-				<!-- Income transactions are auto-processed -->
-				<div class="flex items-center justify-center h-full">
-					<p class="text-sm text-gray-600 dark:text-gray-400">
-						Income transactions are automatically processed and don't need to be mapped.
-					</p>
-				</div>
-			{:else}
-				<div class="space-y-3">
-					<!-- Action Type -->
-					<MappingActionSelector
+			<div class="space-y-3">
+				<!-- Action Type -->
+				<MappingActionSelector
+					{index}
+					selectedAction={mapping.action}
+					transactionType={transaction.transactionType}
+					onActionChange={handleActionChange}
+				/>
+
+				<!-- Map to Existing Bill -->
+				{#if mapping.action === 'map_existing'}
+					<select
+						bind:value={mapping.billId}
+						class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
+					>
+						<option value={undefined}>Select a bill...</option>
+						{#each existingBills as existingBill}
+							<option value={existingBill.id}>
+								{existingBill.name} (${existingBill.amount.toFixed(2)})
+							</option>
+						{/each}
+					</select>
+				{/if}
+
+				<!-- Map to Bucket -->
+				{#if mapping.action === 'map_to_bucket'}
+					<select
+						bind:value={mapping.bucketId}
+						class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
+					>
+						<option value={undefined}>Select a bucket...</option>
+						{#each buckets as bucket}
+							{@const remaining = bucket.currentCycle
+								? bucket.currentCycle.budgetAmount +
+									bucket.currentCycle.carryoverAmount -
+									bucket.currentCycle.totalSpent
+								: bucket.budgetAmount}
+							<option value={bucket.id}>
+								{bucket.name} (${remaining.toFixed(2)} available)
+							</option>
+						{/each}
+					</select>
+				{/if}
+
+				<!-- Create New Bill -->
+				{#if mapping.action === 'create_new'}
+					<BillMappingForm
 						{index}
-						selectedAction={mapping.action}
-						onActionChange={handleActionChange}
+						bind:billName={mapping.billName}
+						bind:dueDate={mapping.dueDate}
+						bind:categoryId={mapping.categoryId}
+						bind:isRecurring={mapping.isRecurring}
+						{categories}
 					/>
+				{/if}
 
-					<!-- Map to Existing Bill -->
-					{#if mapping.action === 'map_existing'}
-						<select
-							bind:value={mapping.billId}
-							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
-						>
-							<option value={undefined}>Select a bill...</option>
-							{#each existingBills as existingBill}
-								<option value={existingBill.id}>
-									{existingBill.name} (${existingBill.amount.toFixed(2)})
-								</option>
-							{/each}
-						</select>
-					{/if}
+				<!-- Create New Bucket -->
+				{#if mapping.action === 'create_new_bucket'}
+					<BucketMappingForm
+						{index}
+						bind:bucketName={mapping.bucketName}
+						bind:budgetAmount={mapping.budgetAmount}
+						bind:frequency={mapping.frequency}
+						bind:anchorDate={mapping.anchorDate}
+					/>
+				{/if}
 
-					<!-- Map to Bucket -->
-					{#if mapping.action === 'map_to_bucket'}
-						<select
-							bind:value={mapping.bucketId}
-							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
-						>
-							<option value={undefined}>Select a bucket...</option>
-							{#each buckets as bucket}
-								{@const remaining = bucket.currentCycle
-									? bucket.currentCycle.budgetAmount +
-										bucket.currentCycle.carryoverAmount -
-										bucket.currentCycle.totalSpent
-									: bucket.budgetAmount}
-								<option value={bucket.id}>
-									{bucket.name} (${remaining.toFixed(2)} available)
-								</option>
-							{/each}
-						</select>
-					{/if}
+				<!-- Mark as Transfer -->
+				{#if mapping.action === 'mark_transfer'}
+					<TransferMappingForm
+						{index}
+						bind:counterpartyAccountId={mapping.counterpartyAccountId}
+						bind:transferCategoryId={mapping.transferCategoryId}
+						{accounts}
+						{categories}
+					/>
+				{/if}
 
-					<!-- Create New Bill -->
-					{#if mapping.action === 'create_new'}
-						<BillMappingForm
-							{index}
-							bind:billName={mapping.billName}
-							bind:dueDate={mapping.dueDate}
-							bind:categoryId={mapping.categoryId}
-							bind:isRecurring={mapping.isRecurring}
-							{categories}
-						/>
-					{/if}
+				<!-- Mark as Refund -->
+				{#if mapping.action === 'mark_refund'}
+					<RefundMappingForm
+						{index}
+						bind:refundedBucketId={mapping.refundedBucketId}
+						bind:refundedBillId={mapping.refundedBillId}
+						refundAmount={transaction.amount}
+						{buckets}
+						{existingBills}
+					/>
+				{/if}
 
-					<!-- Create New Bucket -->
-					{#if mapping.action === 'create_new_bucket'}
-						<BucketMappingForm
-							{index}
-							bind:bucketName={mapping.bucketName}
-							bind:budgetAmount={mapping.budgetAmount}
-							bind:frequency={mapping.frequency}
-							bind:anchorDate={mapping.anchorDate}
-						/>
-					{/if}
-
-					<!-- Mark as Transfer -->
-					{#if mapping.action === 'mark_transfer'}
-						<TransferMappingForm
-							{index}
-							bind:counterpartyAccountId={mapping.counterpartyAccountId}
-							bind:transferCategoryId={mapping.transferCategoryId}
-							{accounts}
-							{categories}
-						/>
-					{/if}
-				</div>
-			{/if}
+				<!-- Mark as Income — no further input needed -->
+				{#if mapping.action === 'mark_income'}
+					<p class="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded px-2 py-1">
+						This transaction will be recorded as income and excluded from spending totals.
+					</p>
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>

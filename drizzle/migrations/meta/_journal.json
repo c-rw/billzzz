@@ -50,6 +50,13 @@
       "when": 1767192500000,
       "tag": "0006_accounts_and_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770000000000,
+      "tag": "0007_refunds_and_transfer_fixes",
+      "breakpoints": true
     }
   ]
 }

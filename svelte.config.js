@@ -10,7 +10,7 @@ const config = {
 	kit: {
 		// Using adapter-node for SQLite database support with persistent filesystem
 		adapter: adapter(),
-		// Disable CSRF origin checking for Docker environments
+		// Allow requests regardless of origin (needed for Docker/reverse-proxy environments)
 		csrf: {
 			checkOrigin: false
 		}
