@@ -335,7 +335,7 @@ export const actions: Actions = {
 								categoryId: categoryId || null,
 								isRecurring: isRecurring || false,
 								recurrenceType: recurrenceType || null,
-								recurrenceDay: (isRecurring && recurrenceType === 'monthly') ? billDueDate.getDate() : null,
+								recurrenceDay: (isRecurring && (recurrenceType === 'monthly' || recurrenceType === 'quarterly')) ? billDueDate.getDate() : null,
 								isPaid: shouldMarkAsPaid,
 								isAutopay: false,
 								notes: null,

@@ -17,6 +17,8 @@ export function getRecurrenceDescription(
 			return recurrenceDay ? `Monthly on day ${recurrenceDay}` : 'Every month';
 		case 'quarterly':
 			return recurrenceDay ? `Quarterly on day ${recurrenceDay}` : 'Every 3 months';
+		case 'semi-annual':
+			return 'Every 6 months';
 		case 'yearly':
 			return 'Every year';
 		default:

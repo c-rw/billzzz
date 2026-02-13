@@ -1,6 +1,6 @@
 import type { Bill, Category, BillCycle, BillPayment } from '$lib/server/db/schema';
 
-export type RecurrenceType = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly';
+export type RecurrenceType = 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semi-annual' | 'yearly';
 
 export type BillStatus = 'paid' | 'upcoming' | 'overdue';
 

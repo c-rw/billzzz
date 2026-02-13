@@ -71,6 +71,9 @@ function getCycleEnd(recurrenceType: RecurrenceType, cycleStart: Date): Date {
 		case 'quarterly':
 			end = addQuarters(cycleStart, 1);
 			break;
+		case 'semi-annual':
+			end = addMonths(cycleStart, 6);
+			break;
 		case 'yearly':
 			end = addYears(cycleStart, 1);
 			break;
@@ -93,6 +96,8 @@ function getNextCycleStart(recurrenceType: RecurrenceType, currentStart: Date): 
 			return addMonths(currentStart, 1);
 		case 'quarterly':
 			return addQuarters(currentStart, 1);
+		case 'semi-annual':
+			return addMonths(currentStart, 6);
 		case 'yearly':
 			return addYears(currentStart, 1);
 	}
@@ -111,6 +116,8 @@ function getPreviousCycleStart(recurrenceType: RecurrenceType, currentStart: Dat
 			return addMonths(currentStart, -1);
 		case 'quarterly':
 			return addQuarters(currentStart, -1);
+		case 'semi-annual':
+			return addMonths(currentStart, -6);
 		case 'yearly':
 			return addYears(currentStart, -1);
 	}
