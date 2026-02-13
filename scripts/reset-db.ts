@@ -53,7 +53,7 @@ db.exec(`
 		payment_link TEXT,
 		category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
 		is_recurring INTEGER NOT NULL DEFAULT 0,
-		recurrence_type TEXT CHECK(recurrence_type IN ('weekly', 'biweekly', 'monthly', 'quarterly', 'yearly')),
+		recurrence_type TEXT CHECK(recurrence_type IN ('weekly', 'biweekly', 'monthly', 'quarterly', 'semi-annual', 'yearly')),
 		recurrence_day INTEGER,
 		is_paid INTEGER NOT NULL DEFAULT 0,
 		notes TEXT,

@@ -47,7 +47,18 @@
 	$effect(() => {
 		name = initialData?.name || '';
 		amount = initialData?.amount || 0;
-		dueDate = initialData?.dueDate ? format(initialData.dueDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+		if (initialData?.dueDate) {
+			// Use UTC methods to format the date, since dates are stored as UTC midnight in the DB.
+			// Using local-time methods (like date-fns format) causes an off-by-one shift for
+			// timezones behind UTC (e.g. UTC-5 would show Feb 11 for a UTC midnight Feb 12 date).
+			const d = initialData.dueDate;
+			const y = d.getUTCFullYear();
+			const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+			const day = String(d.getUTCDate()).padStart(2, '0');
+			dueDate = `${y}-${m}-${day}`;
+		} else {
+			dueDate = format(new Date(), 'yyyy-MM-dd');
+		}
 		paymentLink = initialData?.paymentLink || '';
 		categoryId = initialData?.categoryId || null;
 		isRecurring = initialData?.isRecurring || false;
@@ -55,6 +66,23 @@
 		recurrenceDay = initialData?.recurrenceDay || null;
 		isAutopay = initialData?.isAutopay || false;
 		notes = initialData?.notes || '';
+	});
+
+	// When switching to monthly or quarterly, auto-populate the day-of-month from the
+	// due date field (which reflects the last transaction date).
+	let prevRecurrenceType = $state<RecurrenceType | null>(null);
+	$effect(() => {
+		const isMonthly = recurrenceType === 'monthly' || recurrenceType === 'quarterly';
+		const wasMonthly = prevRecurrenceType === 'monthly' || prevRecurrenceType === 'quarterly';
+		if (isMonthly && !wasMonthly) {
+			// Parse the day from the current dueDate string (YYYY-MM-DD), using the UTC day
+			// to stay consistent with how dates are stored and displayed.
+			const parts = dueDate.split('-');
+			if (parts.length === 3) {
+				recurrenceDay = parseInt(parts[2], 10) || null;
+			}
+		}
+		prevRecurrenceType = recurrenceType;
 	});
 
 	async function handleSubmit(e: Event) {
@@ -207,8 +235,9 @@
 					>
 						<option value="weekly">Weekly</option>
 						<option value="biweekly">Every 2 Weeks</option>
-						<option value="monthly">Monthly</option>
+					<option value="monthly">Monthly</option>
 						<option value="quarterly">Quarterly</option>
+						<option value="semi-annual">Every 6 Months</option>
 						<option value="yearly">Yearly</option>
 					</select>
 				</div>

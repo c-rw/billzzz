@@ -50,6 +50,10 @@ export function calculateNextDueDate(
 			}
 			break;
 
+		case 'semi-annual':
+			nextDate = addMonths(currentDueDate, 6);
+			break;
+
 		case 'yearly':
 			nextDate = addYears(currentDueDate, 1);
 			break;

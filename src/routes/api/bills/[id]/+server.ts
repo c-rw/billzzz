@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getBillById, updateBill, deleteBill, markBillAsPaid } from '$lib/server/db/queries';
-import { createPayment } from '$lib/server/db/bill-queries';
+import { createPayment, getPaymentsForBill } from '$lib/server/db/bill-queries';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
 import { parseLocalDate } from '$lib/utils/dates';
 
@@ -27,6 +27,12 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
 		const id = parseInt(params.id);
 		const data = await request.json();
+
+		// Capture existing bill before update so we can detect recurrenceType changes
+		const existingBill = getBillById(id);
+		if (!existingBill) {
+			return json({ error: 'Bill not found' }, { status: 404 });
+		}
 
 		// Handle both ISO timestamp and YYYY-MM-DD formats for dueDate
 		let parsedDueDate: Date | undefined;
@@ -64,10 +70,40 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			(key) => updateData[key] === undefined && delete updateData[key]
 		);
 
-		const bill = updateBill(id, updateData);
+		let bill = updateBill(id, updateData);
 
 		if (!bill) {
 			return json({ error: 'Bill not found' }, { status: 404 });
+		}
+
+		// If the recurrence type changed and the user didn't explicitly pick a new due date,
+		// advance the due date by one period of the NEW cadence so the next occurrence reflects
+		// the change (e.g. monthly → yearly: March 12 2026 → March 12 2027).
+		const recurrenceTypeChanged = data.recurrenceType && data.recurrenceType !== existingBill.recurrenceType;
+		const existingDateStr = existingBill.dueDate.toISOString().split('T')[0];
+		const submittedDateStr = parsedDueDate ? parsedDueDate.toISOString().split('T')[0] : null;
+		const dueDateUnchanged = !submittedDateStr || submittedDateStr === existingDateStr;
+
+		if (recurrenceTypeChanged && dueDateUnchanged && bill.isRecurring && bill.recurrenceType) {
+			// Use the most recent payment date as the anchor so the next due date
+			// reflects when the bill was actually last paid (e.g. last paid Feb 12 +
+			// yearly cadence = Feb 12 next year), falling back to the existing due date.
+			const payments = await getPaymentsForBill(id);
+			const anchorDate = payments.length > 0 ? payments[0].paymentDate : existingBill.dueDate;
+			const nextDueDate = calculateNextDueDate(
+				anchorDate,
+				bill.recurrenceType as any,
+				bill.recurrenceDay
+			);
+			bill = updateBill(id, { dueDate: nextDueDate }) ?? bill;
+		} else if (bill.isRecurring && bill.recurrenceType && bill.dueDate < new Date()) {
+			// Due date is in the past (and recurrence type didn't change) — advance one period.
+			const nextDueDate = calculateNextDueDate(
+				bill.dueDate,
+				bill.recurrenceType as any,
+				bill.recurrenceDay
+			);
+			bill = updateBill(id, { dueDate: nextDueDate }) ?? bill;
 		}
 
 		return json(bill);
