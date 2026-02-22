@@ -3,6 +3,7 @@ import { bills, buckets, debts, paydaySettings, userPreferences, importedTransac
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
 import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays } from 'date-fns';
+import { utcDateToLocal } from '$lib/utils/dates';
 
 export interface CashFlowDataPoint {
 	date: Date;
@@ -220,8 +221,9 @@ async function projectCashFlow(
 
 		if (bill.isRecurring && bill.recurrenceType) {
 			// For recurring bills, calculate all occurrences in the projection period
-			// Start with the bill's original due date
-			let nextOccurrence = startOfDay(bill.dueDate);
+			// Start with the bill's original due date (converted to local midnight so keys
+			// match the local-midnight keys produced by the day-loop below).
+			let nextOccurrence = startOfDay(utcDateToLocal(bill.dueDate));
 
 			// Fast-forward to the first occurrence on or after today
 			while (nextOccurrence < today) {
@@ -273,7 +275,7 @@ async function projectCashFlow(
 			}
 		} else {
 			// For non-recurring bills, only include if due within projection period
-			const billDue = startOfDay(bill.dueDate);
+			const billDue = startOfDay(utcDateToLocal(bill.dueDate));
 			if (billDue >= today && billDue <= endDate && !bill.isPaid) {
 				const dateKey = billDue.toISOString();
 				if (!billDueDates.has(dateKey)) {

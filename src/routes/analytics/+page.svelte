@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 	import { format, formatDistanceToNow, differenceInDays } from 'date-fns';
+	import { utcDateToLocal } from '$lib/utils/dates';
 	import CashFlowChart from '$lib/components/CashFlowChart.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import BalanceInputForm from '$lib/components/BalanceInputForm.svelte';
@@ -163,8 +164,8 @@
 				<div class="min-w-[280px] snap-center shrink-0">
 					<MetricCard
 						title="Next Payday"
-						value={format(analytics.metrics.nextPayday, 'MMM d')}
-						subtitle={format(analytics.metrics.nextPayday, 'yyyy')}
+						value={format(utcDateToLocal(analytics.metrics.nextPayday), 'MMM d')}
+						subtitle={format(utcDateToLocal(analytics.metrics.nextPayday), 'yyyy')}
 						variant="default"
 					/>
 				</div>
@@ -206,16 +207,16 @@
 				subtitle="Bills + Buckets + Debts"
 				variant="default"
 			/>
-			{#if analytics.metrics.nextPayday}
-				<MetricCard
-					title="Next Payday"
-					value={format(analytics.metrics.nextPayday, 'MMM d')}
-					subtitle={format(analytics.metrics.nextPayday, 'yyyy')}
-					variant="default"
-				/>
-			{/if}
-		</div>
+		{#if analytics.metrics.nextPayday}
+			<MetricCard
+				title="Next Payday"
+				value={format(utcDateToLocal(analytics.metrics.nextPayday), 'MMM d')}
+				subtitle={format(utcDateToLocal(analytics.metrics.nextPayday), 'yyyy')}
+				variant="default"
+			/>
+		{/if}
 	</div>
+</div>
 
 	<!-- Cash Flow Projection Chart -->
 	{#if !needsSetup}

@@ -12,6 +12,7 @@ import {
 	isAfter,
 	isWithinInterval
 } from 'date-fns';
+import { utcDateToLocal } from '$lib/utils/dates';
 
 /**
  * Calculate the cycle dates for a bill based on recurrence pattern and due date
@@ -24,12 +25,12 @@ export function calculateBillCycleDates(
 	// For non-recurring bills, create a single cycle
 	if (!bill.isRecurring || !bill.recurrenceType) {
 		return {
-			startDate: startOfDay(bill.createdAt),
-			endDate: endOfDay(bill.dueDate)
+			startDate: startOfDay(utcDateToLocal(bill.createdAt)),
+			endDate: endOfDay(utcDateToLocal(bill.dueDate))
 		};
 	}
 
-	const dueDate = startOfDay(bill.dueDate);
+	const dueDate = startOfDay(utcDateToLocal(bill.dueDate));
 	const ref = startOfDay(referenceDate);
 
 	let cycleStart = dueDate;
@@ -144,8 +145,8 @@ export function generateBillCyclesBetween(
 	// For non-recurring bills, return single cycle
 	if (!bill.isRecurring || !bill.recurrenceType) {
 		return [{
-			startDate: startOfDay(bill.createdAt),
-			endDate: endOfDay(bill.dueDate)
+			startDate: startOfDay(utcDateToLocal(bill.createdAt)),
+			endDate: endOfDay(utcDateToLocal(bill.dueDate))
 		}];
 	}
 

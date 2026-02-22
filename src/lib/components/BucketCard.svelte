@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { BucketWithCycle } from '$lib/types/bucket';
 	import { format } from 'date-fns';
+	import { utcDateToLocal } from '$lib/utils/dates';
 	import {
 		ShoppingCart,
 		Fuel,
@@ -120,7 +121,7 @@
 
 		{#if currentCycle}
 			<div class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-				{format(currentCycle.startDate, 'MMM d')} – {format(currentCycle.endDate, 'MMM d, yyyy')}
+				{format(utcDateToLocal(currentCycle.startDate), 'MMM d')} – {format(utcDateToLocal(currentCycle.endDate), 'MMM d, yyyy')}
 			</div>
 		{/if}
 

@@ -4,6 +4,7 @@
 	import CategoryBadge from './CategoryBadge.svelte';
 	import { format } from 'date-fns';
 	import { getRecurrenceDescription } from '$lib/utils/recurrence';
+	import { utcDateToLocal } from '$lib/utils/dates';
 	import { goto } from '$app/navigation';
 
 	interface Props {
@@ -104,7 +105,7 @@
 			</div>
 			<div>
 				<span class="text-gray-500 dark:text-gray-400">Due:</span>
-				<span class="ml-2 font-medium text-gray-900 dark:text-gray-100">{format(bill.dueDate, 'MMM d, yyyy')}</span>
+				<span class="ml-2 font-medium text-gray-900 dark:text-gray-100">			{format(utcDateToLocal(bill.dueDate), 'MMM d, yyyy')}</span>
 			</div>
 		</div>
 

@@ -9,6 +9,7 @@
 	import type { BillWithCategory } from '$lib/types/bill';
 	import { invalidateAll } from '$app/navigation';
 	import { format } from 'date-fns';
+	import { utcDateToLocal } from '$lib/utils/dates';
 
 	let { data }: { data: PageData } = $props();
 
@@ -292,7 +293,7 @@
 			<div class="mb-6 rounded-lg border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-4 md:p-6 shadow-sm">
 				<div class="flex items-start justify-between">
 					<div class="flex-1">
-						<h3 class="text-base md:text-lg font-semibold text-blue-900 dark:text-blue-100">Next Payday: {format(data.stats.nextPayday, 'MMM d, yyyy')}</h3>
+						<h3 class="text-base md:text-lg font-semibold text-blue-900 dark:text-blue-100">Next Payday: {format(utcDateToLocal(data.stats.nextPayday), 'MMM d, yyyy')}</h3>
 						<div class="mt-4 space-y-4 md:space-y-0 md:grid md:gap-4 md:grid-cols-2">
 							<div>
 								<p class="text-sm text-blue-700 dark:text-blue-300">Due Before Next Payday</p>
@@ -305,7 +306,7 @@
 							</div>
 							{#if data.stats.followingPayday}
 								<div>
-									<p class="text-sm text-blue-700 dark:text-blue-300">Due Before Following Payday ({format(data.stats.followingPayday, 'MMM d')})</p>
+									<p class="text-sm text-blue-700 dark:text-blue-300">Due Before Following Payday ({format(utcDateToLocal(data.stats.followingPayday), 'MMM d')})</p>
 									<div class="mt-1 flex items-baseline gap-2">
 										<p class="text-2xl md:text-3xl font-bold text-blue-900 dark:text-blue-100">
 											${data.stats.amountDueBeforeFollowingPayday.toFixed(2)}

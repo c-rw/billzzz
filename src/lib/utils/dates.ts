@@ -1,6 +1,7 @@
 /**
  * Date utility functions to handle timezone-safe date operations
  */
+import { format } from 'date-fns';
 
 /**
  * Parses a date-only string (YYYY-MM-DD) as local midnight instead of UTC midnight.
@@ -63,4 +64,37 @@ export function formatDateForInput(date: Date): string {
 	const month = String(date.getMonth() + 1).padStart(2, '0');
 	const day = String(date.getDate()).padStart(2, '0');
 	return `${year}-${month}-${day}`;
+}
+
+/**
+ * Converts a UTC-midnight Date (as stored in the DB) to a local-midnight Date
+ * representing the same calendar day.
+ *
+ * The DB stores all dates as UTC midnight (e.g. 2025-02-12T00:00:00Z). In
+ * negative-UTC timezones (all US zones) that instant is the previous evening
+ * locally, so every date-fns function that operates in local time would read
+ * the wrong calendar day. Reading the UTC components and rebuilding the Date
+ * at local midnight fixes this for all downstream consumers.
+ *
+ * @param date - A Date object whose UTC date components represent the intended calendar day
+ * @returns A new Date set to local midnight of that same calendar day
+ *
+ * @example
+ * // DB returns 2025-02-12T00:00:00Z; in UTC-5 that is Feb 11 locally.
+ * utcDateToLocal(dbDate) // => Feb 12 00:00:00 local time
+ */
+export function utcDateToLocal(date: Date): Date {
+	return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+/**
+ * Formats a UTC-midnight DB date using date-fns format() without a timezone shift.
+ * Equivalent to format(utcDateToLocal(date), formatStr).
+ *
+ * @param date - A Date from the DB (UTC midnight)
+ * @param formatStr - A date-fns format string, e.g. 'MMM d, yyyy'
+ * @returns Formatted date string for the correct calendar day
+ */
+export function formatUTCDate(date: Date, formatStr: string): string {
+	return format(utcDateToLocal(date), formatStr);
 }
