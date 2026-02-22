@@ -18,6 +18,7 @@ import {
 import { eq, and, gte, lte, desc, asc, like, or, sql } from 'drizzle-orm';
 import type { BillFilters, BillSort } from '$lib/types/bill';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
+import { utcDateToLocal } from '$lib/utils/dates';
 
 // ===== ACCOUNT QUERIES =====
 
@@ -278,22 +279,26 @@ export function markBillAsPaid(id: number, paid: boolean) {
 
 export function getDashboardStats() {
 	const now = new Date();
-	const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-	const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+	// Use local-midnight boundaries so "overdue" and "upcoming" align with the
+	// user's calendar day, not UTC midnight (which is up to 8h off for US timezones).
+	const todayLocal = utcDateToLocal(now);
+	const sevenDaysFromNow = new Date(todayLocal.getTime() + 7 * 24 * 60 * 60 * 1000);
+	const thirtyDaysFromNow = new Date(todayLocal.getTime() + 30 * 24 * 60 * 60 * 1000);
 
 	const allBills = db.select().from(bills).all();
 
 	const totalBills = allBills.length;
 	const paidBills = allBills.filter((b) => b.isPaid).length;
 	const unpaidBills = totalBills - paidBills;
-	const overdueBills = allBills.filter((b) => !b.isPaid && b.dueDate <= now).length;
+	// Compare local-midnight due date against local-midnight today
+	const overdueBills = allBills.filter((b) => !b.isPaid && utcDateToLocal(b.dueDate) < todayLocal).length;
 	const upcomingBills = allBills.filter(
-		(b) => !b.isPaid && b.dueDate > now && b.dueDate <= sevenDaysFromNow
+		(b) => !b.isPaid && utcDateToLocal(b.dueDate) >= todayLocal && utcDateToLocal(b.dueDate) <= sevenDaysFromNow
 	).length;
 
 	// Calculate total amount due in next 30 days (including overdue)
 	const totalAmount = allBills
-		.filter((b) => !b.isPaid && b.dueDate <= thirtyDaysFromNow)
+		.filter((b) => !b.isPaid && utcDateToLocal(b.dueDate) <= thirtyDaysFromNow)
 		.reduce((sum, b) => sum + b.amount, 0);
 
 	// Get payday settings if configured
@@ -310,17 +315,17 @@ export function getDashboardStats() {
 			nextPayday = calculateNextPayday(paydayConfig, now);
 			followingPayday = calculateFollowingPayday(paydayConfig, now);
 
-			// Count bills due before next payday
-			const billsBeforeNextPayday = allBills.filter(
-				(b) => !b.isPaid && b.dueDate <= nextPayday!
-			);
-			dueBeforeNextPayday = billsBeforeNextPayday.length;
-			amountDueBeforeNextPayday = billsBeforeNextPayday.reduce((sum, b) => sum + b.amount, 0);
+		// Count bills due before next payday (compare local-midnight on both sides)
+		const billsBeforeNextPayday = allBills.filter(
+			(b) => !b.isPaid && utcDateToLocal(b.dueDate) <= nextPayday!
+		);
+		dueBeforeNextPayday = billsBeforeNextPayday.length;
+		amountDueBeforeNextPayday = billsBeforeNextPayday.reduce((sum, b) => sum + b.amount, 0);
 
-			// Count bills due before following payday
-			const billsBeforeFollowingPayday = allBills.filter(
-				(b) => !b.isPaid && b.dueDate <= followingPayday!
-			);
+		// Count bills due before following payday
+		const billsBeforeFollowingPayday = allBills.filter(
+			(b) => !b.isPaid && utcDateToLocal(b.dueDate) <= followingPayday!
+		);
 			dueBeforeFollowingPayday = billsBeforeFollowingPayday.length;
 			amountDueBeforeFollowingPayday = billsBeforeFollowingPayday.reduce((sum, b) => sum + b.amount, 0);
 		} catch (error) {

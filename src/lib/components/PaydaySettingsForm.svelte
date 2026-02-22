@@ -2,6 +2,7 @@
 	import Button from '$lib/components/Button.svelte';
 	import type { PaydaySettings } from '$lib/server/db/schema';
 	import { format } from 'date-fns';
+	import { utcDateToLocal } from '$lib/utils/dates';
 
 	interface Props {
 		initialData?: PaydaySettings | null;
@@ -18,7 +19,7 @@
 	let dayOfMonth = $state(initialData?.dayOfMonth ?? 1);
 	let dayOfMonth2 = $state(initialData?.dayOfMonth2 ?? 15);
 	let startDate = $state(
-		initialData?.startDate ? format(initialData.startDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
+		initialData?.startDate ? format(utcDateToLocal(initialData.startDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
 	);
 	let isSubmitting = $state(false);
 

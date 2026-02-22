@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { format } from 'date-fns';
+	import { utcDateToLocal } from '$lib/utils/dates';
 
 	interface CurrentCycle {
 		startingBalance: number;
@@ -53,7 +54,7 @@
 	<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
 		<p class="text-sm text-gray-500 dark:text-gray-400">Cycle Period</p>
 		<p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-			{format(currentCycle.startDate, 'MMM d')} – {format(currentCycle.endDate, 'MMM d, yyyy')}
+			{format(utcDateToLocal(currentCycle.startDate), 'MMM d')} – {format(utcDateToLocal(currentCycle.endDate), 'MMM d, yyyy')}
 		</p>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400 capitalize">{frequency}</p>
 	</div>

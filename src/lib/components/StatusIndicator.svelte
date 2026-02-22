@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatDistanceToNow, isPast, differenceInDays } from 'date-fns';
+	import { utcDateToLocal } from '$lib/utils/dates';
 
 	interface Props {
 		dueDate: Date;
@@ -8,11 +9,15 @@
 
 	let { dueDate, isPaid }: Props = $props();
 
+	// Convert the UTC-midnight DB date to local midnight so all date-fns
+	// comparisons operate on the correct calendar day.
+	const localDueDate = $derived(utcDateToLocal(dueDate));
+
 	const status = $derived.by(() => {
 		if (isPaid) return 'paid';
-		if (isPast(dueDate)) return 'overdue';
+		if (isPast(localDueDate)) return 'overdue';
 
-		const daysUntilDue = differenceInDays(dueDate, new Date());
+		const daysUntilDue = differenceInDays(localDueDate, new Date());
 		if (daysUntilDue <= 7) return 'upcoming';
 
 		return 'pending';
@@ -27,8 +32,8 @@
 
 	const statusText = $derived.by(() => {
 		if (isPaid) return 'Paid';
-		if (status === 'overdue') return `Overdue ${formatDistanceToNow(dueDate)}`;
-		return `Due ${formatDistanceToNow(dueDate, { addSuffix: true })}`;
+		if (status === 'overdue') return `Overdue ${formatDistanceToNow(localDueDate)}`;
+		return `Due ${formatDistanceToNow(localDueDate, { addSuffix: true })}`;
 	});
 </script>
 
