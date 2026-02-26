@@ -120,8 +120,25 @@
 		</div>
 
 		{#if currentCycle}
-			<div class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-				{format(utcDateToLocal(currentCycle.startDate), 'MMM d')} – {format(utcDateToLocal(currentCycle.endDate), 'MMM d, yyyy')}
+			<div class="mb-3 flex items-center justify-between text-xs">
+				<span class="text-gray-500 dark:text-gray-400">
+					{format(utcDateToLocal(currentCycle.startDate), 'MMM d')} – {format(utcDateToLocal(currentCycle.endDate), 'MMM d, yyyy')}
+				</span>
+				<div class="flex items-center gap-1.5">
+					{#if remaining < 0}
+						<span class="rounded bg-red-100 px-1.5 py-0.5 font-medium text-red-700 dark:bg-red-950 dark:text-red-400">Over</span>
+					{/if}
+					{#if currentCycle.carryoverAmount !== 0}
+						<span class="rounded px-1.5 py-0.5 font-medium {currentCycle.carryoverAmount > 0 ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400'}">
+							{currentCycle.carryoverAmount > 0 ? '+' : ''}{currentCycle.carryoverAmount.toFixed(0)} carry
+						</span>
+					{/if}
+					{#if currentCycle.allocatedAmount > 0}
+						<span class="rounded bg-blue-100 px-1.5 py-0.5 font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-400">
+							+${currentCycle.allocatedAmount.toFixed(0)} planned
+						</span>
+					{/if}
+				</div>
 			</div>
 		{/if}
 
@@ -131,9 +148,6 @@
 				<span class="text-2xl font-bold {statusColor}">${Math.abs(remaining).toFixed(2)}</span>
 				<span class="text-sm text-gray-500 dark:text-gray-400">remaining</span>
 			</div>
-			{#if remaining < 0}
-				<p class="mt-1 text-xs text-red-600">Overbudget</p>
-			{/if}
 		</div>
 
 		<!-- Progress Bar -->
@@ -157,17 +171,6 @@
 				<span class="ml-2 font-medium text-gray-900 dark:text-gray-100">${startingBalance.toFixed(2)}</span>
 			</div>
 		</div>
-
-		{#if currentCycle && currentCycle.carryoverAmount !== 0}
-			<div class="mt-2 text-xs {currentCycle.carryoverAmount > 0 ? 'text-green-600' : 'text-red-600'}">
-				{currentCycle.carryoverAmount > 0 ? '+' : ''}{currentCycle.carryoverAmount.toFixed(2)} carried over
-			</div>
-		{/if}
-		{#if currentCycle && currentCycle.allocatedAmount > 0}
-			<div class="mt-1 text-xs text-blue-600 dark:text-blue-400">
-				+${currentCycle.allocatedAmount.toFixed(2)} planned
-			</div>
-		{/if}
 	</div>
 
 	<!-- Action Buttons -->

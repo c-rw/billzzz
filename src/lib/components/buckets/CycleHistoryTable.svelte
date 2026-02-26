@@ -104,7 +104,7 @@
 						<td
 							class="whitespace-nowrap px-6 py-4 text-right text-sm {cycle.allocatedAmount > 0
 								? 'text-blue-600 dark:text-blue-400'
-								: 'text-gray-500 dark:text-gray-400'}"
+								: 'text-gray-400 dark:text-gray-500'}"
 						>
 							{cycle.allocatedAmount > 0 ? `+${cycle.allocatedAmount.toFixed(2)}` : '—'}
 						</td>
