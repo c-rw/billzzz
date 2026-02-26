@@ -8,6 +8,8 @@ export interface DebtWithDetails extends Debt {
 	linkedBill?: Bill | null;
 	payments?: DebtPayment[];
 	totalPaid?: number;
+	// Total overpayment amount auto-applied from bill payments
+	totalOverpaymentApplied?: number;
 }
 
 // Monthly payment breakdown for a single debt

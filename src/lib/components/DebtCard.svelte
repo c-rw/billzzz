@@ -18,6 +18,8 @@
 	);
 
 	const monthlyInterest = $derived((debt.currentBalance * (debt.interestRate / 100)) / 12);
+
+	const hasOverpayments = $derived((debt.totalOverpaymentApplied ?? 0) > 0);
 </script>
 
 <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow dark:bg-gray-800">
@@ -103,6 +105,24 @@
 					</div>
 					<span class="text-sm font-bold text-blue-900 dark:text-blue-100">{format(payoffDate, 'MMM yyyy')}</span>
 				</div>
+			</div>
+		{/if}
+
+		<!-- Bill Overpayment Applied -->
+		{#if hasOverpayments}
+			<div class="bg-green-50 dark:bg-green-950 rounded-lg p-3 border border-green-200 dark:border-green-800">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+						</svg>
+						<span class="text-xs font-medium text-green-700 dark:text-green-300">Extra Payments Applied</span>
+					</div>
+					<span class="text-sm font-bold text-green-900 dark:text-green-100">${(debt.totalOverpaymentApplied ?? 0).toFixed(2)}</span>
+				</div>
+				<p class="text-xs text-green-600 dark:text-green-400 mt-1">
+					Auto-detected from bill overpayments
+				</p>
 			</div>
 		{/if}
 

@@ -2,7 +2,7 @@ import { db } from './index';
 import { debts, debtPayments, debtStrategySettings, bills } from './schema';
 import type { NewDebt, NewDebtPayment, NewDebtStrategySettings } from './schema';
 import type { DebtWithDetails, DebtSummary } from '$lib/types/debt';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
 
 /**
  * Get all debts
@@ -49,10 +49,16 @@ export function getDebtsWithDetails(): DebtWithDetails[] {
 		const payments = paymentsByDebt[debt.id] || [];
 		const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 
+		// Calculate total overpayment applied from bill payments (auto-created entries)
+		const totalOverpaymentApplied = payments
+			.filter((p) => p.sourceBillCycleId !== null)
+			.reduce((sum, p) => sum + p.amount, 0);
+
 		return {
 			...debt,
 			payments,
-			totalPaid
+			totalPaid,
+			totalOverpaymentApplied
 		};
 	});
 }
@@ -82,11 +88,16 @@ export function getDebtById(id: number): DebtWithDetails | undefined {
 
 	const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 
+	const totalOverpaymentApplied = payments
+		.filter((p) => p.sourceBillCycleId !== null)
+		.reduce((sum, p) => sum + p.amount, 0);
+
 	return {
 		...result.debt,
 		linkedBill: result.linkedBill,
 		payments,
-		totalPaid
+		totalPaid,
+		totalOverpaymentApplied
 	};
 }
 
@@ -270,4 +281,51 @@ export function getDebtSummary(): DebtSummary {
 		totalPaid,
 		percentPaid
 	};
+}
+
+/**
+ * Find the debt linked to a specific bill (reverse lookup).
+ * A bill can have at most one debt pointing to it.
+ */
+export function getDebtByLinkedBillId(billId: number) {
+	return db
+		.select()
+		.from(debts)
+		.where(eq(debts.linkedBillId, billId))
+		.get();
+}
+
+/**
+ * Sync a debt's minimum payment to its linked bill's amount.
+ * Called after the debt's minimumPayment changes.
+ */
+export function syncDebtMinimumToBill(debtId: number) {
+	const debt = db.select().from(debts).where(eq(debts.id, debtId)).get();
+	if (!debt || !debt.linkedBillId) return;
+
+	db.update(bills)
+		.set({
+			amount: debt.minimumPayment,
+			updatedAt: new Date()
+		})
+		.where(eq(bills.id, debt.linkedBillId))
+		.run();
+}
+
+/**
+ * Get auto-created debt payments (those with a sourceBillCycleId) for a given debt.
+ * Used to display overpayment info on the UI.
+ */
+export function getAutoDebtPayments(debtId: number) {
+	return db
+		.select()
+		.from(debtPayments)
+		.where(
+			and(
+				eq(debtPayments.debtId, debtId),
+				isNotNull(debtPayments.sourceBillCycleId)
+			)
+		)
+		.orderBy(desc(debtPayments.paymentDate))
+		.all();
 }

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getAllDebts, getDebtsWithDetails, createDebt } from '$lib/server/db/debt-queries';
+import { getAllDebts, getDebtsWithDetails, createDebt, syncDebtMinimumToBill } from '$lib/server/db/debt-queries';
 
 export const GET: RequestHandler = async ({ url }) => {
 	try {
@@ -53,6 +53,11 @@ export const POST: RequestHandler = async ({ request }) => {
 			priority: data.priority || null,
 			notes: data.notes?.trim() || null
 		});
+
+		// Sync minimum payment to linked bill on creation
+		if (debt.linkedBillId) {
+			syncDebtMinimumToBill(debt.id);
+		}
 
 		return json(debt, { status: 201 });
 	} catch (error) {

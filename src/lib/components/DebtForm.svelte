@@ -168,6 +168,11 @@
 					class="block w-full pl-7 rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
 				/>
 			</div>
+			{#if linkedBillId !== null}
+				<p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
+					Changing the minimum payment will automatically update the linked bill's amount to match.
+				</p>
+			{/if}
 		</div>
 	</div>
 
@@ -186,7 +191,7 @@
 			{/each}
 		</select>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-			Link this debt to a recurring bill for automatic tracking. The bill amount will be used for cash flow projections instead of the minimum payment.
+			Link this debt to a recurring bill for automatic tracking. The bill's amount will be kept in sync with the minimum payment, and overpayments on the bill will automatically reduce the debt balance.
 		</p>
 		{#if linkedBillId !== null && minimumPayment > 0}
 			{@const linkedBill = bills.find(b => b.id === linkedBillId)}
