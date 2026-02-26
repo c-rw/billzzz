@@ -1,10 +1,12 @@
 import { db } from './index';
-import { bills, buckets, debts, paydaySettings, userPreferences, importedTransactions } from './schema';
+import { bills, buckets, debts, paydaySettings, userPreferences, importedTransactions, debtStrategySettings } from './schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
 import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays, setDate, getDaysInMonth } from 'date-fns';
 import { utcDateToLocal } from '$lib/utils/dates';
 import { getAccountsWithBalances } from './account-queries';
+import { sortBySnowball, sortByAvalanche, sortByCustom } from '../utils/debt-calculator';
+import type { Debt } from '$lib/types/debt';
 
 export interface CashFlowDataPoint {
 	date: Date;
@@ -131,9 +133,13 @@ async function calculateMonthlyObligations() {
 	}
 
 	// Calculate monthly debt payments (exclude debts linked to bills to avoid double-counting)
-	const monthlyDebts = allDebts
-		.filter(debt => debt.linkedBillId === null)
-		.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+	const unlinkedDebts = allDebts.filter(debt => debt.linkedBillId === null);
+	const monthlyDebtMinimums = unlinkedDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
+
+	// Load debt strategy settings to include extra payment
+	const strategyRow = await db.select().from(debtStrategySettings).limit(1);
+	const extraMonthlyPayment = strategyRow.length > 0 ? strategyRow[0].extraMonthlyPayment : 0;
+	const monthlyDebts = monthlyDebtMinimums + extraMonthlyPayment;
 
 	return {
 		totalMonthlyBills: monthlyBills,
@@ -159,6 +165,30 @@ async function projectCashFlow(
 	const allBuckets = await db.select().from(buckets).where(eq(buckets.isDeleted, false));
 	const allDebts = await db.select().from(debts);
 	const paydayConfig = await db.select().from(paydaySettings).limit(1);
+	const strategyRow = await db.select().from(debtStrategySettings).limit(1);
+
+	// Debt strategy settings for distributing extra payment
+	const strategy = strategyRow.length > 0 ? strategyRow[0].strategy : 'snowball';
+	const extraMonthlyPayment = strategyRow.length > 0 ? strategyRow[0].extraMonthlyPayment : 0;
+	const customPriorityOrder: number[] = strategyRow.length > 0 && strategyRow[0].customPriorityOrder
+		? JSON.parse(strategyRow[0].customPriorityOrder)
+		: [];
+
+	// Sort unlinked debts by strategy for extra payment distribution
+	const unlinkedDebts = allDebts.filter(debt => debt.linkedBillId === null) as Debt[];
+	let sortedUnlinkedDebts: Debt[];
+	switch (strategy) {
+		case 'avalanche':
+			sortedUnlinkedDebts = sortByAvalanche(unlinkedDebts);
+			break;
+		case 'custom':
+			sortedUnlinkedDebts = sortByCustom(unlinkedDebts, customPriorityOrder);
+			break;
+		case 'snowball':
+		default:
+			sortedUnlinkedDebts = sortBySnowball(unlinkedDebts);
+			break;
+	}
 
 	// Calculate daily bucket allocation (spread monthly budget over 30 days)
 	let dailyBucketCost = 0;
@@ -389,17 +419,28 @@ async function projectCashFlow(
 
 		// Check for debt payments (assume monthly on the 1st)
 		// Exclude debts linked to bills to avoid double-counting
-		if (currentDate.getDate() === 1) {
-			const unlinkedDebts = allDebts.filter(debt => debt.linkedBillId === null);
-			const totalDebtPayment = unlinkedDebts.reduce((sum, debt) => sum + debt.minimumPayment, 0);
-			if (totalDebtPayment > 0) {
-				dailyExpenses += totalDebtPayment;
-				runningBalance -= totalDebtPayment;
-				events.push({
-					type: 'debt',
-					description: 'Debt minimum payments',
-					amount: totalDebtPayment
-				});
+		// Show individual debt events with extra payment distributed by strategy priority
+		if (currentDate.getDate() === 1 && sortedUnlinkedDebts.length > 0) {
+			let remainingExtra = extraMonthlyPayment;
+
+			for (const debt of sortedUnlinkedDebts) {
+				let payment = debt.minimumPayment;
+
+				// Allocate extra payment to the highest-priority debt (first in sorted order)
+				if (remainingExtra > 0) {
+					payment += remainingExtra;
+					remainingExtra = 0;
+				}
+
+				if (payment > 0) {
+					dailyExpenses += payment;
+					runningBalance -= payment;
+					events.push({
+						type: 'debt',
+						description: `${debt.name} payment`,
+						amount: payment
+					});
+				}
 			}
 		}
 

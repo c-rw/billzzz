@@ -22,21 +22,21 @@ function calculateMonthlyInterest(balance: number, annualRate: number): number {
 /**
  * Sort debts by snowball method (smallest balance first)
  */
-function sortBySnowball(debts: Debt[]): Debt[] {
+export function sortBySnowball(debts: Debt[]): Debt[] {
 	return [...debts].sort((a, b) => a.currentBalance - b.currentBalance);
 }
 
 /**
  * Sort debts by avalanche method (highest interest rate first)
  */
-function sortByAvalanche(debts: Debt[]): Debt[] {
+export function sortByAvalanche(debts: Debt[]): Debt[] {
 	return [...debts].sort((a, b) => b.interestRate - a.interestRate);
 }
 
 /**
  * Sort debts by custom priority
  */
-function sortByCustom(debts: Debt[], priorityOrder: number[]): Debt[] {
+export function sortByCustom(debts: Debt[], priorityOrder: number[]): Debt[] {
 	return [...debts].sort((a, b) => {
 		const aIndex = priorityOrder.indexOf(a.id);
 		const bIndex = priorityOrder.indexOf(b.id);
