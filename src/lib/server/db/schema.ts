@@ -234,25 +234,17 @@ export type NewDebtPayment = typeof debtPayments.$inferInsert;
 export type DebtStrategySettings = typeof debtStrategySettings.$inferSelect;
 export type NewDebtStrategySettings = typeof debtStrategySettings.$inferInsert;
 
-// Import sessions - track OFX/QFX file imports
-export const importSessions = sqliteTable('import_sessions', {
-	id: integer('id').primaryKey({ autoIncrement: true }),
-	fileName: text('file_name').notNull(),
-	fileType: text('file_type', { enum: ['ofx', 'qfx'] }).notNull(),
-	transactionCount: integer('transaction_count').notNull(),
-	importedCount: integer('imported_count').notNull().default(0),
-	skippedCount: integer('skipped_count').notNull().default(0),
-	status: text('status', { enum: ['pending', 'completed', 'failed'] })
-		.notNull()
-		.default('pending'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`)
-});
-
+// Accounts - bank/credit card accounts for multi-account tracking
 export const accounts = sqliteTable('accounts', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull().unique(),
+	accountType: text('account_type', {
+		enum: ['checking', 'savings', 'credit_card']
+	}),
+	accountNumber: text('account_number'), // last 4 digits for display/matching
+	bankId: text('bank_id'), // routing number for matching
+	initialBalance: real('initial_balance').notNull().default(0),
+	balanceAsOfDate: integer('balance_as_of_date', { mode: 'timestamp' }), // null = before all transactions
 	isExternal: integer('is_external', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
@@ -262,8 +254,22 @@ export const accounts = sqliteTable('accounts', {
 		.default(sql`(unixepoch())`)
 });
 
-export type Account = typeof accounts.$inferSelect;
-export type NewAccount = typeof accounts.$inferInsert;
+// Import sessions - track OFX/QFX file imports
+export const importSessions = sqliteTable('import_sessions', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	fileName: text('file_name').notNull(),
+	fileType: text('file_type', { enum: ['ofx', 'qfx'] }).notNull(),
+	transactionCount: integer('transaction_count').notNull(),
+	importedCount: integer('imported_count').notNull().default(0),
+	skippedCount: integer('skipped_count').notNull().default(0),
+	accountId: integer('account_id').references(() => accounts.id, { onDelete: 'set null' }),
+	status: text('status', { enum: ['pending', 'completed', 'failed'] })
+		.notNull()
+		.default('pending'),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
 
 // Imported transactions - temporary storage for OFX transactions before mapping
 export const importedTransactions = sqliteTable('imported_transactions', {
@@ -283,18 +289,6 @@ export const importedTransactions = sqliteTable('imported_transactions', {
 	mappedBucketId: integer('mapped_bucket_id').references(() => buckets.id, {
 		onDelete: 'set null'
 	}),
-	// Transfer fields (import-only)
-	isTransfer: integer('is_transfer', { mode: 'boolean' }).notNull().default(false),
-	isPotentialTransfer: integer('is_potential_transfer', { mode: 'boolean' }).notNull().default(false), // True when OFX TRNTYPE = 'XFER'
-	ownerAccountId: integer('owner_account_id').references(() => accounts.id, {
-		onDelete: 'set null'
-	}),
-	counterpartyAccountId: integer('counterparty_account_id').references(() => accounts.id, {
-		onDelete: 'set null'
-	}),
-	transferCategoryId: integer('transfer_category_id').references(() => categories.id, {
-		onDelete: 'set null'
-	}),
 	createNewBill: integer('create_new_bill', { mode: 'boolean' }).default(false),
 	suggestedCategoryId: integer('suggested_category_id').references(() => categories.id, {
 		onDelete: 'set null'
@@ -306,6 +300,12 @@ export const importedTransactions = sqliteTable('imported_transactions', {
 	refundedBucketId: integer('refunded_bucket_id').references(() => buckets.id, { onDelete: 'set null' }),
 	refundedBillId: integer('refunded_bill_id').references(() => bills.id, { onDelete: 'set null' }),
 	isProcessed: integer('is_processed', { mode: 'boolean' }).notNull().default(false),
+	// Account & transfer tracking (columns exist from migrations 0006/0007)
+	ownerAccountId: integer('owner_account_id').references(() => accounts.id, { onDelete: 'set null' }),
+	isPotentialTransfer: integer('is_potential_transfer', { mode: 'boolean' }).notNull().default(false),
+	isTransfer: integer('is_transfer', { mode: 'boolean' }).notNull().default(false),
+	counterpartyAccountId: integer('counterparty_account_id').references(() => accounts.id),
+	transferCategoryId: integer('transfer_category_id'),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`)
@@ -316,6 +316,37 @@ export type NewImportSession = typeof importSessions.$inferInsert;
 
 export type ImportedTransaction = typeof importedTransactions.$inferSelect;
 export type NewImportedTransaction = typeof importedTransactions.$inferInsert;
+
+// Transfers - links paired transfer transactions between accounts
+export const transfers = sqliteTable('transfers', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	fromTransactionId: integer('from_transaction_id')
+		.notNull()
+		.references(() => importedTransactions.id, { onDelete: 'cascade' }),
+	toTransactionId: integer('to_transaction_id')
+		.notNull()
+		.references(() => importedTransactions.id, { onDelete: 'cascade' }),
+	fromAccountId: integer('from_account_id')
+		.notNull()
+		.references(() => accounts.id, { onDelete: 'cascade' }),
+	toAccountId: integer('to_account_id')
+		.notNull()
+		.references(() => accounts.id, { onDelete: 'cascade' }),
+	amount: real('amount').notNull(),
+	status: text('status', { enum: ['pending', 'confirmed', 'rejected'] })
+		.notNull()
+		.default('pending'),
+	detectedAt: integer('detected_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	confirmedAt: integer('confirmed_at', { mode: 'timestamp' })
+});
+
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+
+export type Transfer = typeof transfers.$inferSelect;
+export type NewTransfer = typeof transfers.$inferInsert;
 
 // User preferences - stores app settings like theme preference
 export const userPreferences = sqliteTable('user_preferences', {
