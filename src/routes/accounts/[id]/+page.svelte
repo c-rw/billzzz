@@ -751,8 +751,8 @@
 		{/if}
 	</div>
 
-	<!-- Transfers for this account -->
-	{#if data.transfers.length > 0}
+	<!-- Transfers for this account (hidden when filtering unclassified) -->
+	{#if data.transfers.length > 0 && data.filter !== 'unclassified'}
 		<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
 			<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
 				<ArrowRightLeft class="h-5 w-5" />
