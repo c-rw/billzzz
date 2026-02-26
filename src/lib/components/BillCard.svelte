@@ -61,7 +61,7 @@
 			{#if bill.isRecurring}
 				<span
 					class="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-					title={bill.recurrenceType ? getRecurrenceDescription(bill.recurrenceType as any, bill.recurrenceDay) : ''}
+					title={bill.recurrenceType ? getRecurrenceDescription(bill.recurrenceType as any, bill.recurrenceDay, (bill as any).recurrenceDay2) : ''}
 				>
 					<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
 						<path

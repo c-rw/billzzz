@@ -20,9 +20,10 @@ export const bills = sqliteTable('bills', {
 	categoryId: integer('category_id').references(() => categories.id, { onDelete: 'set null' }),
 	isRecurring: integer('is_recurring', { mode: 'boolean' }).notNull().default(false),
 	recurrenceType: text('recurrence_type', {
-		enum: ['weekly', 'biweekly', 'monthly', 'quarterly', 'semi-annual', 'yearly']
+		enum: ['weekly', 'biweekly', 'semi-monthly', 'monthly', 'quarterly', 'semi-annual', 'yearly']
 	}),
 	recurrenceDay: integer('recurrence_day'),
+	recurrenceDay2: integer('recurrence_day_2'), // Second day of month for semi-monthly
 	isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
 	isAutopay: integer('is_autopay', { mode: 'boolean' }).notNull().default(false),
 	notes: text('notes'),

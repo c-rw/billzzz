@@ -68,6 +68,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			isRecurring: data.isRecurring || false,
 			recurrenceType: data.recurrenceType || null,
 			recurrenceDay: data.recurrenceDay || null,
+			recurrenceDay2: data.recurrenceDay2 || null,
 			isPaid: data.isPaid || false,
 			isAutopay: data.isAutopay || false,
 			notes: data.notes || null
