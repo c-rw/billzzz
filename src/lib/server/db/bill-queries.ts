@@ -14,6 +14,7 @@ import {
 	findCycleForPaymentDate,
 	generateBillCyclesBetween
 } from '../utils/bill-cycle-calculator';
+import { getDebtByLinkedBillId } from './debt-queries';
 import { isBefore, isAfter } from 'date-fns';
 
 /**
@@ -28,10 +29,12 @@ export async function getBillWithCurrentCycle(id: number): Promise<BillWithCycle
 	await ensureCyclesExist(bill);
 
 	const currentCycle = await getCurrentCycle(bill.id);
+	const linkedDebt = getDebtByLinkedBillId(bill.id);
 
 	return {
 		...bill,
-		currentCycle: currentCycle ? addComputedFields(currentCycle) : null
+		currentCycle: currentCycle ? addComputedFields(currentCycle) : null,
+		linkedDebtId: linkedDebt?.id ?? null
 	};
 }
 
@@ -46,10 +49,12 @@ export async function getAllBillsWithCurrentCycle(): Promise<BillWithCycle[]> {
 		allBills.map(async (bill) => {
 			await ensureCyclesExist(bill);
 			const currentCycle = await getCurrentCycle(bill.id);
+			const linkedDebt = getDebtByLinkedBillId(bill.id);
 
 			return {
 				...bill,
-				currentCycle: currentCycle ? addComputedFields(currentCycle) : null
+				currentCycle: currentCycle ? addComputedFields(currentCycle) : null,
+				linkedDebtId: linkedDebt?.id ?? null
 			};
 		})
 	);

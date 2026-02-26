@@ -583,8 +583,11 @@
 				isRecurring: editingBill.isRecurring,
 				recurrenceType: editingBill.recurrenceType || undefined,
 				recurrenceDay: editingBill.recurrenceDay || undefined,
+				recurrenceDay2: editingBill.recurrenceDay2 || undefined,
 				isAutopay: editingBill.isAutopay,
-				notes: editingBill.notes || undefined
+				enableCarryover: editingBill.enableCarryover || false,
+				notes: editingBill.notes || undefined,
+				linkedDebtId: editingBill.linkedDebtId || undefined
 			}}
 			onSubmit={handleUpdateBill}
 			onCancel={handleCloseEditModal}

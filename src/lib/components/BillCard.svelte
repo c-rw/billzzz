@@ -19,6 +19,7 @@
 	// Check if bill has cycle info
 	const billWithCycle = $derived('currentCycle' in bill ? bill as BillWithCycle : null);
 	const currentCycle = $derived(billWithCycle?.currentCycle);
+	const linkedDebtId = $derived('linkedDebtId' in bill ? (bill as any).linkedDebtId : null);
 
 	function handleCardClick(e: MouseEvent | KeyboardEvent) {
 		// Don't navigate if clicking on a button
@@ -88,7 +89,19 @@
 							clip-rule="evenodd"
 						/>
 					</svg>
-					Autopay
+				Autopay
+				</span>
+			{/if}
+			{#if linkedDebtId}
+				<span
+					class="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs text-purple-700 dark:bg-purple-950 dark:text-purple-400"
+					title="Linked to a debt — amount is managed automatically"
+				>
+					<svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+						<path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4z" />
+						<path fill-rule="evenodd" d="M6 8a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2V8zm2 0h8v4H8V8z" clip-rule="evenodd" />
+					</svg>
+					Debt
 				</span>
 			{/if}
 		</div>

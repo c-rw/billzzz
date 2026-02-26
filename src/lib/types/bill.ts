@@ -7,6 +7,7 @@ export type BillStatus = 'paid' | 'upcoming' | 'overdue';
 // Extended bill type with category details
 export interface BillWithCategory extends Bill {
 	category?: Category | null;
+	linkedDebtId?: number | null;
 }
 
 // Bill cycle with computed fields
@@ -19,6 +20,7 @@ export interface BillCycleWithComputed extends BillCycle {
 // Bill with current cycle information
 export interface BillWithCycle extends Bill {
 	currentCycle?: BillCycleWithComputed | null;
+	linkedDebtId?: number | null;
 }
 
 // Filter options for bills list

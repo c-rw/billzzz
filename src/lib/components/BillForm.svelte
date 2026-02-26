@@ -19,6 +19,7 @@
 			isAutopay?: boolean;
 			enableCarryover?: boolean;
 			notes?: string;
+			linkedDebtId?: number | null;
 		};
 		onSubmit: (data: any) => Promise<void>;
 		onCancel: () => void;
@@ -46,6 +47,8 @@
 	let enableCarryover = $state(false);
 	let notes = $state('');
 	let isSubmitting = $state(false);
+
+	const isAmountLinkedToDebt = $derived(!!initialData?.linkedDebtId);
 
 	// Reset form when initialData changes
 	$effect(() => {
@@ -156,10 +159,16 @@
 				required
 				min="0"
 				step="0.01"
-				class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 pl-7 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
+				disabled={isAmountLinkedToDebt}
+				class="block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 pl-7 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 {isAmountLinkedToDebt ? 'opacity-60 cursor-not-allowed' : ''}"
 				placeholder="0.00"
 			/>
 		</div>
+		{#if isAmountLinkedToDebt}
+			<p class="mt-1 text-xs text-purple-600 dark:text-purple-400">
+				Amount is managed by the linked debt's minimum payment.
+			</p>
+		{/if}
 	</div>
 
 	<!-- Due Date -->
