@@ -7,6 +7,7 @@
 		dueDate = $bindable(),
 		categoryId = $bindable(),
 		isRecurring = $bindable(),
+		recurrenceType = $bindable(),
 		categories
 	}: {
 		index: number;
@@ -14,6 +15,7 @@
 		dueDate: string | undefined;
 		categoryId: number | undefined;
 		isRecurring: boolean | undefined;
+		recurrenceType: string | undefined;
 		categories: Category[];
 	} = $props();
 </script>
@@ -67,4 +69,23 @@
 			Recurring Bill
 		</label>
 	</div>
+	{#if isRecurring}
+		<div class="col-span-2">
+			<label for="recurrenceType_{index}" class="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+				Frequency
+			</label>
+			<select
+				id="recurrenceType_{index}"
+				bind:value={recurrenceType}
+				class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
+			>
+				<option value="weekly">Weekly</option>
+				<option value="biweekly">Biweekly</option>
+				<option value="monthly">Monthly</option>
+				<option value="quarterly">Quarterly</option>
+				<option value="semi-annual">Semi-Annual</option>
+				<option value="yearly">Yearly</option>
+			</select>
+		</div>
+	{/if}
 </div>

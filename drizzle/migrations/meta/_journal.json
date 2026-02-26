@@ -57,6 +57,20 @@
       "when": 1770000000000,
       "tag": "0007_refunds_and_transfer_fixes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1772000000000,
+      "tag": "0008_multi_account_support",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774000000000,
+      "tag": "0009_balance_as_of_date",
+      "breakpoints": true
     }
   ]
 }

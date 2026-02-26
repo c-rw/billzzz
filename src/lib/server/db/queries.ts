@@ -5,102 +5,17 @@ import {
 	paydaySettings,
 	importSessions,
 	importedTransactions,
-	accounts,
 	type NewBill,
 	type NewCategory,
 	type Category,
 	type NewPaydaySettings,
 	type NewImportSession,
-	type NewImportedTransaction,
-	type Account,
-	type NewAccount
+	type NewImportedTransaction
 } from './schema';
 import { eq, and, gte, lte, desc, asc, like, or, sql } from 'drizzle-orm';
 import type { BillFilters, BillSort } from '$lib/types/bill';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
 import { utcDateToLocal } from '$lib/utils/dates';
-
-// ===== ACCOUNT QUERIES =====
-
-export function getAllAccounts(): (Account & { balance: number })[] {
-	const allAccounts = db.select().from(accounts).orderBy(accounts.name).all();
-
-	// Calculate balance for each account based on transfer transactions.
-	// Owner account (OFX file) uses normal sign logic; counterparty account uses inverted sign logic.
-	// From the owner account's perspective:
-	//   DEBIT = money left this account (money out, negative)
-	//   CREDIT = money arrived in this account (money in, positive)
-	//   XFER (is_potential_transfer) = same logic as DEBIT unless otherwise specified
-	return allAccounts.map(account => {
-		const balanceResult = db
-			.select({
-				balance: sql<number>`
-					COALESCE(
-						SUM(
-							CASE
-								WHEN ${importedTransactions.ownerAccountId} = ${account.id} THEN
-									CASE
-										WHEN ${importedTransactions.transactionType} = 'CREDIT' THEN ${importedTransactions.amount}
-										WHEN ${importedTransactions.transactionType} = 'DEBIT' THEN -${importedTransactions.amount}
-										WHEN ${importedTransactions.transactionType} = 'XFER' THEN -${importedTransactions.amount}
-										ELSE 0
-									END
-								WHEN ${importedTransactions.counterpartyAccountId} = ${account.id} THEN
-									CASE
-										WHEN ${importedTransactions.transactionType} = 'CREDIT' THEN -${importedTransactions.amount}
-										WHEN ${importedTransactions.transactionType} = 'DEBIT' THEN ${importedTransactions.amount}
-										WHEN ${importedTransactions.transactionType} = 'XFER' THEN ${importedTransactions.amount}
-										ELSE 0
-									END
-								ELSE 0
-							END
-						),
-						0
-					)
-				`
-			})
-			.from(importedTransactions)
-			.where(
-				and(
-					eq(importedTransactions.isTransfer, true),
-					or(
-						eq(importedTransactions.ownerAccountId, account.id),
-						eq(importedTransactions.counterpartyAccountId, account.id)
-					)
-				)
-			)
-			.get();
-
-		return {
-			...account,
-			balance: balanceResult?.balance ?? 0
-		};
-	});
-}
-
-export function getAccountById(id: number) {
-	return db.select().from(accounts).where(eq(accounts.id, id)).get();
-}
-
-export function createAccount(data: NewAccount) {
-	return db.insert(accounts).values(data).returning().get();
-}
-
-export function updateAccount(id: number, data: Partial<NewAccount>) {
-	return db
-		.update(accounts)
-		.set({
-			...data,
-			updatedAt: new Date()
-		})
-		.where(eq(accounts.id, id))
-		.returning()
-		.get();
-}
-
-export function deleteAccount(id: number) {
-	return db.delete(accounts).where(eq(accounts.id, id)).returning().get();
-}
 
 // ===== CATEGORY QUERIES =====
 

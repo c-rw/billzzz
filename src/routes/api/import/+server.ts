@@ -12,7 +12,12 @@ import {
 	debts,
 	debtPayments,
 	debtStrategySettings,
-	paydaySettings
+	paydaySettings,
+	accounts,
+	importSessions,
+	importedTransactions,
+	transfers,
+	userPreferences
 } from '$lib/server/db/schema';
 
 interface ImportData {
@@ -30,6 +35,12 @@ interface ImportData {
 		debtPayments: any[];
 		debtStrategySettings: any[];
 		paydaySettings: any[];
+		// v2.0 fields (optional for backward compatibility with v1.0 backups)
+		accounts?: any[];
+		importSessions?: any[];
+		importedTransactions?: any[];
+		transfers?: any[];
+		userPreferences?: any[];
 	};
 }
 
@@ -66,6 +77,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Clear existing data (in reverse order due to foreign key constraints)
+		// v2.0 tables first (they reference importedTransactions/accounts)
+		db.delete(transfers).run();
+		db.delete(importedTransactions).run();
+		db.delete(importSessions).run();
+		db.delete(accounts).run();
+		db.delete(userPreferences).run();
+		// Original v1.0 tables
 		db.delete(bucketTransactions).run();
 		db.delete(bucketCycles).run();
 		db.delete(buckets).run();
@@ -78,7 +96,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		db.delete(paydaySettings).run();
 		db.delete(categories).run();
 
-		let importedCounts = {
+		let importedCounts: Record<string, number> = {
 			categories: 0,
 			bills: 0,
 			billCycles: 0,
@@ -89,7 +107,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			debts: 0,
 			debtPayments: 0,
 			debtStrategySettings: 0,
-			paydaySettings: 0
+			paydaySettings: 0,
+			accounts: 0,
+			importSessions: 0,
+			importedTransactions: 0,
+			transfers: 0,
+			userPreferences: 0
 		};
 
 		// Import data (in order to respect foreign key constraints)
@@ -146,6 +169,32 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (importData.data.debtStrategySettings?.length > 0) {
 			db.insert(debtStrategySettings).values(importData.data.debtStrategySettings).run();
 			importedCounts.debtStrategySettings = importData.data.debtStrategySettings.length;
+		}
+
+		// v2.0 tables (accounts/import data/transfers)
+		if (importData.data.accounts && importData.data.accounts.length > 0) {
+			db.insert(accounts).values(importData.data.accounts).run();
+			importedCounts.accounts = importData.data.accounts.length;
+		}
+
+		if (importData.data.importSessions && importData.data.importSessions.length > 0) {
+			db.insert(importSessions).values(importData.data.importSessions).run();
+			importedCounts.importSessions = importData.data.importSessions.length;
+		}
+
+		if (importData.data.importedTransactions && importData.data.importedTransactions.length > 0) {
+			db.insert(importedTransactions).values(importData.data.importedTransactions).run();
+			importedCounts.importedTransactions = importData.data.importedTransactions.length;
+		}
+
+		if (importData.data.transfers && importData.data.transfers.length > 0) {
+			db.insert(transfers).values(importData.data.transfers).run();
+			importedCounts.transfers = importData.data.transfers.length;
+		}
+
+		if (importData.data.userPreferences && importData.data.userPreferences.length > 0) {
+			db.insert(userPreferences).values(importData.data.userPreferences).run();
+			importedCounts.userPreferences = importData.data.userPreferences.length;
 		}
 
 		return json({
