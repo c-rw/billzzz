@@ -11,6 +11,7 @@ export interface BillWithCategory extends Bill {
 
 // Bill cycle with computed fields
 export interface BillCycleWithComputed extends BillCycle {
+	startingBalance: number;
 	remaining: number;
 	percentPaid: number;
 }
@@ -45,6 +46,7 @@ export interface BillFormData {
 	recurrenceDay?: number;
 	recurrenceDay2?: number; // Second day of month for semi-monthly
 	isAutopay: boolean;
+	enableCarryover: boolean;
 	notes?: string;
 }
 

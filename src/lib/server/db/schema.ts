@@ -26,6 +26,7 @@ export const bills = sqliteTable('bills', {
 	recurrenceDay2: integer('recurrence_day_2'), // Second day of month for semi-monthly
 	isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
 	isAutopay: integer('is_autopay', { mode: 'boolean' }).notNull().default(false),
+	enableCarryover: integer('enable_carryover', { mode: 'boolean' }).notNull().default(false),
 	notes: text('notes'),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
@@ -44,6 +45,7 @@ export const billCycles = sqliteTable('bill_cycles', {
 	startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
 	endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
 	expectedAmount: real('expected_amount').notNull(), // Snapshot of bill amount when cycle created
+	carryoverAmount: real('carryover_amount').notNull().default(0),
 	totalPaid: real('total_paid').notNull().default(0),
 	isPaid: integer('is_paid', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })

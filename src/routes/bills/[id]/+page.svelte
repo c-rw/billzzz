@@ -78,7 +78,7 @@
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Current Cycle</h2>
 			</div>
 
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
 				<div>
 					<p class="text-sm text-gray-600 dark:text-gray-400">Period</p>
 					<p class="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -98,6 +98,20 @@
 					</p>
 				</div>
 			</div>
+
+			{#if currentCycle.carryoverAmount !== 0}
+				<div class="mb-4 p-3 rounded-md bg-gray-50 dark:bg-gray-700/50 text-sm">
+					<div class="flex items-center gap-4 text-gray-600 dark:text-gray-400">
+						<span>Budget: {formatCurrency(currentCycle.expectedAmount)}</span>
+						<span class="{currentCycle.carryoverAmount > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+							Carryover: {currentCycle.carryoverAmount > 0 ? '+' : ''}{formatCurrency(currentCycle.carryoverAmount)}
+						</span>
+						<span class="font-medium text-gray-900 dark:text-gray-100">
+							Starting: {formatCurrency(currentCycle.startingBalance)}
+						</span>
+					</div>
+				</div>
+			{/if}
 
 			<!-- Progress Bar -->
 			<div class="mb-2">
@@ -174,6 +188,11 @@
 								</h3>
 								<p class="text-sm text-gray-600 dark:text-gray-400">
 									Expected: {formatCurrency(cycle.expectedAmount)}
+									{#if cycle.carryoverAmount !== 0}
+										<span class="{cycle.carryoverAmount > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+											{cycle.carryoverAmount > 0 ? '+' : ''}{formatCurrency(cycle.carryoverAmount)} carry
+										</span>
+									{/if}
 								</p>
 							</div>
 							<div class="text-right">

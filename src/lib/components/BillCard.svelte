@@ -117,7 +117,14 @@
 		{#if currentCycle}
 			<div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
 				<div class="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-					<span>Current Cycle</span>
+					<span class="flex items-center gap-1">
+						Current Cycle
+						{#if currentCycle.carryoverAmount !== 0}
+							<span class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium {currentCycle.carryoverAmount > 0 ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'}">
+								{currentCycle.carryoverAmount > 0 ? '+' : ''}{currentCycle.carryoverAmount.toFixed(2)} carry
+							</span>
+						{/if}
+					</span>
 					<span>{currentCycle.percentPaid.toFixed(0)}% paid</span>
 				</div>
 				<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
