@@ -1,24 +1,13 @@
 <script lang="ts">
 	import type { PayoffSchedule } from '$lib/types/debt';
 	import { format } from 'date-fns';
+	import { formatCurrency } from '$lib/utils/format';
 
 	interface Props {
 		schedule: PayoffSchedule;
 	}
 
 	let { schedule }: Props = $props();
-
-	let expandedMonths = $state<Set<number>>(new Set());
-
-	function toggleMonth(month: number) {
-		const newSet = new Set(expandedMonths);
-		if (newSet.has(month)) {
-			newSet.delete(month);
-		} else {
-			newSet.add(month);
-		}
-		expandedMonths = newSet;
-	}
 
 	// Show first 12 months by default, with option to load more
 	let visibleMonths = $state(12);
@@ -28,6 +17,13 @@
 	}
 
 	const visibleTimeline = $derived(schedule.timeline.slice(0, visibleMonths));
+
+	// Get unique debt names from the first month (all months have the same debts)
+	const debtNames = $derived(
+		schedule.timeline.length > 0
+			? schedule.timeline[0].debts.map((d) => ({ id: d.debtId, name: d.debtName }))
+			: []
+	);
 </script>
 
 <div class="space-y-4">
@@ -46,107 +42,80 @@
 			</div>
 			<div>
 				<p class="text-sm text-blue-700 dark:text-blue-400 font-medium">Total Interest</p>
-				<p class="text-lg font-bold text-blue-900 dark:text-blue-100">${schedule.totalInterestPaid.toFixed(2)}</p>
+				<p class="text-lg font-bold text-blue-900 dark:text-blue-100">{formatCurrency(schedule.totalInterestPaid)}</p>
 			</div>
 			<div>
 				<p class="text-sm text-blue-700 dark:text-blue-400 font-medium">Monthly Payment</p>
-				<p class="text-lg font-bold text-blue-900 dark:text-blue-100">${schedule.monthlyPayment.toFixed(2)}</p>
+				<p class="text-lg font-bold text-blue-900 dark:text-blue-100">{formatCurrency(schedule.monthlyPayment)}</p>
 			</div>
 		</div>
 	</div>
 
-	<!-- Timeline Table -->
-	<div class="overflow-x-auto">
-		<table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-			<thead class="bg-gray-50 dark:bg-gray-800">
-				<tr>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-					>
-						Month
-					</th>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-					>
-						Date
-					</th>
-					<th
-						class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-					>
-						Payment
-					</th>
-					<th
-						class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-					>
-						Interest
-					</th>
-					<th
-						class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-					>
-						Remaining
-					</th>
-					<th class="px-6 py-3"></th>
-				</tr>
-			</thead>
-			<tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-				{#each visibleTimeline as monthDetail}
-					{@const isExpanded = expandedMonths.has(monthDetail.month)}
-					<tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-						<td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+	<!-- Timeline -->
+	<div class="space-y-2">
+		{#each visibleTimeline as monthDetail}
+			{@const activeDebts = monthDetail.debts.filter((d) => d.payment > 0 || d.remainingBalance > 0)}
+			{@const paidOffThisMonth = monthDetail.debts.filter(
+				(d) => d.payment > 0 && d.remainingBalance === 0 && monthDetail.month > 1
+			)}
+
+			<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+				<!-- Month Header -->
+				<div class="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800">
+					<div class="flex items-center gap-3">
+						<span class="text-xs font-medium text-gray-500 dark:text-gray-400 w-6 text-right">
 							{monthDetail.month}
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+						</span>
+						<span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
 							{format(monthDetail.date, 'MMM yyyy')}
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-gray-100">
-							${monthDetail.totalPayment.toFixed(2)}
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-right text-red-600 dark:text-red-400">
-							${monthDetail.totalInterest.toFixed(2)}
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-gray-100">
-							${monthDetail.totalRemaining.toFixed(2)}
-						</td>
-						<td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-							<button
-								onclick={() => toggleMonth(monthDetail.month)}
-								class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
-							>
-								{isExpanded ? 'Hide' : 'Details'}
-							</button>
-						</td>
-					</tr>
+						</span>
+						{#each paidOffThisMonth as debt}
+							<span class="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full font-medium">
+								{debt.debtName} paid off!
+							</span>
+						{/each}
+					</div>
+					<div class="flex items-center gap-4 text-sm">
+						<span class="text-gray-600 dark:text-gray-400">
+							Total: <strong class="text-gray-900 dark:text-gray-100">{formatCurrency(monthDetail.totalPayment)}</strong>
+						</span>
+						<span class="text-red-600 dark:text-red-400">
+							Interest: <strong>{formatCurrency(monthDetail.totalInterest)}</strong>
+						</span>
+						<span class="text-gray-600 dark:text-gray-400">
+							Remaining: <strong class="text-gray-900 dark:text-gray-100">{formatCurrency(monthDetail.totalRemaining)}</strong>
+						</span>
+					</div>
+				</div>
 
-					<!-- Expanded Details -->
-					{#if isExpanded}
-						<tr>
-							<td colspan="6" class="px-6 py-4 bg-gray-50 dark:bg-gray-800">
-								<div class="space-y-3">
-									<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Debt Breakdown:</h4>
-									{#each monthDetail.debts as debt}
-										{#if debt.payment > 0 || debt.remainingBalance > 0}
-											<div class="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 overflow-hidden">
-												<!-- Debt Header -->
-												<div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800">
-													<span class="text-sm font-medium text-gray-900 dark:text-gray-100">{debt.debtName}</span>
-													<div class="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
-														<span>Payment: <strong>${debt.payment.toFixed(2)}</strong></span>
-														<span>Principal: <strong>${debt.principal.toFixed(2)}</strong></span>
-														<span>Interest: <strong class="text-red-600 dark:text-red-400">${debt.interest.toFixed(2)}</strong></span>
-														<span>Balance: <strong>${debt.remainingBalance.toFixed(2)}</strong></span>
-													</div>
-												</div>
-
-											</div>
-										{/if}
-									{/each}
+				<!-- Per-Debt Breakdown -->
+				{#if activeDebts.length > 0}
+					<div class="divide-y divide-gray-100 dark:divide-gray-800">
+						{#each activeDebts as debt}
+							<div class="flex items-center justify-between px-4 py-2 text-sm {debt.remainingBalance === 0 ? 'bg-green-50 dark:bg-green-950/30' : ''}">
+								<span class="font-medium text-gray-700 dark:text-gray-300 w-40 truncate" title={debt.debtName}>
+									{debt.debtName}
+								</span>
+								<div class="flex items-center gap-6 text-xs">
+									<span class="text-gray-600 dark:text-gray-400 w-24 text-right">
+										Payment: <strong class="text-gray-900 dark:text-gray-100">{formatCurrency(debt.payment)}</strong>
+									</span>
+									<span class="text-gray-600 dark:text-gray-400 w-28 text-right">
+										Principal: <strong class="text-gray-900 dark:text-gray-100">{formatCurrency(debt.principal)}</strong>
+									</span>
+									<span class="w-24 text-right">
+										Interest: <strong class="text-red-600 dark:text-red-400">{formatCurrency(debt.interest)}</strong>
+									</span>
+									<span class="text-gray-600 dark:text-gray-400 w-28 text-right">
+										Balance: <strong class="{debt.remainingBalance === 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}">{formatCurrency(debt.remainingBalance)}</strong>
+									</span>
 								</div>
-							</td>
-						</tr>
-					{/if}
-				{/each}
-			</tbody>
-		</table>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
+		{/each}
 	</div>
 
 	<!-- Load More Button -->
@@ -166,14 +135,14 @@
 		<div class="grid grid-cols-2 gap-4 text-sm">
 			<div>
 				<span class="text-gray-600 dark:text-gray-400">Total Principal Paid:</span>
-				<span class="font-semibold text-gray-900 ml-2">
-					${schedule.totalPrincipalPaid.toFixed(2)}
+				<span class="font-semibold text-gray-900 dark:text-gray-100 ml-2">
+					{formatCurrency(schedule.totalPrincipalPaid)}
 				</span>
 			</div>
 			<div>
 				<span class="text-gray-600 dark:text-gray-400">Total Interest Paid:</span>
-				<span class="font-semibold text-red-600 ml-2">
-					${schedule.totalInterestPaid.toFixed(2)}
+				<span class="font-semibold text-red-600 dark:text-red-400 ml-2">
+					{formatCurrency(schedule.totalInterestPaid)}
 				</span>
 			</div>
 		</div>
