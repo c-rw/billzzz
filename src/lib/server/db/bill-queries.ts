@@ -107,10 +107,11 @@ async function ensureCyclesExist(bill: Bill): Promise<void> {
 
 	if (latestCycle.length === 0) {
 		// No cycles exist
-		// For recurring bills, start from due date
-		// For non-recurring bills, create single cycle
+		// For recurring bills, find the cycle that contains today
+		// (handles both past and future due dates)
 		if (bill.isRecurring && bill.recurrenceType) {
-			startFrom = bill.dueDate;
+			const currentCycleDates = calculateBillCycleDates(bill, now);
+			startFrom = currentCycleDates.startDate;
 		} else {
 			// Create single cycle for non-recurring bill
 			await db.insert(billCycles).values({

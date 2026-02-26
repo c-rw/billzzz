@@ -13,11 +13,11 @@ import {
 	markTransactionsAsProcessed,
 	checkDuplicateFitId,
 	markBillAsPaid,
-	updateBill,
-	getAllAccounts,
-	createAccount
+	updateBill
 } from '$lib/server/db/queries';
 import { getAllBucketsWithCurrentCycle, getAllBuckets, createTransaction, createBucket } from '$lib/server/db/bucket-queries';
+import { getAllAccounts, getAccountByBankInfo, createAccount } from '$lib/server/db/account-queries';
+import { detectPotentialTransfers, findAndLinkTransferMatch } from '$lib/server/db/transfer-queries';
 import { createPayment } from '$lib/server/db/bill-queries';
 import { parseLocalDate, utcDateToLocal } from '$lib/utils/dates';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
@@ -38,6 +38,8 @@ function isPaymentForCurrentCycle(paymentDate: Date, billDueDate: Date): boolean
 
 export const load: PageServerLoad = async ({ url }) => {
 	const sessionId = url.searchParams.get('session');
+	const newAccountParam = url.searchParams.get('newAccount');
+	const accounts = getAllAccounts();
 
 	if (sessionId) {
 		// Load existing import session for review
@@ -47,19 +49,33 @@ export const load: PageServerLoad = async ({ url }) => {
 		const transactions = allTransactions.filter(t => !t.transaction.isProcessed);
 		const categories = getAllCategories();
 		const existingBills = getAllBills();
-			const buckets = await getAllBucketsWithCurrentCycle();
-			const { getAllAccounts } = await import('$lib/server/db/queries');
-			const accounts = getAllAccounts();
+		const buckets = await getAllBucketsWithCurrentCycle();
 
-			return {
-				sessionId: parseInt(sessionId),
-				session,
-				transactions,
-				categories,
-				existingBills,
-				buckets,
-				accounts
-			};
+		// If newAccount flag is set, we need to show the account confirmation step
+		const showAccountConfirmation = newAccountParam === 'true';
+
+		// Parse detected account info from query params (passed from upload action)
+		const detectedAccountType = url.searchParams.get('accountType');
+		const detectedAccountNumber = url.searchParams.get('accountNumber');
+		const detectedBankId = url.searchParams.get('bankId');
+
+		return {
+			sessionId: parseInt(sessionId),
+			session,
+			transactions,
+			categories,
+			existingBills,
+			buckets,
+			accounts,
+			showAccountConfirmation,
+			detectedAccount: showAccountConfirmation
+				? {
+						accountType: detectedAccountType,
+						accountNumber: detectedAccountNumber,
+						bankId: detectedBankId
+					}
+				: null
+		};
 	}
 
 	return {
@@ -68,7 +84,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		categories: [],
 		existingBills: [],
 		buckets: [],
-		accounts: []
+		accounts,
+		showAccountConfirmation: false,
+		detectedAccount: null
 	};
 };
 
@@ -108,20 +126,49 @@ export const actions: Actions = {
 				});
 			}
 
-			// Parse OFX file
-			let parseResult;
-			try {
-				parseResult = await parseOfxFile(buffer);
-			} catch (error) {
-				console.error('OFX parsing error:', error);
-				return fail(400, {
-					error: `Failed to parse OFX file: ${error instanceof Error ? error.message : 'Unknown error'}`
-				});
-			}
+		// Parse OFX file
+		let parseResult;
+		try {
+			parseResult = await parseOfxFile(buffer);
+		} catch (error) {
+			console.error('OFX parsing error:', error);
+			return fail(400, {
+				error: `Failed to parse OFX file: ${error instanceof Error ? error.message : 'Unknown error'}`
+			});
+		}
 
-			if (parseResult.transactions.length === 0) {
-				return fail(400, { error: 'No transactions found in the OFX file' });
-			}
+		if (parseResult.transactions.length === 0) {
+			return fail(400, { error: 'No transactions found in the OFX file' });
+		}
+
+		// --- Account detection from OFX metadata ---
+		const rawAccountNumber = parseResult.accountNumber;
+		const bankId = parseResult.bankId || null;
+		// Store last 4 digits for display/matching
+		const accountNumberLast4 = rawAccountNumber
+			? rawAccountNumber.slice(-4)
+			: null;
+
+		// Map OFX account type to our enum
+		let detectedAccountType: 'checking' | 'savings' | 'credit_card' = 'checking';
+		if (parseResult.accountType === 'CREDIT_CARD') {
+			detectedAccountType = 'credit_card';
+		}
+		// Note: OFX 'BANK' type could be checking or savings. Default to checking;
+		// user can correct during account confirmation.
+
+		// Try to match an existing account by bank info
+		let matchedAccount = accountNumberLast4 && bankId
+			? getAccountByBankInfo(accountNumberLast4, bankId)
+			: null;
+
+		// If no bank info match, try matching by last 4 alone across all accounts
+		if (!matchedAccount && accountNumberLast4) {
+			const allAccounts = getAllAccounts();
+			matchedAccount = allAccounts.find(
+				(a) => a.accountNumber === accountNumberLast4
+			) || null;
+		}
 
 			// Check for duplicate transactions by fitId
 			const newTransactions = [];
@@ -145,61 +192,53 @@ export const actions: Actions = {
 				}
 			}
 
-			// Create import session
-			const session = createImportSession({
-				fileName: file.name,
-				fileType: fileName.endsWith('.qfx') ? 'qfx' : 'ofx',
-				transactionCount: parseResult.transactions.length,
-				importedCount: 0,
-				skippedCount: skippedCount,
-				status: 'pending'
-			});
+		// Create import session (associate with account if matched)
+		const session = createImportSession({
+			fileName: file.name,
+			fileType: fileName.endsWith('.qfx') ? 'qfx' : 'ofx',
+			transactionCount: parseResult.transactions.length,
+			importedCount: 0,
+			skippedCount: skippedCount,
+			status: 'pending',
+			accountId: matchedAccount?.id ?? null
+		});
 
-			// Resolve owner account from OFX account number
-			// Look up existing account or create one from the OFX file's ACCTID
-			let ownerAccountId: number | null = null;
-			if (parseResult.accountNumber) {
-				const existingAccounts = getAllAccounts();
-				const matchedAccount = existingAccounts.find(
-					a => a.name === parseResult.accountNumber || a.name.includes(parseResult.accountNumber!)
-				);
-				if (matchedAccount) {
-					ownerAccountId = matchedAccount.id;
-				} else {
-					// Auto-create an account entry for this OFX account number
-					const newAccount = createAccount({
-						name: parseResult.accountNumber,
-						isExternal: false
-					});
-					ownerAccountId = newAccount.id;
-				}
-			}
-
-			// Insert only non-duplicate transactions into database
-			// NOTE: We no longer auto-process any transactions.
-			// All transactions (including CREDITs) surface to the review screen
-			// so the user can classify them as income, refund, or transfer.
-			if (newTransactions.length > 0) {
-				const transactionData = newTransactions.map((txn) => ({
-					sessionId: session.id,
-					fitId: txn.fitId,
-					transactionType: txn.transactionType,
-					datePosted: txn.datePosted,
-					amount: txn.amount,
-					payee: txn.payee,
-					memo: txn.memo || null,
-					checkNumber: txn.checkNumber || null,
-					ownerAccountId,
-					isPotentialTransfer: txn.isPotentialTransfer,
-					isIncome: false, // Never auto-classify; user decides during review
-					isProcessed: false
-				}));
+		// Insert only non-duplicate transactions into database
+		// All transactions surface to the review screen so the user can classify them.
+		if (newTransactions.length > 0) {
+		const transactionData = newTransactions.map((txn) => ({
+			sessionId: session.id,
+			fitId: txn.fitId,
+			transactionType: txn.transactionType,
+			datePosted: txn.datePosted,
+			amount: txn.amount,
+			payee: txn.payee,
+			memo: txn.memo || null,
+			checkNumber: txn.checkNumber || null,
+			isIncome: false, // Never auto-classify; user decides during review
+			isProcessed: false,
+			ownerAccountId: matchedAccount?.id ?? null,
+			isPotentialTransfer: txn.transactionType === 'XFER'
+		}));
 
 				createImportedTransactionsBatch(transactionData);
 			}
 
-			// Redirect to review page
+		// If account was matched, go straight to review
+		// If not, redirect with newAccount flag so user can name the account
+		if (matchedAccount) {
 			throw redirect(302, `/import?session=${session.id}`);
+		} else {
+			// Build redirect with detected account info for the confirmation step
+			const params = new URLSearchParams({
+				session: session.id.toString(),
+				newAccount: 'true'
+			});
+			if (detectedAccountType) params.set('accountType', detectedAccountType);
+			if (accountNumberLast4) params.set('accountNumber', accountNumberLast4);
+			if (bankId) params.set('bankId', bankId);
+			throw redirect(302, `/import?${params.toString()}`);
+		}
 		} catch (error) {
 			// Don't catch redirect errors - let them propagate
 			if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
@@ -238,7 +277,7 @@ export const actions: Actions = {
 				existingBills.map(b => [b.name.toLowerCase().trim(), b.id])
 			);
 
-			for (const mapping of mappings) {
+		for (const mapping of mappings) {
 			const {
 					transactionId,
 					action,
@@ -250,8 +289,6 @@ export const actions: Actions = {
 					isRecurring,
 					recurrenceType,
 					bucketId,
-					counterpartyAccountId,
-					transferCategoryId,
 					refundedBucketId,
 					refundedBillId
 				} = mapping;
@@ -295,11 +332,14 @@ export const actions: Actions = {
 						isProcessed: true
 					});
 					importedCount++;
-				} else if (action === 'create_new' && transactionData) {
+			} else if (action === 'create_new' && transactionData) {
 					// Create new bill with deduplication
 					const normalizedBillName = billName.toLowerCase().trim();
 					let billIdToUse: number;
 					let wasNewlyCreated = false;
+
+					// Default recurrenceType to 'monthly' when isRecurring is true but no type provided
+					const effectiveRecurrenceType = isRecurring ? (recurrenceType || 'monthly') : null;
 
 					// Validate due date before creating bill
 					let billDueDate: Date;
@@ -334,8 +374,8 @@ export const actions: Actions = {
 								dueDate: billDueDate,
 								categoryId: categoryId || null,
 								isRecurring: isRecurring || false,
-								recurrenceType: recurrenceType || null,
-								recurrenceDay: (isRecurring && (recurrenceType === 'monthly' || recurrenceType === 'quarterly')) ? utcDateToLocal(billDueDate).getDate() : null,
+								recurrenceType: effectiveRecurrenceType,
+								recurrenceDay: (isRecurring && (effectiveRecurrenceType === 'monthly' || effectiveRecurrenceType === 'quarterly')) ? utcDateToLocal(billDueDate).getDate() : null,
 								isPaid: shouldMarkAsPaid,
 								isAutopay: false,
 								notes: null,
@@ -372,7 +412,7 @@ export const actions: Actions = {
 						// For newly created bills, use the values from the form
 						// For existing bills, we need to check if they are recurring
 						const billToUpdate = wasNewlyCreated
-							? { isRecurring, recurrenceType, recurrenceDay: utcDateToLocal(billDueDate).getDate() }
+							? { isRecurring, recurrenceType: effectiveRecurrenceType, recurrenceDay: utcDateToLocal(billDueDate).getDate() }
 							: existingBills.find(b => b.id === billIdToUse);
 
 						if (billToUpdate?.isRecurring && billToUpdate.recurrenceType) {
@@ -474,19 +514,7 @@ export const actions: Actions = {
 						isProcessed: true
 					});
 					importedCount++;
-			} else if (action === 'mark_transfer' && transactionData) {
-					if (!counterpartyAccountId) {
-						continue;
-					}
-
-					updateImportedTransaction(transactionId, {
-						isTransfer: true,
-						counterpartyAccountId,
-						transferCategoryId: transferCategoryId || null,
-						isProcessed: true
-					});
-					importedCount++;
-				} else if (action === 'mark_income' && transactionData) {
+		} else if (action === 'mark_income' && transactionData) {
 					// Mark as income — no further mapping needed
 					updateImportedTransaction(transactionId, {
 						isIncome: true,
@@ -531,6 +559,29 @@ export const actions: Actions = {
 					}
 				}
 				// If action is 'skip', we just don't process it
+				// Handle mark_transfer action
+				if (action === 'mark_transfer' && transactionData) {
+					const { counterpartyAccountId } = mapping;
+					if (counterpartyAccountId) {
+						const linked = findAndLinkTransferMatch(transactionId, counterpartyAccountId);
+						if (!linked) {
+							// No unique match found — mark just this side
+							updateImportedTransaction(transactionId, {
+								isTransfer: true,
+								counterpartyAccountId: counterpartyAccountId,
+								isProcessed: true
+							});
+						}
+						// If linked, findAndLinkTransferMatch already marked both sides
+					} else {
+						updateImportedTransaction(transactionId, {
+							isTransfer: true,
+							counterpartyAccountId: null,
+							isProcessed: true
+						});
+					}
+					importedCount++;
+				}
 			}
 
 			// Update session
@@ -543,6 +594,16 @@ export const actions: Actions = {
 				});
 			}
 
+			// Auto-scan for potential transfers after import completes
+			const session = getImportSession(sessionId);
+			if (session?.accountId) {
+				const potentialTransfers = detectPotentialTransfers(session.accountId, sessionId);
+				if (potentialTransfers.length > 0) {
+					// Redirect to accounts page with transfer review flag
+					throw redirect(302, '/accounts?reviewTransfers=true');
+				}
+			}
+
 			throw redirect(302, '/');
 		} catch (error) {
 			// Don't catch redirect errors - let them propagate
@@ -553,6 +614,56 @@ export const actions: Actions = {
 			console.error('Process transactions error:', error);
 			return fail(500, {
 				error: 'Failed to process transactions'
+			});
+		}
+	},
+
+	confirmAccount: async ({ request }) => {
+		try {
+			const formData = await request.formData();
+			const sessionId = parseInt(formData.get('sessionId') as string);
+			const accountName = (formData.get('accountName') as string)?.trim();
+			const accountType = (formData.get('accountType') as string) || 'checking';
+			const accountNumber = formData.get('accountNumber') as string | null;
+			const bankId = formData.get('bankId') as string | null;
+			const initialBalance = parseFloat(formData.get('initialBalance') as string) || 0;
+
+			if (!accountName) {
+				return fail(400, { error: 'Account name is required' });
+			}
+
+			// Create the new account
+			const account = createAccount({
+				name: accountName,
+				accountType: accountType as 'checking' | 'savings' | 'credit_card',
+				accountNumber: accountNumber || null,
+				bankId: bankId || null,
+				initialBalance,
+				isExternal: false
+			});
+
+			// Associate the session with the new account
+			const { updateImportSession } = await import('$lib/server/db/queries');
+			updateImportSession(sessionId, { accountId: account.id });
+
+			// Associate all transactions in this session with the new account
+			const sessionTransactions = getImportedTransactionsBySession(sessionId);
+			for (const { transaction } of sessionTransactions) {
+				updateImportedTransaction(transaction.id, {
+					ownerAccountId: account.id
+				});
+			}
+
+			// Redirect to review page (without newAccount flag)
+			throw redirect(302, `/import?session=${sessionId}`);
+		} catch (error) {
+			if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
+				throw error;
+			}
+
+			console.error('Confirm account error:', error);
+			return fail(500, {
+				error: 'Failed to create account'
 			});
 		}
 	}
