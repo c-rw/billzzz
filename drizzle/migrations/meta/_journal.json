@@ -71,6 +71,13 @@
       "when": 1774000000000,
       "tag": "0009_balance_as_of_date",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776000000000,
+      "tag": "0010_debt_bill_sync",
+      "breakpoints": true
     }
   ]
 }

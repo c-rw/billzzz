@@ -1,5 +1,5 @@
 import { db } from './index';
-import { bills, billCycles, billPayments } from './schema';
+import { bills, billCycles, billPayments, debts, debtPayments } from './schema';
 import type {
 	Bill,
 	BillCycle,
@@ -389,5 +389,111 @@ async function recalculateCyclesFrom(bill: Bill, startDate: Date): Promise<void>
 				updatedAt: new Date()
 			})
 			.where(eq(billCycles.id, cycle.id));
+
+		// Sync overpayment to linked debt (if any)
+		await syncOverpaymentToDebt(bill.id, cycle.id);
+	}
+}
+
+/**
+ * Sync a bill cycle's overpayment to the linked debt.
+ *
+ * When totalPaid on a cycle exceeds expectedAmount (the minimum payment),
+ * the surplus is recorded as a debt payment reducing the debt's currentBalance.
+ * One auto-created debt payment per cycle (tracked via sourceBillCycleId).
+ */
+export async function syncOverpaymentToDebt(billId: number, cycleId: number): Promise<void> {
+	// Find the debt linked to this bill
+	const linkedDebt = db
+		.select()
+		.from(debts)
+		.where(eq(debts.linkedBillId, billId))
+		.get();
+
+	if (!linkedDebt) return;
+
+	// Get the cycle
+	const cycle = db
+		.select()
+		.from(billCycles)
+		.where(eq(billCycles.id, cycleId))
+		.get();
+
+	if (!cycle) return;
+
+	const overpayment = Math.max(0, cycle.totalPaid - cycle.expectedAmount);
+
+	// Find existing auto-created debt payment for this cycle
+	const existingAutoPayment = db
+		.select()
+		.from(debtPayments)
+		.where(
+			and(
+				eq(debtPayments.debtId, linkedDebt.id),
+				eq(debtPayments.sourceBillCycleId, cycleId)
+			)
+		)
+		.get();
+
+	if (overpayment > 0) {
+		if (existingAutoPayment) {
+			// Update existing: adjust debt balance by the difference
+			const diff = overpayment - existingAutoPayment.amount;
+
+			db.update(debtPayments)
+				.set({
+					amount: overpayment,
+					notes: `Auto-created: bill overpayment of $${overpayment.toFixed(2)} applied to principal`
+				})
+				.where(eq(debtPayments.id, existingAutoPayment.id))
+				.run();
+
+			if (diff !== 0) {
+				const newBalance = Math.max(0, linkedDebt.currentBalance - diff);
+				db.update(debts)
+					.set({
+						currentBalance: newBalance,
+						updatedAt: new Date()
+					})
+					.where(eq(debts.id, linkedDebt.id))
+					.run();
+			}
+		} else {
+			// Create new auto debt payment
+			db.insert(debtPayments)
+				.values({
+					debtId: linkedDebt.id,
+					amount: overpayment,
+					paymentDate: cycle.endDate,
+					notes: `Auto-created: bill overpayment of $${overpayment.toFixed(2)} applied to principal`,
+					sourceBillCycleId: cycleId
+				})
+				.run();
+
+			// Reduce debt balance
+			const newBalance = Math.max(0, linkedDebt.currentBalance - overpayment);
+			db.update(debts)
+				.set({
+					currentBalance: newBalance,
+					updatedAt: new Date()
+				})
+				.where(eq(debts.id, linkedDebt.id))
+				.run();
+		}
+	} else if (existingAutoPayment) {
+		// Overpayment is gone (bill payment was edited/deleted) -- remove the auto debt payment
+		// Restore the debt balance
+		const restoredBalance = linkedDebt.currentBalance + existingAutoPayment.amount;
+		db.update(debts)
+			.set({
+				currentBalance: restoredBalance,
+				updatedAt: new Date()
+			})
+			.where(eq(debts.id, linkedDebt.id))
+			.run();
+
+		db.delete(debtPayments)
+			.where(eq(debtPayments.id, existingAutoPayment.id))
+			.run();
 	}
 }

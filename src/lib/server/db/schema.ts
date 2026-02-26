@@ -116,6 +116,11 @@ export const debtPayments = sqliteTable('debt_payments', {
 	amount: real('amount').notNull(),
 	paymentDate: integer('payment_date', { mode: 'timestamp' }).notNull(),
 	notes: text('notes'),
+	// When set, this debt payment was auto-created from a bill cycle overpayment.
+	// At most one auto-created debt payment per bill cycle.
+	sourceBillCycleId: integer('source_bill_cycle_id').references(() => billCycles.id, {
+		onDelete: 'set null'
+	}),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`)
