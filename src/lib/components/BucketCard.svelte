@@ -163,6 +163,11 @@
 				{currentCycle.carryoverAmount > 0 ? '+' : ''}{currentCycle.carryoverAmount.toFixed(2)} carried over
 			</div>
 		{/if}
+		{#if currentCycle && currentCycle.allocatedAmount > 0}
+			<div class="mt-1 text-xs text-blue-600 dark:text-blue-400">
+				+${currentCycle.allocatedAmount.toFixed(2)} planned
+			</div>
+		{/if}
 	</div>
 
 	<!-- Action Buttons -->

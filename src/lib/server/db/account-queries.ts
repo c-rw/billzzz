@@ -1,6 +1,6 @@
 import { db } from './index';
 import { accounts, importedTransactions, importSessions, type NewAccount } from './schema';
-import { eq, and, gt, desc, asc, sql, isNull, like, or } from 'drizzle-orm';
+import { eq, and, gt, desc, asc, sql, isNull, isNotNull, like, or } from 'drizzle-orm';
 
 // ===== ACCOUNT QUERIES =====
 
@@ -148,8 +148,20 @@ function buildTransactionConditions(
 		);
 	}
 
-	if (options?.filter === 'unclassified') {
-		conditions.push(eq(importedTransactions.isProcessed, false));
+	switch (options?.filter) {
+		case 'unclassified':
+			conditions.push(eq(importedTransactions.isProcessed, false));
+			conditions.push(eq(importedTransactions.isTransfer, false));
+			break;
+		case 'buckets':
+			conditions.push(isNotNull(importedTransactions.mappedBucketId));
+			break;
+		case 'bills':
+			conditions.push(isNotNull(importedTransactions.mappedBillId));
+			break;
+		case 'transfers':
+			conditions.push(eq(importedTransactions.isTransfer, true));
+			break;
 	}
 
 	return conditions;
