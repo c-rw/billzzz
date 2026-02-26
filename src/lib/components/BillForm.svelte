@@ -15,6 +15,7 @@
 			isRecurring?: boolean;
 			recurrenceType?: RecurrenceType | null;
 			recurrenceDay?: number | null;
+			recurrenceDay2?: number | null;
 			isAutopay?: boolean;
 			notes?: string;
 		};
@@ -39,6 +40,7 @@
 	let isRecurring = $state(false);
 	let recurrenceType = $state<RecurrenceType | null>('monthly');
 	let recurrenceDay = $state<number | null>(null);
+	let recurrenceDay2 = $state<number | null>(null);
 	let isAutopay = $state(false);
 	let notes = $state('');
 	let isSubmitting = $state(false);
@@ -64,22 +66,27 @@
 		isRecurring = initialData?.isRecurring || false;
 		recurrenceType = initialData?.recurrenceType || 'monthly';
 		recurrenceDay = initialData?.recurrenceDay || null;
+		recurrenceDay2 = initialData?.recurrenceDay2 || null;
 		isAutopay = initialData?.isAutopay || false;
 		notes = initialData?.notes || '';
 	});
 
-	// When switching to monthly or quarterly, auto-populate the day-of-month from the
-	// due date field (which reflects the last transaction date).
+	// When switching to monthly, quarterly, or semi-monthly, auto-populate the day-of-month
+	// from the due date field (which reflects the last transaction date).
 	let prevRecurrenceType = $state<RecurrenceType | null>(null);
 	$effect(() => {
-		const isMonthly = recurrenceType === 'monthly' || recurrenceType === 'quarterly';
-		const wasMonthly = prevRecurrenceType === 'monthly' || prevRecurrenceType === 'quarterly';
-		if (isMonthly && !wasMonthly) {
+		const needsDay = recurrenceType === 'monthly' || recurrenceType === 'quarterly' || recurrenceType === 'semi-monthly';
+		const neededDay = prevRecurrenceType === 'monthly' || prevRecurrenceType === 'quarterly' || prevRecurrenceType === 'semi-monthly';
+		if (needsDay && !neededDay) {
 			// Parse the day from the current dueDate string (YYYY-MM-DD), using the UTC day
 			// to stay consistent with how dates are stored and displayed.
 			const parts = dueDate.split('-');
 			if (parts.length === 3) {
 				recurrenceDay = parseInt(parts[2], 10) || null;
+			}
+			if (recurrenceType === 'semi-monthly' && !recurrenceDay2) {
+				// Default the second day to 15 days later (or 15th if day is 1st)
+				recurrenceDay2 = recurrenceDay ? Math.min(recurrenceDay + 14, 28) : 15;
 			}
 		}
 		prevRecurrenceType = recurrenceType;
@@ -102,7 +109,8 @@
 				categoryId,
 				isRecurring,
 				recurrenceType: isRecurring ? recurrenceType : null,
-				recurrenceDay: isRecurring && (recurrenceType === 'monthly' || recurrenceType === 'quarterly') ? recurrenceDay : null,
+				recurrenceDay: isRecurring && (recurrenceType === 'monthly' || recurrenceType === 'quarterly' || recurrenceType === 'semi-monthly') ? recurrenceDay : null,
+				recurrenceDay2: isRecurring && recurrenceType === 'semi-monthly' ? recurrenceDay2 : null,
 				isAutopay,
 				notes: notes || null
 			});
@@ -235,6 +243,7 @@
 					>
 						<option value="weekly">Weekly</option>
 						<option value="biweekly">Every 2 Weeks</option>
+						<option value="semi-monthly">Twice a Month</option>
 					<option value="monthly">Monthly</option>
 						<option value="quarterly">Quarterly</option>
 						<option value="semi-annual">Every 6 Months</option>
@@ -242,10 +251,10 @@
 					</select>
 				</div>
 
-				{#if recurrenceType === 'monthly' || recurrenceType === 'quarterly'}
+				{#if recurrenceType === 'monthly' || recurrenceType === 'quarterly' || recurrenceType === 'semi-monthly'}
 					<div>
 						<label for="recurrenceDay" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-							Day of Month
+							{recurrenceType === 'semi-monthly' ? 'First Day of Month' : 'Day of Month'}
 						</label>
 						<input
 							type="number"
@@ -254,10 +263,32 @@
 							min="1"
 							max="31"
 							class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
-							placeholder="e.g., 1 for 1st of month"
+							placeholder={recurrenceType === 'semi-monthly' ? 'e.g., 1' : 'e.g., 1 for 1st of month'}
+						/>
+						{#if recurrenceType !== 'semi-monthly'}
+							<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+								Leave empty to use the same day as the initial due date
+							</p>
+						{/if}
+					</div>
+				{/if}
+
+				{#if recurrenceType === 'semi-monthly'}
+					<div>
+						<label for="recurrenceDay2" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+							Second Day of Month
+						</label>
+						<input
+							type="number"
+							id="recurrenceDay2"
+							bind:value={recurrenceDay2}
+							min="1"
+							max="31"
+							class="mt-1 block w-full rounded-md border border-gray-300 bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500"
+							placeholder="e.g., 15"
 						/>
 						<p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-							Leave empty to use the same day as the initial due date
+							The two days when payment is due each month (e.g., 1st and 15th)
 						</p>
 					</div>
 				{/if}

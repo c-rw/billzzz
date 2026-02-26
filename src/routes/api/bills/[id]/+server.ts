@@ -60,6 +60,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			isRecurring: data.isRecurring,
 			recurrenceType: data.recurrenceType,
 			recurrenceDay: data.recurrenceDay,
+			recurrenceDay2: data.recurrenceDay2,
 			isPaid: data.isPaid,
 			isAutopay: data.isAutopay,
 			notes: data.notes
@@ -93,7 +94,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			const nextDueDate = calculateNextDueDate(
 				anchorDate,
 				bill.recurrenceType as any,
-				bill.recurrenceDay
+				bill.recurrenceDay,
+				bill.recurrenceDay2
 			);
 			bill = updateBill(id, { dueDate: nextDueDate }) ?? bill;
 		} else if (bill.isRecurring && bill.recurrenceType && bill.dueDate < new Date()) {
@@ -101,7 +103,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			const nextDueDate = calculateNextDueDate(
 				bill.dueDate,
 				bill.recurrenceType as any,
-				bill.recurrenceDay
+				bill.recurrenceDay,
+				bill.recurrenceDay2
 			);
 			bill = updateBill(id, { dueDate: nextDueDate }) ?? bill;
 		}
@@ -160,7 +163,8 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 			const nextDueDate = calculateNextDueDate(
 				currentBill.dueDate,
 				currentBill.recurrenceType as any,
-				currentBill.recurrenceDay
+				currentBill.recurrenceDay,
+				currentBill.recurrenceDay2
 			);
 
 			const bill = updateBill(id, {

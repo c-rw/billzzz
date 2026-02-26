@@ -6,13 +6,19 @@ import type { RecurrenceType } from '$lib/types/bill';
  */
 export function getRecurrenceDescription(
 	recurrenceType: RecurrenceType,
-	recurrenceDay?: number | null
+	recurrenceDay?: number | null,
+	recurrenceDay2?: number | null
 ): string {
 	switch (recurrenceType) {
 		case 'weekly':
 			return 'Every week';
 		case 'biweekly':
 			return 'Every 2 weeks';
+		case 'semi-monthly':
+			if (recurrenceDay && recurrenceDay2) {
+				return `Twice monthly on day ${recurrenceDay} & ${recurrenceDay2}`;
+			}
+			return 'Twice a month';
 		case 'monthly':
 			return recurrenceDay ? `Monthly on day ${recurrenceDay}` : 'Every month';
 		case 'quarterly':

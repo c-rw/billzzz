@@ -2,7 +2,7 @@ import { db } from './index';
 import { bills, buckets, debts, paydaySettings, userPreferences, importedTransactions } from './schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
-import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays } from 'date-fns';
+import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays, setDate, getDaysInMonth } from 'date-fns';
 import { utcDateToLocal } from '$lib/utils/dates';
 import { getAccountsWithBalances } from './account-queries';
 
@@ -89,6 +89,9 @@ async function calculateMonthlyObligations() {
 				break;
 			case 'biweekly':
 				monthlyBills += bill.amount * 2.17; // Average bi-weeks per month
+				break;
+			case 'semi-monthly':
+				monthlyBills += bill.amount * 2; // Twice a month
 				break;
 			case 'monthly':
 				monthlyBills += bill.amount;
@@ -239,6 +242,20 @@ async function projectCashFlow(
 					case 'biweekly':
 						nextOccurrence = addWeeks(nextOccurrence, 2);
 						break;
+					case 'semi-monthly': {
+						const day1 = bill.recurrenceDay || 1;
+						const day2 = (bill as any).recurrenceDay2 || 15;
+						const [firstDay, secondDay] = day1 < day2 ? [day1, day2] : [day2, day1];
+						const curDay = nextOccurrence.getDate();
+						const daysInMonth = getDaysInMonth(nextOccurrence);
+						if (curDay < Math.min(secondDay, daysInMonth)) {
+							nextOccurrence = setDate(nextOccurrence, Math.min(secondDay, daysInMonth));
+						} else {
+							const next = addMonths(nextOccurrence, 1);
+							nextOccurrence = setDate(next, Math.min(firstDay, getDaysInMonth(next)));
+						}
+						break;
+					}
 					case 'monthly':
 						nextOccurrence = addMonths(nextOccurrence, 1);
 						break;
@@ -274,6 +291,20 @@ async function projectCashFlow(
 					case 'biweekly':
 						nextOccurrence = addWeeks(nextOccurrence, 2);
 						break;
+					case 'semi-monthly': {
+						const day1 = bill.recurrenceDay || 1;
+						const day2 = (bill as any).recurrenceDay2 || 15;
+						const [firstDay, secondDay] = day1 < day2 ? [day1, day2] : [day2, day1];
+						const curDay = nextOccurrence.getDate();
+						const daysInMonth = getDaysInMonth(nextOccurrence);
+						if (curDay < Math.min(secondDay, daysInMonth)) {
+							nextOccurrence = setDate(nextOccurrence, Math.min(secondDay, daysInMonth));
+						} else {
+							const next = addMonths(nextOccurrence, 1);
+							nextOccurrence = setDate(next, Math.min(firstDay, getDaysInMonth(next)));
+						}
+						break;
+					}
 					case 'monthly':
 						nextOccurrence = addMonths(nextOccurrence, 1);
 						break;

@@ -298,14 +298,23 @@ export function getDebtByLinkedBillId(billId: number) {
 /**
  * Sync a debt's minimum payment to its linked bill's amount.
  * Called after the debt's minimumPayment changes.
+ * For semi-monthly bills, the bill amount is half the monthly minimum
+ * (since the bill is paid twice per month).
  */
 export function syncDebtMinimumToBill(debtId: number) {
 	const debt = db.select().from(debts).where(eq(debts.id, debtId)).get();
 	if (!debt || !debt.linkedBillId) return;
 
+	const bill = db.select().from(bills).where(eq(bills.id, debt.linkedBillId)).get();
+	if (!bill) return;
+
+	const billAmount = bill.recurrenceType === 'semi-monthly'
+		? debt.minimumPayment / 2
+		: debt.minimumPayment;
+
 	db.update(bills)
 		.set({
-			amount: debt.minimumPayment,
+			amount: billAmount,
 			updatedAt: new Date()
 		})
 		.where(eq(bills.id, debt.linkedBillId))
