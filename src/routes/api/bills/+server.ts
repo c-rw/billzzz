@@ -71,6 +71,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			recurrenceDay2: data.recurrenceDay2 || null,
 			isPaid: data.isPaid || false,
 			isAutopay: data.isAutopay || false,
+			enableCarryover: data.enableCarryover || false,
 			notes: data.notes || null
 		};
 

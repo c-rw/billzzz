@@ -17,6 +17,7 @@
 			recurrenceDay?: number | null;
 			recurrenceDay2?: number | null;
 			isAutopay?: boolean;
+			enableCarryover?: boolean;
 			notes?: string;
 		};
 		onSubmit: (data: any) => Promise<void>;
@@ -42,6 +43,7 @@
 	let recurrenceDay = $state<number | null>(null);
 	let recurrenceDay2 = $state<number | null>(null);
 	let isAutopay = $state(false);
+	let enableCarryover = $state(false);
 	let notes = $state('');
 	let isSubmitting = $state(false);
 
@@ -68,6 +70,7 @@
 		recurrenceDay = initialData?.recurrenceDay || null;
 		recurrenceDay2 = initialData?.recurrenceDay2 || null;
 		isAutopay = initialData?.isAutopay || false;
+		enableCarryover = initialData?.enableCarryover || false;
 		notes = initialData?.notes || '';
 	});
 
@@ -112,6 +115,7 @@
 				recurrenceDay: isRecurring && (recurrenceType === 'monthly' || recurrenceType === 'quarterly' || recurrenceType === 'semi-monthly') ? recurrenceDay : null,
 				recurrenceDay2: isRecurring && recurrenceType === 'semi-monthly' ? recurrenceDay2 : null,
 				isAutopay,
+				enableCarryover,
 				notes: notes || null
 			});
 		} finally {
@@ -214,6 +218,24 @@
 		<label for="isAutopay" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
 			This bill is set to autopay
 		</label>
+	</div>
+
+	<!-- Carryover -->
+	<div>
+		<div class="flex items-center">
+			<input
+				type="checkbox"
+				id="enableCarryover"
+				bind:checked={enableCarryover}
+				class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+			/>
+			<label for="enableCarryover" class="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+				Enable carryover
+			</label>
+		</div>
+		<p class="mt-1 ml-6 text-xs text-gray-500 dark:text-gray-400">
+			Set an average amount and surplus/deficit carries between cycles. Good for variable bills like electric or water.
+		</p>
 	</div>
 
 	<!-- Recurring -->

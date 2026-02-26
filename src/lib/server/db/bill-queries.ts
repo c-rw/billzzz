@@ -164,13 +164,15 @@ async function ensureCyclesExist(bill: Bill): Promise<void> {
  * Add computed fields to a cycle
  */
 function addComputedFields(cycle: BillCycle): BillCycleWithComputed {
-	const remaining = cycle.expectedAmount - cycle.totalPaid;
+	const startingBalance = cycle.expectedAmount + cycle.carryoverAmount;
+	const remaining = startingBalance - cycle.totalPaid;
 	const percentPaid = cycle.expectedAmount > 0
 		? Math.min((cycle.totalPaid / cycle.expectedAmount) * 100, 100)
 		: 0;
 
 	return {
 		...cycle,
+		startingBalance,
 		remaining,
 		percentPaid
 	};
@@ -372,12 +374,39 @@ async function recalculateCyclesFrom(bill: Bill, startDate: Date): Promise<void>
 		)
 		.orderBy(asc(billCycles.startDate));
 
+	// If carryover is enabled, we need the previous cycle's remaining to seed the first cycle
+	let prevRemaining = 0;
+	if (bill.enableCarryover && cycles.length > 0) {
+		const firstCycleStart = cycles[0].startDate;
+		const firstTimestamp = Math.floor(firstCycleStart.getTime() / 1000);
+		const prevCycle = await db
+			.select()
+			.from(billCycles)
+			.where(
+				and(
+					eq(billCycles.billId, bill.id),
+					sql`${billCycles.startDate} < ${firstTimestamp}`
+				)
+			)
+			.orderBy(desc(billCycles.startDate))
+			.limit(1);
+
+		if (prevCycle.length > 0) {
+			const prev = prevCycle[0];
+			const prevStartingBalance = prev.expectedAmount + prev.carryoverAmount;
+			prevRemaining = prevStartingBalance - prev.totalPaid;
+		}
+	}
+
 	for (const cycle of cycles) {
 		// Calculate total paid for this cycle
 		const payments = await getPaymentsForCycle(cycle.id);
 		const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
 
-		// Determine if cycle is paid
+		// Determine carryover for this cycle
+		const carryoverAmount = bill.enableCarryover ? prevRemaining : 0;
+
+		// Determine if cycle is paid (based on expectedAmount, not startingBalance)
 		const isPaid = totalPaid >= cycle.expectedAmount;
 
 		// Update the cycle
@@ -385,13 +414,20 @@ async function recalculateCyclesFrom(bill: Bill, startDate: Date): Promise<void>
 			.update(billCycles)
 			.set({
 				totalPaid,
+				carryoverAmount,
 				isPaid,
 				updatedAt: new Date()
 			})
 			.where(eq(billCycles.id, cycle.id));
 
-		// Sync overpayment to linked debt (if any)
-		await syncOverpaymentToDebt(bill.id, cycle.id);
+		// For carryover bills, surplus rolls forward instead of going to debt
+		if (bill.enableCarryover) {
+			const startingBalance = cycle.expectedAmount + carryoverAmount;
+			prevRemaining = startingBalance - totalPaid;
+		} else {
+			// Sync overpayment to linked debt (if any)
+			await syncOverpaymentToDebt(bill.id, cycle.id);
+		}
 	}
 }
 

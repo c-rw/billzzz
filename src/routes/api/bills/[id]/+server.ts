@@ -63,6 +63,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			recurrenceDay2: data.recurrenceDay2,
 			isPaid: data.isPaid,
 			isAutopay: data.isAutopay,
+			enableCarryover: data.enableCarryover,
 			notes: data.notes
 		};
 
