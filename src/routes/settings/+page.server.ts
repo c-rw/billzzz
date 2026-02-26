@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getAllCategories, getPaydaySettings, getAllAccounts } from '$lib/server/db/queries';
+import { getAllCategories } from '$lib/server/db/queries';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index';
 import {
@@ -17,6 +17,7 @@ import {
 	importSessions,
 	importedTransactions,
 	accounts,
+	transfers,
 	userPreferences
 } from '$lib/server/db/schema';
 
@@ -35,6 +36,12 @@ interface ImportData {
 		debtPayments: any[];
 		debtStrategySettings: any[];
 		paydaySettings: any[];
+		// v2.0 fields (optional for backward compatibility with v1.0 backups)
+		accounts?: any[];
+		importSessions?: any[];
+		importedTransactions?: any[];
+		transfers?: any[];
+		userPreferences?: any[];
 	};
 }
 
@@ -60,13 +67,9 @@ function convertDatesToObjects(data: any[]): any[] {
 
 export const load: PageServerLoad = async () => {
 	const categoriesData = getAllCategories();
-	const paydaySettingsData = getPaydaySettings();
-	const accountsData = getAllAccounts();
 
 	return {
-		categories: categoriesData,
-		paydaySettings: paydaySettingsData,
-		accounts: accountsData
+		categories: categoriesData
 	};
 };
 
@@ -103,6 +106,13 @@ export const actions: Actions = {
 			}
 
 			// Clear existing data (in reverse order due to foreign key constraints)
+			// v2.0 tables first (they reference importedTransactions/accounts)
+			db.delete(transfers).run();
+			db.delete(importedTransactions).run();
+			db.delete(importSessions).run();
+			db.delete(accounts).run();
+			db.delete(userPreferences).run();
+			// Original v1.0 tables
 			db.delete(bucketTransactions).run();
 			db.delete(bucketCycles).run();
 			db.delete(buckets).run();
@@ -126,7 +136,12 @@ export const actions: Actions = {
 				debts: 0,
 				debtPayments: 0,
 				debtStrategySettings: 0,
-				paydaySettings: 0
+				paydaySettings: 0,
+				accounts: 0,
+				importSessions: 0,
+				importedTransactions: 0,
+				transfers: 0,
+				userPreferences: 0
 			};
 
 			// Import data (in order to respect foreign key constraints)
@@ -200,6 +215,37 @@ export const actions: Actions = {
 				importedCounts.debtStrategySettings = importData.data.debtStrategySettings.length;
 			}
 
+			// v2.0 tables (accounts/import data/transfers)
+			if (importData.data.accounts && importData.data.accounts.length > 0) {
+				const convertedAccounts = convertDatesToObjects(importData.data.accounts);
+				db.insert(accounts).values(convertedAccounts).run();
+				importedCounts.accounts = importData.data.accounts.length;
+			}
+
+			if (importData.data.importSessions && importData.data.importSessions.length > 0) {
+				const convertedImportSessions = convertDatesToObjects(importData.data.importSessions);
+				db.insert(importSessions).values(convertedImportSessions).run();
+				importedCounts.importSessions = importData.data.importSessions.length;
+			}
+
+			if (importData.data.importedTransactions && importData.data.importedTransactions.length > 0) {
+				const convertedImportedTransactions = convertDatesToObjects(importData.data.importedTransactions);
+				db.insert(importedTransactions).values(convertedImportedTransactions).run();
+				importedCounts.importedTransactions = importData.data.importedTransactions.length;
+			}
+
+			if (importData.data.transfers && importData.data.transfers.length > 0) {
+				const convertedTransfers = convertDatesToObjects(importData.data.transfers);
+				db.insert(transfers).values(convertedTransfers).run();
+				importedCounts.transfers = importData.data.transfers.length;
+			}
+
+			if (importData.data.userPreferences && importData.data.userPreferences.length > 0) {
+				const convertedUserPreferences = convertDatesToObjects(importData.data.userPreferences);
+				db.insert(userPreferences).values(convertedUserPreferences).run();
+				importedCounts.userPreferences = importData.data.userPreferences.length;
+			}
+
 			console.log('Import successful:', importedCounts);
 
 			return {
@@ -226,6 +272,7 @@ export const actions: Actions = {
 			}
 
 			// Delete all data (in reverse order due to foreign key constraints)
+			db.delete(transfers).run();
 			db.delete(importedTransactions).run();
 			db.delete(importSessions).run();
 			db.delete(accounts).run();

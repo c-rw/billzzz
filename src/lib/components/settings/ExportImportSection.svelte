@@ -58,7 +58,7 @@
 					<div class="flex-1">
 						<h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">Export Data</h3>
 						<p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-							Download a JSON file with all your bills, buckets, debts, categories, and settings (payment history not included)
+							Download a JSON file with all your data including accounts, transactions, bills, buckets, debts, and settings
 						</p>
 						<Button variant="primary" size="md" onclick={onExport} class="mt-3">
 							<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

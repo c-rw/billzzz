@@ -61,23 +61,28 @@
 			budgetAmount?: number;
 			frequency?: string;
 			anchorDate?: string;
-			counterpartyAccountId?: number;
-			transferCategoryId?: number;
 			refundedBucketId?: number;
 			refundedBillId?: number;
+			counterpartyAccountId?: number;
 		}>
 	>([]);
 
 	// Initialize mappings when transactions load
 	// Smart defaults based on transaction type:
-	//   CREDIT  → mark_income (can be changed to refund or transfer)
-	//   XFER    → mark_transfer (bank-flagged as inter-account transfer)
+	//   XFER / isPotentialTransfer → mark_transfer
+	//   CREDIT  → mark_income (can be changed to refund or skip)
 	//   DEBIT   → skip (user must choose a mapping)
 	function defaultActionForTransaction(txn: typeof data.transactions[0]['transaction']): MappingAction {
+		if (txn.isPotentialTransfer) return 'mark_transfer';
 		if (txn.transactionType === 'CREDIT') return 'mark_income';
-		if (txn.transactionType === 'XFER' || txn.isPotentialTransfer) return 'mark_transfer';
 		return 'skip';
 	}
+
+	// Resolve the account name for the current import session
+	const currentAccountId = $derived(data.session?.accountId ?? null);
+	const currentAccount = $derived(
+		data.accounts?.find((a) => a.id === currentAccountId) ?? null
+	);
 
 	$effect(() => {
 		if (data.transactions.length > 0 && transactionMappings.length === 0) {
@@ -136,6 +141,74 @@
 	{#if !data.sessionId}
 		<!-- Upload Form -->
 		<OFXUploadForm bind:uploading bind:selectedFile />
+	{:else if data.showAccountConfirmation}
+		<!-- Account Confirmation Step -->
+		<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 max-w-lg mx-auto">
+			<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">New Account Detected</h2>
+			<p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+				This file appears to be from a new account. Please confirm the account details below.
+			</p>
+
+			<form method="POST" action="?/confirmAccount" use:enhance>
+				<input type="hidden" name="sessionId" value={data.sessionId} />
+				{#if data.detectedAccount?.accountNumber}
+					<input type="hidden" name="accountNumber" value={data.detectedAccount.accountNumber} />
+				{/if}
+				{#if data.detectedAccount?.bankId}
+					<input type="hidden" name="bankId" value={data.detectedAccount.bankId} />
+				{/if}
+
+				<div class="space-y-4">
+					<div>
+						<label for="accountName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+							Account Name
+						</label>
+						<input
+							id="accountName"
+							type="text"
+							name="accountName"
+							required
+							placeholder="e.g. Chase Checking, Amex Gold"
+							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
+						/>
+					</div>
+
+					<div>
+						<label for="accountType" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+							Account Type
+						</label>
+						<select
+							id="accountType"
+							name="accountType"
+							value={data.detectedAccount?.accountType ?? 'checking'}
+							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
+						>
+							<option value="checking">Checking</option>
+							<option value="savings">Savings</option>
+							<option value="credit_card">Credit Card</option>
+						</select>
+					</div>
+
+					{#if data.detectedAccount?.accountNumber}
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							Account ending in <span class="font-mono font-medium">...{data.detectedAccount.accountNumber}</span>
+						</p>
+					{/if}
+				</div>
+
+				<div class="mt-6 flex justify-end gap-3">
+					<a
+						href="/import"
+						class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+					>
+						Cancel
+					</a>
+					<Button type="submit" variant="primary" size="md">
+						Continue to Review
+					</Button>
+				</div>
+			</form>
+		</div>
 	{:else}
 		<!-- Review Transactions -->
 		<div class="space-y-6">
@@ -147,8 +220,16 @@
 						<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
 							Review Transactions ({data.transactions.length})
 						</h2>
+						{#if currentAccount}
+							<p class="text-sm text-blue-600 dark:text-blue-400 font-medium">
+								Importing to: {currentAccount.name}
+								{#if currentAccount.accountType}
+									<span class="text-gray-400 font-normal">({currentAccount.accountType.replace('_', ' ')})</span>
+								{/if}
+							</p>
+						{/if}
 						<p class="text-sm text-gray-600 dark:text-gray-400">
-							Review and classify each transaction — map to bills/buckets, mark as income, record refunds, or flag transfers
+							Review and classify each transaction — map to bills/buckets, mark as income, or record refunds
 						</p>
 						{#if data.session?.skippedCount && data.session.skippedCount > 0}
 							<p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
@@ -183,24 +264,25 @@
 					<div class="space-y-4">
 					{#each data.transactions as { transaction }, index}
 							{#if transactionMappings[index]}
-								<TransactionCard
-									transaction={{
-										id: transaction.id,
-										payee: transaction.payee,
-										amount: transaction.amount,
-										datePosted: transaction.datePosted,
-										memo: transaction.memo,
-										transactionType: transaction.transactionType,
-										isPotentialTransfer: transaction.isPotentialTransfer ?? false
-									}}
-									{index}
-									bind:mapping={transactionMappings[index]}
-									existingBills={data.existingBills}
-									buckets={data.buckets}
-									categories={data.categories}
-									accounts={data.accounts}
-									{iconMap}
-								/>
+						<TransactionCard
+							transaction={{
+								id: transaction.id,
+								payee: transaction.payee,
+								amount: transaction.amount,
+								datePosted: transaction.datePosted,
+								memo: transaction.memo,
+								transactionType: transaction.transactionType,
+								isPotentialTransfer: transaction.isPotentialTransfer ?? false
+							}}
+							{index}
+							bind:mapping={transactionMappings[index]}
+							existingBills={data.existingBills}
+							buckets={data.buckets}
+							categories={data.categories}
+							accounts={data.accounts}
+							{currentAccountId}
+							{iconMap}
+						/>
 							{/if}
 						{/each}
 					</div>

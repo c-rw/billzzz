@@ -19,13 +19,21 @@
 					>
 						Bills
 					</a>
-					<a
+				<a
 						href="/buckets"
 						class="rounded-md px-3 py-2 text-sm font-medium transition-colors {isActive('/buckets')
 							? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
 							: 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}"
 					>
 						Buckets
+					</a>
+					<a
+						href="/accounts"
+						class="rounded-md px-3 py-2 text-sm font-medium transition-colors {isActive('/accounts')
+							? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400'
+							: 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}"
+					>
+						Accounts
 					</a>
 					<a
 						href="/analytics"

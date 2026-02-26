@@ -4,6 +4,7 @@ import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
 import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays } from 'date-fns';
 import { utcDateToLocal } from '$lib/utils/dates';
+import { getAccountsWithBalances } from './account-queries';
 
 export interface CashFlowDataPoint {
 	date: Date;
@@ -25,10 +26,9 @@ export interface AnalyticsData {
 	cashFlowProjection: CashFlowDataPoint[];
 	warnings: AnalyticsWarning[];
 	metrics: {
-		currentBalance: number | null;
+		currentBalance: number;
 		expectedIncome: number | null;
 		nextPayday: Date | null;
-		lastBalanceUpdate: Date | null;
 		savingsPerPaycheck: number;
 		burnRate: number;
 		runway: number;
@@ -51,7 +51,7 @@ export async function getHistoricalIncomeData() {
 	const incomeTransactions = await db
 		.select()
 		.from(importedTransactions)
-		.where(eq(importedTransactions.isIncome, true))
+		.where(and(eq(importedTransactions.isIncome, true), eq(importedTransactions.isTransfer, false)))
 		.orderBy(desc(importedTransactions.datePosted))
 		.limit(10);
 
@@ -95,6 +95,9 @@ async function calculateMonthlyObligations() {
 				break;
 			case 'quarterly':
 				monthlyBills += bill.amount / 3;
+				break;
+			case 'semi-annual':
+				monthlyBills += bill.amount / 6;
 				break;
 			case 'yearly':
 				monthlyBills += bill.amount / 12;
@@ -226,7 +229,9 @@ async function projectCashFlow(
 			let nextOccurrence = startOfDay(utcDateToLocal(bill.dueDate));
 
 			// Fast-forward to the first occurrence on or after today
-			while (nextOccurrence < today) {
+			let safetyCounter = 0;
+			while (nextOccurrence < today && safetyCounter < 1000) {
+				safetyCounter++;
 				switch (bill.recurrenceType) {
 					case 'weekly':
 						nextOccurrence = addWeeks(nextOccurrence, 1);
@@ -240,8 +245,15 @@ async function projectCashFlow(
 					case 'quarterly':
 						nextOccurrence = addQuarters(nextOccurrence, 1);
 						break;
+					case 'semi-annual':
+						nextOccurrence = addMonths(nextOccurrence, 6);
+						break;
 					case 'yearly':
 						nextOccurrence = addYears(nextOccurrence, 1);
+						break;
+					default:
+						// Unknown recurrence type — break out to avoid infinite loop
+						safetyCounter = 1000;
 						break;
 				}
 			}
@@ -268,8 +280,15 @@ async function projectCashFlow(
 					case 'quarterly':
 						nextOccurrence = addQuarters(nextOccurrence, 1);
 						break;
+					case 'semi-annual':
+						nextOccurrence = addMonths(nextOccurrence, 6);
+						break;
 					case 'yearly':
 						nextOccurrence = addYears(nextOccurrence, 1);
+						break;
+					default:
+						// Unknown recurrence type — break out to avoid infinite loop
+						nextOccurrence = addDays(endDate, 1);
 						break;
 				}
 			}
@@ -399,13 +418,17 @@ async function projectCashFlow(
  * Get comprehensive analytics data
  */
 export async function getAnalyticsData(): Promise<AnalyticsData> {
-	// Get user preferences
+	// Get user preferences (for expectedIncomeAmount)
 	const prefs = await db.select().from(userPreferences).limit(1);
 	const userPref = prefs.length > 0 ? prefs[0] : null;
 
-	const currentBalance = userPref?.currentBalance ?? null;
 	const expectedIncome = userPref?.expectedIncomeAmount ?? null;
-	const lastBalanceUpdate = userPref?.lastBalanceUpdate ?? null;
+
+	// Compute total balance from all non-external accounts
+	const accountsWithBalances = getAccountsWithBalances();
+	const currentBalance = accountsWithBalances
+		.filter((a) => !a.isExternal)
+		.reduce((sum, a) => sum + a.balance, 0);
 
 	// Get payday info
 	const paydayConfig = await db.select().from(paydaySettings).limit(1);
@@ -416,7 +439,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
 
 	// Project cash flow
 	const { dataPoints, warnings } = await projectCashFlow(
-		currentBalance ?? 0,
+		currentBalance,
 		expectedIncome ?? 0,
 		90
 	);
@@ -443,7 +466,6 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
 			currentBalance,
 			expectedIncome,
 			nextPayday,
-			lastBalanceUpdate,
 			savingsPerPaycheck,
 			burnRate,
 			runway,
@@ -465,7 +487,6 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
  */
 export async function updateAnalyticsPreferences(data: {
 	expectedIncomeAmount?: number;
-	currentBalance?: number;
 }) {
 	const prefs = await db.select().from(userPreferences).limit(1);
 
@@ -473,9 +494,7 @@ export async function updateAnalyticsPreferences(data: {
 		// Create new preferences
 		await db.insert(userPreferences).values({
 			themePreference: 'system',
-			expectedIncomeAmount: data.expectedIncomeAmount,
-			currentBalance: data.currentBalance,
-			lastBalanceUpdate: data.currentBalance !== undefined ? new Date() : undefined
+			expectedIncomeAmount: data.expectedIncomeAmount
 		});
 	} else {
 		// Update existing
@@ -483,8 +502,6 @@ export async function updateAnalyticsPreferences(data: {
 			.update(userPreferences)
 			.set({
 				expectedIncomeAmount: data.expectedIncomeAmount,
-				currentBalance: data.currentBalance,
-				lastBalanceUpdate: data.currentBalance !== undefined ? new Date() : undefined,
 				updatedAt: new Date()
 			})
 			.where(eq(userPreferences.id, prefs[0].id));

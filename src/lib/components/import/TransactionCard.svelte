@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { FileText } from 'lucide-svelte';
+	import { FileText, ArrowLeftRight } from 'lucide-svelte';
 	import MappingActionSelector from './MappingActionSelector.svelte';
 	import type { MappingAction } from '$lib/types/import';
 	import BillMappingForm from './BillMappingForm.svelte';
 	import BucketMappingForm from './BucketMappingForm.svelte';
-	import TransferMappingForm from './TransferMappingForm.svelte';
 	import RefundMappingForm from './RefundMappingForm.svelte';
+	import TransferMappingForm from './TransferMappingForm.svelte';
 	import type { Category, BillWithCategory } from '$lib/types/bill';
 	import { formatDateForInput } from '$lib/utils/dates';
 
@@ -15,8 +15,15 @@
 		amount: number;
 		datePosted: Date;
 		memo?: string | null;
-		transactionType: string; // Raw OFX TRNTYPE: 'DEBIT', 'CREDIT', 'XFER', etc.
-		isPotentialTransfer: boolean;
+		transactionType: string; // Raw OFX TRNTYPE: 'DEBIT', 'CREDIT', etc.
+		isPotentialTransfer?: boolean;
+	}
+
+	interface Account {
+		id: number;
+		name: string;
+		accountType: string | null;
+		isExternal: boolean;
 	}
 
 	interface Bucket {
@@ -31,12 +38,6 @@
 		} | null;
 	}
 
-	interface Account {
-		id: number;
-		name: string;
-		isExternal: boolean;
-	}
-
 	interface TransactionMapping {
 		transactionId: number;
 		action: MappingAction;
@@ -46,15 +47,15 @@
 		dueDate?: string;
 		categoryId?: number;
 		isRecurring?: boolean;
+		recurrenceType?: string;
 		bucketId?: number;
 		bucketName?: string;
 		budgetAmount?: number;
 		frequency?: string;
 		anchorDate?: string;
-		counterpartyAccountId?: number;
-		transferCategoryId?: number;
 		refundedBucketId?: number;
 		refundedBillId?: number;
+		counterpartyAccountId?: number;
 	}
 
 	let {
@@ -64,7 +65,8 @@
 		existingBills,
 		buckets,
 		categories,
-		accounts,
+		accounts = [],
+		currentAccountId = null,
 		iconMap
 	}: {
 		transaction: Transaction;
@@ -73,7 +75,8 @@
 		existingBills: BillWithCategory[];
 		buckets: Bucket[];
 		categories: Category[];
-		accounts: Account[];
+		accounts?: Account[];
+		currentAccountId?: number | null;
 		iconMap: Record<string, any>;
 	} = $props();
 
@@ -99,8 +102,8 @@
 	const typeBadge = $derived(
 		transaction.transactionType === 'CREDIT'
 			? { label: 'Credit / Income', cls: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' }
-			: transaction.transactionType === 'XFER'
-				? { label: 'Transfer', cls: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' }
+			: transaction.isPotentialTransfer
+				? { label: 'Possible Transfer', cls: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' }
 				: null
 	);
 </script>
@@ -143,6 +146,7 @@
 					{index}
 					selectedAction={mapping.action}
 					transactionType={transaction.transactionType}
+					isPotentialTransfer={transaction.isPotentialTransfer ?? false}
 					onActionChange={handleActionChange}
 				/>
 
@@ -189,6 +193,7 @@
 						bind:dueDate={mapping.dueDate}
 						bind:categoryId={mapping.categoryId}
 						bind:isRecurring={mapping.isRecurring}
+						bind:recurrenceType={mapping.recurrenceType}
 						{categories}
 					/>
 				{/if}
@@ -204,18 +209,7 @@
 					/>
 				{/if}
 
-				<!-- Mark as Transfer -->
-				{#if mapping.action === 'mark_transfer'}
-					<TransferMappingForm
-						{index}
-						bind:counterpartyAccountId={mapping.counterpartyAccountId}
-						bind:transferCategoryId={mapping.transferCategoryId}
-						{accounts}
-						{categories}
-					/>
-				{/if}
-
-				<!-- Mark as Refund -->
+			<!-- Mark as Refund -->
 				{#if mapping.action === 'mark_refund'}
 					<RefundMappingForm
 						{index}
@@ -232,6 +226,16 @@
 					<p class="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded px-2 py-1">
 						This transaction will be recorded as income and excluded from spending totals.
 					</p>
+				{/if}
+
+				<!-- Mark as Transfer -->
+				{#if mapping.action === 'mark_transfer'}
+					<TransferMappingForm
+						{index}
+						bind:counterpartyAccountId={mapping.counterpartyAccountId}
+						{accounts}
+						{currentAccountId}
+					/>
 				{/if}
 			</div>
 		</div>

@@ -12,14 +12,19 @@ import {
 	debts,
 	debtPayments,
 	debtStrategySettings,
-	paydaySettings
+	paydaySettings,
+	accounts,
+	importSessions,
+	importedTransactions,
+	transfers,
+	userPreferences
 } from '$lib/server/db/schema';
 
 export const GET: RequestHandler = async () => {
 	try {
 		// Export all data
 		const exportData = {
-			version: '1.0',
+			version: '2.0',
 			exportDate: new Date().toISOString(),
 			data: {
 				categories: db.select().from(categories).all(),
@@ -32,7 +37,12 @@ export const GET: RequestHandler = async () => {
 				debts: db.select().from(debts).all(),
 				debtPayments: db.select().from(debtPayments).all(),
 				debtStrategySettings: db.select().from(debtStrategySettings).all(),
-				paydaySettings: db.select().from(paydaySettings).all()
+				paydaySettings: db.select().from(paydaySettings).all(),
+				accounts: db.select().from(accounts).all(),
+				importSessions: db.select().from(importSessions).all(),
+				importedTransactions: db.select().from(importedTransactions).all(),
+				transfers: db.select().from(transfers).all(),
+				userPreferences: db.select().from(userPreferences).all()
 			}
 		};
 

@@ -5,22 +5,24 @@
 		index,
 		selectedAction,
 		transactionType,
+		isPotentialTransfer = false,
 		onActionChange
 	}: {
 		index: number;
 		selectedAction: MappingAction;
 		transactionType: string; // Raw OFX TRNTYPE: 'DEBIT', 'CREDIT', 'XFER', etc.
+		isPotentialTransfer?: boolean;
 		onActionChange: (action: MappingAction) => void;
 	} = $props();
 
-	// CREDITs are money coming IN — they can be income, refunds, or transfer receipts.
-	// DEBITs and XFERs are money going OUT or moving — they map to bills, buckets, or transfers.
+	// CREDITs are money coming IN — they can be income or refunds.
+	// DEBITs are money going OUT — they map to bills or buckets.
 	const isCredit = $derived(transactionType === 'CREDIT');
 </script>
 
 <div class="grid grid-cols-3 gap-2">
 	{#if isCredit}
-		<!-- CREDIT transactions: income, refund, transfer receipt, or skip -->
+		<!-- CREDIT transactions: income, refund, transfer, or skip -->
 		<label class="flex items-center">
 			<input
 				type="radio"
@@ -52,7 +54,14 @@
 				onchange={() => onActionChange('mark_transfer')}
 				class="mr-2"
 			/>
-			<span class="text-sm dark:text-gray-300">Transfer</span>
+			<span class="text-sm dark:text-gray-300">
+				Transfer
+				{#if isPotentialTransfer}
+					<span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+						Likely
+					</span>
+				{/if}
+			</span>
 		</label>
 		<label class="flex items-center">
 			<input
@@ -66,7 +75,7 @@
 			<span class="text-sm dark:text-gray-300">Skip</span>
 		</label>
 	{:else}
-		<!-- DEBIT / XFER / other transactions: expense mapping or transfer -->
+		<!-- DEBIT / other transactions: bill, bucket, transfer mapping -->
 		<label class="flex items-center">
 			<input
 				type="radio"
@@ -131,7 +140,14 @@
 				onchange={() => onActionChange('mark_transfer')}
 				class="mr-2"
 			/>
-			<span class="text-sm dark:text-gray-300">Transfer</span>
+			<span class="text-sm dark:text-gray-300">
+				Transfer
+				{#if isPotentialTransfer}
+					<span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+						Likely
+					</span>
+				{/if}
+			</span>
 		</label>
 	{/if}
 </div>
