@@ -18,8 +18,12 @@ import {
 	createBill,
 	updateImportedTransaction,
 	markBillAsPaid,
-	updateBill
+	updateBill,
+	createImportSession,
+	createImportedTransactionsBatch,
+	checkDuplicateFitId
 } from '$lib/server/db/queries';
+import { parseOfxFile, isValidOfxFile } from '$lib/server/ofx-parser';
 import { getAllBucketsWithCurrentCycle, getAllBuckets, createTransaction, createBucket } from '$lib/server/db/bucket-queries';
 import { createPayment } from '$lib/server/db/bill-queries';
 import { parseLocalDate, utcDateToLocal } from '$lib/utils/dates';
@@ -414,6 +418,121 @@ export const actions: Actions = {
 		} catch (err) {
 			console.error('Update transaction mapping error:', err);
 			return fail(500, { error: 'Failed to update transaction mapping' });
+		}
+	},
+
+	importTransactions: async ({ request, params }) => {
+		const accountId = parseInt(params.id);
+
+		const account = getAccountById(accountId);
+		if (!account) {
+			return fail(404, { error: 'Account not found' });
+		}
+
+		const formData = await request.formData();
+		const file = formData.get('ofxFile') as File | null;
+
+		if (!file || file.size === 0) {
+			return fail(400, { error: 'Please select a file to upload' });
+		}
+
+		const fileName = file.name.toLowerCase();
+		if (!fileName.endsWith('.ofx') && !fileName.endsWith('.qfx')) {
+			return fail(400, { error: 'Only OFX and QFX files are supported' });
+		}
+
+		if (file.size > 10 * 1024 * 1024) {
+			return fail(400, { error: 'File size exceeds 10 MB limit' });
+		}
+
+		try {
+			const buffer = Buffer.from(await file.arrayBuffer());
+
+			if (!isValidOfxFile(buffer)) {
+				return fail(400, { error: 'File does not appear to be a valid OFX/QFX file' });
+			}
+
+			const parseResult = await parseOfxFile(buffer);
+
+			if (parseResult.transactions.length === 0) {
+				return fail(400, { error: 'No transactions found in the file' });
+			}
+
+			// Deduplicate against existing processed transactions
+			const newTransactions = [];
+			let skippedCount = 0;
+			const seenFitIds = new Set<string>();
+
+			for (const txn of parseResult.transactions) {
+				if (seenFitIds.has(txn.fitId)) {
+					skippedCount++;
+					continue;
+				}
+
+				const duplicate = checkDuplicateFitId(txn.fitId);
+				if (!duplicate) {
+					newTransactions.push(txn);
+					seenFitIds.add(txn.fitId);
+				} else {
+					skippedCount++;
+				}
+			}
+
+			// Create import session linked to this account
+			const session = createImportSession({
+				fileName: file.name,
+				fileType: fileName.endsWith('.qfx') ? 'qfx' : 'ofx',
+				transactionCount: parseResult.transactions.length,
+				importedCount: newTransactions.length,
+				skippedCount,
+				status: 'completed',
+				accountId
+			});
+
+			// Insert non-duplicate transactions, already owned by this account
+			if (newTransactions.length > 0) {
+				const transactionData = newTransactions.map((txn) => ({
+					sessionId: session.id,
+					fitId: txn.fitId,
+					transactionType: txn.transactionType,
+					datePosted: txn.datePosted,
+					amount: Math.abs(txn.amount),
+					payee: txn.payee,
+					memo: txn.memo || null,
+					checkNumber: txn.checkNumber || null,
+					isIncome: false,
+					isProcessed: false,
+					ownerAccountId: accountId,
+					isPotentialTransfer: txn.transactionType === 'XFER'
+				}));
+
+				createImportedTransactionsBatch(transactionData);
+			}
+
+			// Update account's bank info if not already set (for future matching)
+			const accountNumberLast4 = parseResult.accountNumber
+				? parseResult.accountNumber.slice(-4)
+				: null;
+			const bankId = parseResult.bankId || null;
+
+			if (accountNumberLast4 && !account.accountNumber) {
+				updateAccount(accountId, { accountNumber: accountNumberLast4 });
+			}
+			if (bankId && !account.bankId) {
+				updateAccount(accountId, { bankId });
+			}
+
+			return {
+				importSuccess: true,
+				importedCount: newTransactions.length,
+				skippedCount,
+				totalCount: parseResult.transactions.length
+			};
+		} catch (err) {
+			console.error('Import transactions error:', err);
+			return fail(500, {
+				error: `Failed to import transactions: ${err instanceof Error ? err.message : 'Unknown error'}`
+			});
 		}
 	}
 };

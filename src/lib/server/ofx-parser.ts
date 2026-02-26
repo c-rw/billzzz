@@ -74,8 +74,13 @@ export async function parseOfxFile(fileBuffer: Buffer): Promise<OFXParseResult> 
 		}
 
 		// Get data as JSON for account info
+		// toJson() returns nested OFX structure:
+		//   Bank: OFX.BANKMSGSRSV1.STMTTRNRS.STMTRS.BANKACCTFROM
+		//   Credit Card: OFX.CREDITCARDMSGSRSV1.CCSTMTTRNRS.CCSTMTRS.CCACCTFROM
 		const ofxData = ofx.toJson();
-		const accountInfo = ofxData?.BANKACCTFROM || ofxData?.CCACCTFROM;
+		const bankStmt = ofxData?.OFX?.BANKMSGSRSV1?.STMTTRNRS?.STMTRS;
+		const ccStmt = ofxData?.OFX?.CREDITCARDMSGSRSV1?.CCSTMTTRNRS?.CCSTMTRS;
+		const accountInfo = bankStmt?.BANKACCTFROM || ccStmt?.CCACCTFROM;
 
 		return {
 			accountType,
