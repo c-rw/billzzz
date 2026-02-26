@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getDebtById, recordDebtPayment } from '$lib/server/db/debt-queries';
+import { parseLocalDate } from '$lib/utils/dates';
 
 export const POST: RequestHandler = async ({ params, request }) => {
 	try {
@@ -32,7 +33,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const payment = recordDebtPayment({
 			debtId,
 			amount: data.amount,
-			paymentDate: new Date(data.paymentDate),
+			paymentDate: parseLocalDate(data.paymentDate.split('T')[0]),
 			notes: data.notes?.trim() || null
 		});
 

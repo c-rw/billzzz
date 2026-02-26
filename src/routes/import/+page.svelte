@@ -4,7 +4,7 @@
 	import OFXUploadForm from '$lib/components/import/OFXUploadForm.svelte';
 	import TransactionCard from '$lib/components/import/TransactionCard.svelte';
 	import { enhance } from '$app/forms';
-	import { formatDateForInput } from '$lib/utils/dates';
+	import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
 	import {
 		ShoppingCart,
 		Fuel,
@@ -91,7 +91,7 @@
 				action: defaultActionForTransaction(t.transaction),
 				amount: t.transaction.amount,
 				billName: t.transaction.payee,
-				dueDate: formatDateForInput(new Date(t.transaction.datePosted)),
+				dueDate: formatDateForInput(utcDateToLocal(new Date(t.transaction.datePosted))),
 				isRecurring: true,
 				recurrenceType: 'monthly'
 			}));

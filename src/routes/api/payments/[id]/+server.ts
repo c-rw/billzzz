@@ -1,6 +1,15 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { updatePayment, deletePayment } from '$lib/server/db/bill-queries';
+import { parseLocalDate } from '$lib/utils/dates';
+
+/** Safely parse a date string (YYYY-MM-DD or ISO timestamp) to local midnight */
+function parseDateInput(value: string): Date {
+	if (value.includes('T')) {
+		return parseLocalDate(value.split('T')[0]);
+	}
+	return parseLocalDate(value);
+}
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
@@ -9,7 +18,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 		const updateData: any = {};
 		if (data.amount !== undefined) updateData.amount = parseFloat(data.amount);
-		if (data.paymentDate) updateData.paymentDate = new Date(data.paymentDate);
+		if (data.paymentDate) updateData.paymentDate = parseDateInput(data.paymentDate);
 		if (data.notes !== undefined) updateData.notes = data.notes;
 
 		const payment = await updatePayment(id, updateData);
@@ -32,7 +41,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 
 		const updateData: any = {};
 		if (data.amount !== undefined) updateData.amount = parseFloat(data.amount);
-		if (data.paymentDate) updateData.paymentDate = new Date(data.paymentDate);
+		if (data.paymentDate) updateData.paymentDate = parseDateInput(data.paymentDate);
 		if (data.notes !== undefined) updateData.notes = data.notes;
 
 		const payment = await updatePayment(id, updateData);
