@@ -93,11 +93,7 @@
 		e.preventDefault();
 		isSubmitting = true;
 
-		try {
-			// Parse date as local time to avoid timezone issues
-			const [year, month, day] = anchorDate.split('-').map(Number);
-			const localDate = new Date(year, month - 1, day);
-
+	try {
 			await onSubmit({
 				name,
 				frequency,
@@ -105,7 +101,7 @@
 				enableCarryover,
 				icon: icon || null,
 				color: color || null,
-				anchorDate: localDate
+				anchorDate // Send YYYY-MM-DD string directly — server parses with parseLocalDate
 			});
 		} finally {
 			isSubmitting = false;
