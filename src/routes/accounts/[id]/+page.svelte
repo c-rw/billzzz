@@ -7,6 +7,7 @@
 	import BucketMappingForm from '$lib/components/import/BucketMappingForm.svelte';
 	import RefundMappingForm from '$lib/components/import/RefundMappingForm.svelte';
 	import TransferMappingForm from '$lib/components/import/TransferMappingForm.svelte';
+	import ImportModal from '$lib/components/import/ImportModal.svelte';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
@@ -42,6 +43,7 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let editing = $state(false);
+	let showImportModal = $state(false);
 	let searchInput = $state(data.search ?? '');
 
 	/** Build query string preserving current search + filter state */
@@ -389,11 +391,9 @@
 					<Button variant="ghost" size="sm" onclick={() => (editing = true)}>
 						<Pencil class="h-4 w-4 mr-1 inline" /> Edit
 					</Button>
-					<a href="/import">
-						<Button variant="secondary" size="sm">
-							<Upload class="h-4 w-4 mr-1 inline" /> Import
-						</Button>
-					</a>
+					<Button variant="secondary" size="sm" onclick={() => (showImportModal = true)}>
+						<Upload class="h-4 w-4 mr-1 inline" /> Import
+					</Button>
 					{#if !data.hasTransactions}
 						<form method="POST" action="?/deleteAccount" use:enhance={({ cancel }) => {
 							if (!confirm('Are you sure you want to delete this account?')) {
@@ -408,8 +408,14 @@
 								<Trash2 class="h-4 w-4 mr-1 inline" /> Delete
 							</Button>
 						</form>
-					{/if}
-				</div>
+	{/if}
+</div>
+
+<ImportModal
+	bind:isOpen={showImportModal}
+	onClose={() => (showImportModal = false)}
+	accountName={data.account.name}
+/>
 			</div>
 
 			<!-- Stats -->

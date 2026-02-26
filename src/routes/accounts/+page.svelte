@@ -173,14 +173,11 @@
 			<Landmark class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
 			<h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No accounts yet</h3>
 			<p class="mt-2 text-gray-500 dark:text-gray-400">
-				Import an OFX file to auto-detect your first account, or create one manually.
+				Create an account, then import transactions from its detail page.
 			</p>
 			<div class="mt-6 flex justify-center gap-3">
-				<a href="/import">
-					<Button variant="primary" size="md">Import Transactions</Button>
-				</a>
-				<Button variant="secondary" size="md" onclick={() => (showNewAccountForm = true)}>
-					Add Manually
+				<Button variant="primary" size="md" onclick={() => (showNewAccountForm = true)}>
+					Add Account
 				</Button>
 			</div>
 		</div>
