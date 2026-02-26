@@ -26,9 +26,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		let anchorDate: Date;
 		if (data.anchorDate) {
 			try {
-				if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
-					// ISO timestamp format: "2025-11-24T06:00:00.000Z"
-					anchorDate = new Date(data.anchorDate);
+			if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
+					// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
+					anchorDate = parseLocalDate(data.anchorDate.split('T')[0]);
 				} else {
 					// YYYY-MM-DD format
 					anchorDate = parseLocalDate(data.anchorDate);

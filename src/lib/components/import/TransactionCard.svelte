@@ -7,7 +7,7 @@
 	import RefundMappingForm from './RefundMappingForm.svelte';
 	import TransferMappingForm from './TransferMappingForm.svelte';
 	import type { Category, BillWithCategory } from '$lib/types/bill';
-	import { formatDateForInput } from '$lib/utils/dates';
+	import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
 
 	interface Transaction {
 		id: number;
@@ -91,7 +91,7 @@
 				bucketName: transaction.payee,
 				budgetAmount: transaction.amount,
 				frequency: 'monthly',
-				anchorDate: formatDateForInput(new Date(transaction.datePosted))
+				anchorDate: formatDateForInput(utcDateToLocal(new Date(transaction.datePosted)))
 			};
 		} else {
 			mapping = { ...mapping, action };
@@ -126,7 +126,7 @@
 						{/if}
 					</div>
 					<p class="text-sm text-gray-600 dark:text-gray-400">
-						{new Date(transaction.datePosted).toLocaleDateString()}
+						{utcDateToLocal(new Date(transaction.datePosted)).toLocaleDateString()}
 					</p>
 					{#if transaction.memo}
 						<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{transaction.memo}</p>

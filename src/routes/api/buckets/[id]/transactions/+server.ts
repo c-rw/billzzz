@@ -4,6 +4,7 @@ import {
 	getTransactionsForBucket,
 	createTransaction
 } from '$lib/server/db/bucket-queries';
+import { parseLocalDate } from '$lib/utils/dates';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
@@ -29,7 +30,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const transaction = await createTransaction({
 			bucketId,
 			amount: data.amount,
-			timestamp: new Date(data.timestamp),
+			timestamp: typeof data.timestamp === 'string' ? parseLocalDate(data.timestamp.split('T')[0]) : new Date(data.timestamp),
 			vendor: data.vendor,
 			notes: data.notes
 		});

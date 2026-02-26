@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getPaymentsForBill, createPayment } from '$lib/server/db/bill-queries';
+import { parseLocalDate } from '$lib/utils/dates';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
@@ -21,7 +22,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		const payment = await createPayment({
 			billId: id,
 			amount: parseFloat(data.amount),
-			paymentDate: new Date(data.paymentDate || Date.now()),
+			paymentDate: data.paymentDate ? parseLocalDate(data.paymentDate.split('T')[0]) : new Date(),
 			notes: data.notes
 		});
 
