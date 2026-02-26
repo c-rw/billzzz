@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { FrequencyType } from '$lib/types/bucket';
 	import { format } from 'date-fns';
+	import { utcDateToLocal } from '$lib/utils/dates';
 	import Button from '$lib/components/Button.svelte';
 	import {
 		ShoppingCart,
@@ -83,8 +84,8 @@
 		enableCarryover = initialData?.enableCarryover ?? true;
 		icon = initialData?.icon || '';
 		color = initialData?.color || '#3b82f6';
-		anchorDate = initialData?.anchorDate
-			? format(initialData.anchorDate, 'yyyy-MM-dd')
+	anchorDate = initialData?.anchorDate
+			? format(utcDateToLocal(initialData.anchorDate), 'yyyy-MM-dd')
 			: format(new Date(), 'yyyy-MM-dd');
 	});
 

@@ -239,7 +239,7 @@
 				bucketName: txn?.payee ?? '',
 				budgetAmount: txn?.amount ?? 0,
 				frequency: 'monthly',
-				anchorDate: txn ? formatDateForInput(new Date(txn.datePosted)) : ''
+				anchorDate: txn ? formatDateForInput(utcDateToLocal(new Date(txn.datePosted))) : ''
 			};
 		} else {
 			currentMapping = { ...currentMapping, action };
