@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { getBillById, updateBill, deleteBill, markBillAsPaid } from '$lib/server/db/queries';
 import { createPayment, getPaymentsForBill } from '$lib/server/db/bill-queries';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
-import { parseLocalDate } from '$lib/utils/dates';
+import { parseLocalDate, formatDateForInput } from '$lib/utils/dates';
 
 // GET /api/bills/[id] - Get a single bill
 export const GET: RequestHandler = async ({ params }) => {
@@ -34,13 +34,13 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			return json({ error: 'Bill not found' }, { status: 404 });
 		}
 
-		// Handle both ISO timestamp and YYYY-MM-DD formats for dueDate
+	// Handle both ISO timestamp and YYYY-MM-DD formats for dueDate
 		let parsedDueDate: Date | undefined;
 		if (data.dueDate) {
 			try {
 				if (data.dueDate.includes('T')) {
-					// ISO timestamp format: "2025-10-31T05:00:00.000Z"
-					parsedDueDate = new Date(data.dueDate.split('T')[0] + 'T00:00:00Z');
+					// ISO timestamp format: "2025-10-31T05:00:00.000Z" — extract date part
+					parsedDueDate = parseLocalDate(data.dueDate.split('T')[0]);
 				} else {
 					// YYYY-MM-DD format
 					parsedDueDate = parseLocalDate(data.dueDate);
@@ -80,8 +80,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		// advance the due date by one period of the NEW cadence so the next occurrence reflects
 		// the change (e.g. monthly → yearly: March 12 2026 → March 12 2027).
 		const recurrenceTypeChanged = data.recurrenceType && data.recurrenceType !== existingBill.recurrenceType;
-		const existingDateStr = existingBill.dueDate.toISOString().split('T')[0];
-		const submittedDateStr = parsedDueDate ? parsedDueDate.toISOString().split('T')[0] : null;
+		const existingDateStr = formatDateForInput(existingBill.dueDate);
+		const submittedDateStr = parsedDueDate ? formatDateForInput(parsedDueDate) : null;
 		const dueDateUnchanged = !submittedDateStr || submittedDateStr === existingDateStr;
 
 		if (recurrenceTypeChanged && dueDateUnchanged && bill.isRecurring && bill.recurrenceType) {

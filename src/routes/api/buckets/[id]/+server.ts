@@ -31,9 +31,9 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		// Convert date string to Date object if present
 		if (data.anchorDate) {
 			try {
-				if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
-					// ISO timestamp format: "2025-11-24T06:00:00.000Z"
-					data.anchorDate = new Date(data.anchorDate);
+			if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
+					// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
+					data.anchorDate = parseLocalDate(data.anchorDate.split('T')[0]);
 				} else {
 					// YYYY-MM-DD format
 					data.anchorDate = parseLocalDate(data.anchorDate);
@@ -66,8 +66,8 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 		if (data.anchorDate) {
 			try {
 				if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
-					// ISO timestamp format: "2025-11-24T06:00:00.000Z"
-					data.anchorDate = new Date(data.anchorDate);
+					// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
+					data.anchorDate = parseLocalDate(data.anchorDate.split('T')[0]);
 				} else {
 					// YYYY-MM-DD format
 					data.anchorDate = parseLocalDate(data.anchorDate);
