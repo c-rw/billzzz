@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { updateTransaction, deleteTransaction } from '$lib/server/db/bucket-queries';
+import { parseLocalDate } from '$lib/utils/dates';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
@@ -8,8 +9,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const data = await request.json();
 
 		// Convert date string to Date object if present
-		if (data.timestamp) {
-			data.timestamp = new Date(data.timestamp);
+		if (data.timestamp && typeof data.timestamp === 'string') {
+			data.timestamp = parseLocalDate(data.timestamp.split('T')[0]);
 		}
 
 		const transaction = await updateTransaction(id, data);
@@ -31,8 +32,8 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 		const data = await request.json();
 
 		// Convert date string to Date object if present
-		if (data.timestamp) {
-			data.timestamp = new Date(data.timestamp);
+		if (data.timestamp && typeof data.timestamp === 'string') {
+			data.timestamp = parseLocalDate(data.timestamp.split('T')[0]);
 		}
 
 		const transaction = await updateTransaction(id, data);

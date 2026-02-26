@@ -47,9 +47,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Parse and validate due date
 		let dueDate: Date;
 		try {
-			if (typeof data.dueDate === 'string' && data.dueDate.includes('T')) {
-				// ISO timestamp format: "2025-11-24T06:00:00.000Z"
-				dueDate = new Date(data.dueDate);
+		if (typeof data.dueDate === 'string' && data.dueDate.includes('T')) {
+				// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
+				dueDate = parseLocalDate(data.dueDate.split('T')[0]);
 			} else {
 				// YYYY-MM-DD format
 				dueDate = parseLocalDate(data.dueDate);

@@ -13,6 +13,7 @@
 		ExternalLink,
 		Trash2
 	} from 'lucide-svelte';
+	import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -33,7 +34,8 @@
 
 	function formatDate(date: Date | string | null): string {
 		if (!date) return 'Never';
-		return new Date(date).toLocaleDateString('en-US', {
+		const d = date instanceof Date ? date : new Date(date);
+		return utcDateToLocal(d).toLocaleDateString('en-US', {
 			month: 'short',
 			day: 'numeric',
 			year: 'numeric'
@@ -136,7 +138,7 @@
 							id="balanceAsOfDate"
 							type="date"
 							name="balanceAsOfDate"
-							value={new Date().toISOString().split('T')[0]}
+							value={formatDateForInput(new Date())}
 							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						/>
 					</div>

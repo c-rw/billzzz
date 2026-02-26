@@ -9,7 +9,7 @@
 	import TransferMappingForm from '$lib/components/import/TransferMappingForm.svelte';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import { formatDateForInput } from '$lib/utils/dates';
+	import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
 	import {
 		ArrowLeft,
 		ArrowRight,
@@ -121,7 +121,8 @@
 
 	function formatDate(date: Date | string | null): string {
 		if (!date) return 'N/A';
-		return new Date(date).toLocaleDateString('en-US', {
+		const d = date instanceof Date ? date : new Date(date);
+		return utcDateToLocal(d).toLocaleDateString('en-US', {
 			month: 'short',
 			day: 'numeric',
 			year: 'numeric'
@@ -218,13 +219,13 @@
 			refundedBillId: txn.refundedBillId ?? undefined,
 			counterpartyAccountId: txn.counterpartyAccountId ?? undefined,
 			billName: txn.payee,
-			dueDate: formatDateForInput(new Date(txn.datePosted)),
+			dueDate: formatDateForInput(utcDateToLocal(new Date(txn.datePosted))),
 			isRecurring: true,
 			recurrenceType: 'monthly',
 			bucketName: txn.payee,
 			budgetAmount: txn.amount,
 			frequency: 'monthly',
-			anchorDate: formatDateForInput(new Date(txn.datePosted))
+			anchorDate: formatDateForInput(utcDateToLocal(new Date(txn.datePosted)))
 		};
 	}
 
@@ -345,7 +346,7 @@
 							id="balanceAsOfDate"
 							type="date"
 							name="balanceAsOfDate"
-							value={data.account.balanceAsOfDate ? new Date(data.account.balanceAsOfDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+							value={data.account.balanceAsOfDate ? formatDateForInput(utcDateToLocal(new Date(data.account.balanceAsOfDate))) : formatDateForInput(new Date())}
 							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						/>
 						<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">

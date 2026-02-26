@@ -35,16 +35,18 @@
 	const filteredBills = $derived.by(() => {
 		let bills = data.bills as BillWithCategory[];
 
-		// Apply status filter
+	// Apply status filter
 		if (filterStatus !== 'all') {
 			const now = new Date();
+			const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 			bills = bills.filter((bill) => {
+				const localDue = utcDateToLocal(bill.dueDate);
 				if (filterStatus === 'paid') return bill.isPaid;
 				if (filterStatus === 'unpaid') return !bill.isPaid;
-				if (filterStatus === 'overdue') return !bill.isPaid && bill.dueDate <= now;
+				if (filterStatus === 'overdue') return !bill.isPaid && localDue <= today;
 				if (filterStatus === 'upcoming') {
-					const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-					return !bill.isPaid && bill.dueDate > now && bill.dueDate <= sevenDaysFromNow;
+					const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+					return !bill.isPaid && localDue > today && localDue <= sevenDaysFromNow;
 				}
 				return true;
 			});

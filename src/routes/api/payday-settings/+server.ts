@@ -2,6 +2,15 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getPaydaySettings, createPaydaySettings, updatePaydaySettings, deletePaydaySettings } from '$lib/server/db/queries';
 import type { NewPaydaySettings } from '$lib/server/db/schema';
+import { parseLocalDate } from '$lib/utils/dates';
+
+/** Safely parse a date string (YYYY-MM-DD or ISO timestamp) to local midnight */
+function parseDateInput(value: string): Date {
+	if (value.includes('T')) {
+		return parseLocalDate(value.split('T')[0]);
+	}
+	return parseLocalDate(value);
+}
 
 // GET /api/payday-settings - Get payday settings
 export const GET: RequestHandler = async () => {
@@ -35,7 +44,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			dayOfWeek: data.dayOfWeek || null,
 			dayOfMonth: data.dayOfMonth || null,
 			dayOfMonth2: data.dayOfMonth2 || null,
-			startDate: data.startDate ? new Date(data.startDate) : null
+		startDate: data.startDate ? parseDateInput(data.startDate) : null
 		};
 
 		const settings = createPaydaySettings(newSettings);
@@ -62,7 +71,7 @@ export const PUT: RequestHandler = async ({ request }) => {
 			dayOfWeek: data.dayOfWeek || null,
 			dayOfMonth: data.dayOfMonth || null,
 			dayOfMonth2: data.dayOfMonth2 || null,
-			startDate: data.startDate ? new Date(data.startDate) : null
+			startDate: data.startDate ? parseDateInput(data.startDate) : null
 		};
 
 		// Remove undefined values
