@@ -8,6 +8,7 @@
 		startDate: Date;
 		endDate: Date;
 		budgetAmount: number;
+		allocatedAmount: number;
 		carryoverAmount: number;
 		totalSpent: number;
 	}
@@ -58,11 +59,16 @@
 						>
 							Budget
 						</th>
-						<th
-							class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
-						>
-							Carryover
-						</th>
+					<th
+						class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+					>
+						Carryover
+					</th>
+					<th
+						class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
+					>
+						Extra
+					</th>
 						<th
 							class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400"
 						>
@@ -76,9 +82,9 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-					{#each cycles as cycle (cycle.id)}
-						{@const startingBalance = cycle.budgetAmount + cycle.carryoverAmount}
-						{@const remaining = startingBalance - cycle.totalSpent}
+				{#each cycles as cycle (cycle.id)}
+					{@const startingBalance = cycle.budgetAmount + cycle.allocatedAmount + cycle.carryoverAmount}
+					{@const remaining = startingBalance - cycle.totalSpent}
 						<tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
 							<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
 								{format(utcDateToLocal(cycle.startDate), 'MMM d')} – {format(utcDateToLocal(cycle.endDate), 'MMM d, yyyy')}
@@ -86,15 +92,22 @@
 							<td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900 dark:text-gray-100">
 								${cycle.budgetAmount.toFixed(2)}
 							</td>
-							<td
-								class="whitespace-nowrap px-6 py-4 text-right text-sm {cycle.carryoverAmount > 0
-									? 'text-green-600 dark:text-green-400'
-									: cycle.carryoverAmount < 0
-										? 'text-red-600 dark:text-red-400'
-										: 'text-gray-500 dark:text-gray-400'}"
-							>
-								{cycle.carryoverAmount > 0 ? '+' : ''}{cycle.carryoverAmount.toFixed(2)}
-							</td>
+						<td
+							class="whitespace-nowrap px-6 py-4 text-right text-sm {cycle.carryoverAmount > 0
+								? 'text-green-600 dark:text-green-400'
+								: cycle.carryoverAmount < 0
+									? 'text-red-600 dark:text-red-400'
+									: 'text-gray-500 dark:text-gray-400'}"
+						>
+							{cycle.carryoverAmount > 0 ? '+' : ''}{cycle.carryoverAmount.toFixed(2)}
+						</td>
+						<td
+							class="whitespace-nowrap px-6 py-4 text-right text-sm {cycle.allocatedAmount > 0
+								? 'text-blue-600 dark:text-blue-400'
+								: 'text-gray-500 dark:text-gray-400'}"
+						>
+							{cycle.allocatedAmount > 0 ? `+${cycle.allocatedAmount.toFixed(2)}` : '—'}
+						</td>
 							<td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900 dark:text-gray-100">
 								${cycle.totalSpent.toFixed(2)}
 							</td>

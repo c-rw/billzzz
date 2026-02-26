@@ -1,15 +1,17 @@
 import { db } from './index';
-import { buckets, bucketCycles, bucketTransactions } from './schema';
+import { buckets, bucketCycles, bucketTransactions, bucketAllocations } from './schema';
 import type {
 	Bucket,
 	NewBucket,
 	BucketCycle,
 	NewBucketCycle,
 	BucketTransaction,
-	NewBucketTransaction
+	NewBucketTransaction,
+	BucketAllocation,
+	NewBucketAllocation
 } from './schema';
 import type { BucketWithCycle, BucketCycleWithComputed } from '$lib/types/bucket';
-import { eq, and, desc, asc, sql } from 'drizzle-orm';
+import { eq, and, desc, asc, sql, gte, lte } from 'drizzle-orm';
 import {
 	calculateCycleDates,
 	findCycleForTimestamp,
@@ -43,9 +45,21 @@ export async function getBucketWithCurrentCycle(id: number): Promise<BucketWithC
 
 	const currentCycle = await getCurrentCycle(bucket.id);
 
+	if (currentCycle) {
+		const allocations = await getAllocationsForCycle(
+			bucket.id,
+			currentCycle.startDate,
+			currentCycle.endDate
+		);
+		return {
+			...bucket,
+			currentCycle: addComputedFields(currentCycle, allocations)
+		};
+	}
+
 	return {
 		...bucket,
-		currentCycle: currentCycle ? addComputedFields(currentCycle) : null
+		currentCycle: null
 	};
 }
 
@@ -60,9 +74,21 @@ export async function getAllBucketsWithCurrentCycle(): Promise<BucketWithCycle[]
 			await ensureCyclesExist(bucket);
 			const currentCycle = await getCurrentCycle(bucket.id);
 
+			if (currentCycle) {
+				const allocations = await getAllocationsForCycle(
+					bucket.id,
+					currentCycle.startDate,
+					currentCycle.endDate
+				);
+				return {
+					...bucket,
+					currentCycle: addComputedFields(currentCycle, allocations)
+				};
+			}
+
 			return {
 				...bucket,
-				currentCycle: currentCycle ? addComputedFields(currentCycle) : null
+				currentCycle: null
 			};
 		})
 	);
@@ -230,10 +256,17 @@ async function ensureCyclesExist(bucket: Bucket): Promise<void> {
 
 		if (previousCycle.length > 0 && bucket.enableCarryover) {
 			const prev = previousCycle[0];
-			const startingBalance = prev.budgetAmount + prev.carryoverAmount;
+			const startingBalance = prev.budgetAmount + prev.allocatedAmount + prev.carryoverAmount;
 			const remaining = startingBalance - prev.totalSpent;
 			carryoverAmount = remaining;
 		}
+
+		// Calculate allocated amount for this cycle from matching allocations
+		const allocatedAmount = await sumAllocationsForCycle(
+			bucket.id,
+			cycle.startDate,
+			cycle.endDate
+		);
 
 		await db.insert(bucketCycles).values({
 			bucketId: bucket.id,
@@ -241,6 +274,7 @@ async function ensureCyclesExist(bucket: Bucket): Promise<void> {
 			endDate: cycle.endDate,
 			budgetAmount: bucket.budgetAmount,
 			carryoverAmount,
+			allocatedAmount,
 			totalSpent: 0,
 			isClosed: false
 		});
@@ -294,16 +328,56 @@ async function updateFutureCycleBudgets(bucketId: number, newBudgetAmount: numbe
 }
 
 /**
+ * Get allocations that fall within a cycle's date range
+ */
+async function getAllocationsForCycle(
+	bucketId: number,
+	startDate: Date,
+	endDate: Date
+): Promise<BucketAllocation[]> {
+	const startTimestamp = Math.floor(startDate.getTime() / 1000);
+	const endTimestamp = Math.floor(endDate.getTime() / 1000);
+
+	return db
+		.select()
+		.from(bucketAllocations)
+		.where(
+			and(
+				eq(bucketAllocations.bucketId, bucketId),
+				sql`${bucketAllocations.targetDate} >= ${startTimestamp}`,
+				sql`${bucketAllocations.targetDate} <= ${endTimestamp}`
+			)
+		)
+		.orderBy(asc(bucketAllocations.targetDate));
+}
+
+/**
+ * Sum allocation amounts for a cycle's date range
+ */
+async function sumAllocationsForCycle(
+	bucketId: number,
+	startDate: Date,
+	endDate: Date
+): Promise<number> {
+	const allocations = await getAllocationsForCycle(bucketId, startDate, endDate);
+	return allocations.reduce((sum, a) => sum + a.amount, 0);
+}
+
+/**
  * Add computed fields to a cycle
  */
-function addComputedFields(cycle: BucketCycle): BucketCycleWithComputed {
-	const startingBalance = cycle.budgetAmount + cycle.carryoverAmount;
+function addComputedFields(
+	cycle: BucketCycle,
+	allocations: BucketAllocation[] = []
+): BucketCycleWithComputed {
+	const startingBalance = cycle.budgetAmount + cycle.allocatedAmount + cycle.carryoverAmount;
 	const remaining = startingBalance - cycle.totalSpent;
 
 	return {
 		...cycle,
 		startingBalance,
-		remaining
+		remaining,
+		allocations
 	};
 }
 
@@ -506,6 +580,13 @@ async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<v
 		const transactions = await getTransactionsForCycle(cycle.id);
 		const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
 
+		// Calculate allocated amount for this cycle from matching allocations
+		const allocatedAmount = await sumAllocationsForCycle(
+			bucket.id,
+			cycle.startDate,
+			cycle.endDate
+		);
+
 		// Get carryover from previous cycle
 		const cycleStartTimestamp = Math.floor(cycle.startDate.getTime() / 1000);
 		const previousCycle = await db
@@ -524,7 +605,7 @@ async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<v
 
 		if (previousCycle.length > 0 && bucket.enableCarryover) {
 			const prev = previousCycle[0];
-			const startingBalance = prev.budgetAmount + prev.carryoverAmount;
+			const startingBalance = prev.budgetAmount + prev.allocatedAmount + prev.carryoverAmount;
 			const remaining = startingBalance - prev.totalSpent;
 			carryoverAmount = remaining;
 		}
@@ -535,8 +616,116 @@ async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<v
 			.set({
 				totalSpent,
 				carryoverAmount,
+				allocatedAmount,
 				updatedAt: new Date()
 			})
 			.where(eq(bucketCycles.id, cycle.id));
+	}
+}
+
+// ===== Allocation CRUD =====
+
+/**
+ * Get all allocations for a bucket
+ */
+export async function getAllocationsForBucket(bucketId: number): Promise<BucketAllocation[]> {
+	return db
+		.select()
+		.from(bucketAllocations)
+		.where(eq(bucketAllocations.bucketId, bucketId))
+		.orderBy(asc(bucketAllocations.targetDate));
+}
+
+/**
+ * Get a single allocation by ID
+ */
+export async function getAllocationById(id: number): Promise<BucketAllocation | undefined> {
+	const result = await db
+		.select()
+		.from(bucketAllocations)
+		.where(eq(bucketAllocations.id, id))
+		.limit(1);
+	return result[0];
+}
+
+/**
+ * Create a new allocation and recalculate affected cycle
+ */
+export async function createAllocation(
+	data: Omit<NewBucketAllocation, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<BucketAllocation> {
+	const result = await db.insert(bucketAllocations).values(data).returning();
+
+	// Recalculate cycles so allocatedAmount is updated
+	const bucket = await getBucketById(data.bucketId);
+	if (bucket) {
+		const cycleDates = findCycleForTimestamp(bucket.frequency, bucket.anchorDate, data.targetDate);
+		await recalculateCyclesFrom(bucket, cycleDates.startDate);
+	}
+
+	return result[0];
+}
+
+/**
+ * Update an existing allocation and recalculate affected cycles
+ */
+export async function updateAllocation(
+	id: number,
+	data: Partial<Pick<NewBucketAllocation, 'amount' | 'targetDate' | 'notes'>>
+): Promise<BucketAllocation | undefined> {
+	const existing = await getAllocationById(id);
+	if (!existing) return undefined;
+
+	const result = await db
+		.update(bucketAllocations)
+		.set({
+			...data,
+			updatedAt: new Date()
+		})
+		.where(eq(bucketAllocations.id, id))
+		.returning();
+
+	// Recalculate cycles from the earliest affected date
+	const bucket = await getBucketById(existing.bucketId);
+	if (bucket) {
+		const oldCycleDates = findCycleForTimestamp(
+			bucket.frequency,
+			bucket.anchorDate,
+			existing.targetDate
+		);
+		await recalculateCyclesFrom(bucket, oldCycleDates.startDate);
+
+		// If targetDate changed, also recalculate the new cycle
+		if (data.targetDate && data.targetDate.getTime() !== existing.targetDate.getTime()) {
+			const newCycleDates = findCycleForTimestamp(
+				bucket.frequency,
+				bucket.anchorDate,
+				data.targetDate
+			);
+			await recalculateCyclesFrom(bucket, newCycleDates.startDate);
+		}
+	}
+
+	return result[0];
+}
+
+/**
+ * Delete an allocation and recalculate affected cycle
+ */
+export async function deleteAllocation(id: number): Promise<void> {
+	const existing = await getAllocationById(id);
+	if (!existing) return;
+
+	await db.delete(bucketAllocations).where(eq(bucketAllocations.id, id));
+
+	// Recalculate the affected cycle
+	const bucket = await getBucketById(existing.bucketId);
+	if (bucket) {
+		const cycleDates = findCycleForTimestamp(
+			bucket.frequency,
+			bucket.anchorDate,
+			existing.targetDate
+		);
+		await recalculateCyclesFrom(bucket, cycleDates.startDate);
 	}
 }

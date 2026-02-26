@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { BucketAllocationFormData } from '$lib/types/bucket';
 	import Modal from '$lib/components/Modal.svelte';
 	import BucketForm from '$lib/components/BucketForm.svelte';
 	import TransactionForm from '$lib/components/TransactionForm.svelte';
@@ -10,6 +11,7 @@
 	import EmptyTransactionsState from '$lib/components/buckets/EmptyTransactionsState.svelte';
 	import TransactionsTable from '$lib/components/buckets/TransactionsTable.svelte';
 	import CycleHistoryTable from '$lib/components/buckets/CycleHistoryTable.svelte';
+	import PlannedAllocations from '$lib/components/buckets/PlannedAllocations.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 	import {
@@ -52,6 +54,7 @@
 	const bucket = $derived(data.bucket);
 	const currentCycle = $derived(bucket.currentCycle);
 	const transactions = $derived(data.transactions);
+	const allocations = $derived(data.allocations);
 
 	const editingTransaction = $derived(
 		editingTransactionId !== null
@@ -183,6 +186,73 @@
 			console.error('Error deleting bucket:', error);
 		}
 	}
+
+	// === Allocation handlers ===
+
+	async function handleAddAllocation(allocationData: BucketAllocationFormData) {
+		try {
+			const response = await fetch(`/api/buckets/${bucket.id}/allocations`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					amount: allocationData.amount,
+					targetDate: allocationData.targetDate,
+					notes: allocationData.notes
+				})
+			});
+
+			if (response.ok) {
+				await invalidateAll();
+			} else {
+				alert('Failed to add allocation. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error adding allocation:', error);
+			alert('Failed to add allocation. Please try again.');
+		}
+	}
+
+	async function handleUpdateAllocation(id: number, allocationData: Partial<BucketAllocationFormData>) {
+		try {
+			const response = await fetch(`/api/buckets/${bucket.id}/allocations`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					id,
+					amount: allocationData.amount,
+					targetDate: allocationData.targetDate,
+					notes: allocationData.notes
+				})
+			});
+
+			if (response.ok) {
+				await invalidateAll();
+			} else {
+				alert('Failed to update allocation. Please try again.');
+			}
+		} catch (error) {
+			console.error('Error updating allocation:', error);
+			alert('Failed to update allocation. Please try again.');
+		}
+	}
+
+	async function handleDeleteAllocation(id: number) {
+		if (!confirm('Are you sure you want to delete this planned allocation?')) return;
+
+		try {
+			const response = await fetch(`/api/buckets/${bucket.id}/allocations`, {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ id })
+			});
+
+			if (response.ok) {
+				await invalidateAll();
+			}
+		} catch (error) {
+			console.error('Error deleting allocation:', error);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -201,6 +271,15 @@
 		<BucketStatsCards {currentCycle} frequency={bucket.frequency} />
 		<BucketProgressBar {currentCycle} />
 	{/if}
+
+	<!-- Planned Allocations Section -->
+	<PlannedAllocations
+		{allocations}
+		bucketId={bucket.id}
+		onAdd={handleAddAllocation}
+		onUpdate={handleUpdateAllocation}
+		onDelete={handleDeleteAllocation}
+	/>
 
 	<!-- Transactions Section -->
 	<div class="mb-8">

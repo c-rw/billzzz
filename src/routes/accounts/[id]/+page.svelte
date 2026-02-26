@@ -64,10 +64,16 @@
 		goto(`?${buildParams({ search: '' })}`, { keepFocus: true });
 	}
 
-	function toggleUnclassifiedFilter() {
-		const newFilter = data.filter === 'unclassified' ? '' : 'unclassified';
-		goto(`?${buildParams({ filter: newFilter })}`, { keepFocus: true });
+	function setFilter(value: string) {
+		goto(`?${buildParams({ filter: value })}`, { keepFocus: true });
 	}
+
+	const filterLabels: Record<string, string> = {
+		unclassified: 'unclassified',
+		buckets: 'bucket',
+		bills: 'bill',
+		transfers: 'transfer'
+	};
 
 	// Track which transaction row is expanded for re-classification
 	let expandedTxnId = $state<number | null>(null);
@@ -475,22 +481,24 @@
 					</div>
 					<Button type="submit" variant="secondary" size="sm">Search</Button>
 				</form>
-				<button
-					type="button"
-					onclick={toggleUnclassifiedFilter}
-					class="whitespace-nowrap px-3 py-2 text-xs font-medium rounded-lg border transition-colors {data.filter === 'unclassified'
-						? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
-						: 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'}"
+				<select
+					value={data.filter ?? ''}
+					onchange={(e) => setFilter(e.currentTarget.value)}
+					class="whitespace-nowrap px-3 py-2 text-xs font-medium rounded-lg border transition-colors bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
 				>
-					Unclassified only
-				</button>
+					<option value="">All Transactions</option>
+					<option value="unclassified">Unclassified</option>
+					<option value="buckets">Buckets</option>
+					<option value="bills">Bills</option>
+					<option value="transfers">Transfers</option>
+				</select>
 			</div>
 			{#if data.search || data.filter}
 				<p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
 					{data.transactionCount} result{data.transactionCount !== 1 ? 's' : ''}
 					{#if data.search}for "{data.search}"{/if}
-					{#if data.filter === 'unclassified'}
-						{data.search ? ',' : ''} showing unclassified only
+					{#if data.filter && filterLabels[data.filter]}
+						{data.search ? ',' : ''} showing {filterLabels[data.filter]} only
 					{/if}
 				</p>
 			{/if}
@@ -498,12 +506,14 @@
 
 		{#if data.transactions.length === 0}
 			<p class="text-gray-500 dark:text-gray-400 text-sm">
-				{#if data.search && data.filter === 'unclassified'}
-					No unclassified transactions matching "{data.search}".
+				{#if data.search && data.filter}
+					No {filterLabels[data.filter] ?? ''} transactions matching "{data.search}".
 				{:else if data.search}
 					No transactions matching "{data.search}".
 				{:else if data.filter === 'unclassified'}
 					No unclassified transactions. All transactions have been classified.
+				{:else if data.filter}
+					No {filterLabels[data.filter] ?? ''} transactions found.
 				{:else}
 					No transactions yet. Import an OFX file to get started.
 				{/if}
@@ -751,8 +761,8 @@
 		{/if}
 	</div>
 
-	<!-- Transfers for this account (hidden when filtering unclassified) -->
-	{#if data.transfers.length > 0 && data.filter !== 'unclassified'}
+	<!-- Transfers for this account (only shown when not filtering, or filtering by transfers) -->
+	{#if data.transfers.length > 0 && (!data.filter || data.filter === 'transfers')}
 		<div class="rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
 			<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
 				<ArrowRightLeft class="h-5 w-5" />

@@ -1,5 +1,5 @@
 import { db } from './index';
-import { bills, buckets, debts, paydaySettings, userPreferences, importedTransactions, debtStrategySettings } from './schema';
+import { bills, buckets, debts, paydaySettings, userPreferences, importedTransactions, debtStrategySettings, bucketAllocations } from './schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
 import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays, setDate, getDaysInMonth } from 'date-fns';
@@ -218,6 +218,39 @@ async function projectCashFlow(
 	const today = startOfDay(new Date());
 	const endDate = addDays(today, daysToProject);
 
+	// Query upcoming bucket allocations within the projection window
+	const upcomingAllocations = await db
+		.select({
+			amount: bucketAllocations.amount,
+			targetDate: bucketAllocations.targetDate,
+			notes: bucketAllocations.notes,
+			bucketId: bucketAllocations.bucketId
+		})
+		.from(bucketAllocations)
+		.innerJoin(buckets, eq(bucketAllocations.bucketId, buckets.id))
+		.where(
+			and(
+				eq(buckets.isDeleted, false),
+				gte(bucketAllocations.targetDate, today),
+				lte(bucketAllocations.targetDate, endDate)
+			)
+		);
+
+	// Build a map of allocation events keyed by date ISO string
+	const allocationsByDate = new Map<string, Array<{ amount: number; notes: string | null; bucketName: string }>>();
+	for (const alloc of upcomingAllocations) {
+		const bucketRecord = allBuckets.find(b => b.id === alloc.bucketId);
+		const dateKey = startOfDay(alloc.targetDate).toISOString();
+		if (!allocationsByDate.has(dateKey)) {
+			allocationsByDate.set(dateKey, []);
+		}
+		allocationsByDate.get(dateKey)!.push({
+			amount: alloc.amount,
+			notes: alloc.notes,
+			bucketName: bucketRecord?.name ?? 'Bucket'
+		});
+	}
+
 	// Get payday schedule
 	const paydays: Date[] = [];
 	if (paydayConfig.length > 0) {
@@ -414,6 +447,20 @@ async function projectCashFlow(
 				type: 'bucket',
 				description: 'Daily variable spending',
 				amount: dailyBucketCost
+			});
+		}
+
+		// One-time bucket allocation events (planned extra spending)
+		const dayAllocations = allocationsByDate.get(dateKey) || [];
+		for (const alloc of dayAllocations) {
+			dailyExpenses += alloc.amount;
+			runningBalance -= alloc.amount;
+			events.push({
+				type: 'bucket',
+				description: alloc.notes
+					? `${alloc.bucketName}: ${alloc.notes}`
+					: `${alloc.bucketName} planned allocation`,
+				amount: alloc.amount
 			});
 		}
 

@@ -181,6 +181,23 @@ export const buckets = sqliteTable('buckets', {
 		.default(sql`(unixepoch())`)
 });
 
+// Bucket planned allocations - extra funds for specific months
+export const bucketAllocations = sqliteTable('bucket_allocations', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	bucketId: integer('bucket_id')
+		.notNull()
+		.references(() => buckets.id, { onDelete: 'cascade' }),
+	amount: real('amount').notNull(),
+	targetDate: integer('target_date', { mode: 'timestamp' }).notNull(),
+	notes: text('notes'),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
+
 // Bucket cycles - generated periods for tracking spending
 export const bucketCycles = sqliteTable('bucket_cycles', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -191,6 +208,7 @@ export const bucketCycles = sqliteTable('bucket_cycles', {
 	endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
 	budgetAmount: real('budget_amount').notNull(), // Snapshot of budget at cycle creation
 	carryoverAmount: real('carryover_amount').notNull().default(0),
+	allocatedAmount: real('allocated_amount').notNull().default(0),
 	totalSpent: real('total_spent').notNull().default(0),
 	isClosed: integer('is_closed', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })
@@ -230,6 +248,9 @@ export type NewBucketCycle = typeof bucketCycles.$inferInsert;
 
 export type BucketTransaction = typeof bucketTransactions.$inferSelect;
 export type NewBucketTransaction = typeof bucketTransactions.$inferInsert;
+
+export type BucketAllocation = typeof bucketAllocations.$inferSelect;
+export type NewBucketAllocation = typeof bucketAllocations.$inferInsert;
 
 export type Debt = typeof debts.$inferSelect;
 export type NewDebt = typeof debts.$inferInsert;

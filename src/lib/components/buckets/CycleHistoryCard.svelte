@@ -7,6 +7,7 @@
 		startDate: Date;
 		endDate: Date;
 		budgetAmount: number;
+		allocatedAmount: number;
 		carryoverAmount: number;
 		totalSpent: number;
 	}
@@ -17,10 +18,10 @@
 		cycle: Cycle;
 	} = $props();
 
-	const remaining = $derived(cycle.budgetAmount + cycle.carryoverAmount - cycle.totalSpent);
+	const remaining = $derived(cycle.budgetAmount + cycle.allocatedAmount + cycle.carryoverAmount - cycle.totalSpent);
 	const percentSpent = $derived(
-		cycle.budgetAmount + cycle.carryoverAmount > 0
-			? (cycle.totalSpent / (cycle.budgetAmount + cycle.carryoverAmount)) * 100
+		cycle.budgetAmount + cycle.allocatedAmount + cycle.carryoverAmount > 0
+			? (cycle.totalSpent / (cycle.budgetAmount + cycle.allocatedAmount + cycle.carryoverAmount)) * 100
 			: 0
 	);
 
@@ -64,6 +65,15 @@
 			<span class="text-gray-500 dark:text-gray-400">Carryover:</span>
 			<span class="ml-2 font-medium {cycle.carryoverAmount > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
 				{cycle.carryoverAmount > 0 ? '+' : ''}{cycle.carryoverAmount.toFixed(2)}
+			</span>
+		</div>
+	{/if}
+
+	{#if cycle.allocatedAmount > 0}
+		<div class="mt-2 text-sm">
+			<span class="text-gray-500 dark:text-gray-400">Extra Allocated:</span>
+			<span class="ml-2 font-medium text-blue-600 dark:text-blue-400">
+				+{cycle.allocatedAmount.toFixed(2)}
 			</span>
 		</div>
 	{/if}
