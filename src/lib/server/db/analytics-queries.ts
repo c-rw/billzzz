@@ -218,7 +218,8 @@ async function projectCashFlow(
 	const today = startOfDay(new Date());
 	const endDate = addDays(today, daysToProject);
 
-	// Query upcoming bucket allocations within the projection window
+	// Query upcoming bucket allocations (target date in the future)
+	// These get spread as daily burn from today until their target date
 	const upcomingAllocations = await db
 		.select({
 			amount: bucketAllocations.amount,
@@ -231,23 +232,25 @@ async function projectCashFlow(
 		.where(
 			and(
 				eq(buckets.isDeleted, false),
-				gte(bucketAllocations.targetDate, today),
-				lte(bucketAllocations.targetDate, endDate)
+				gte(bucketAllocations.targetDate, today)
 			)
 		);
 
-	// Build a map of allocation events keyed by date ISO string
-	const allocationsByDate = new Map<string, Array<{ amount: number; notes: string | null; bucketName: string }>>();
+	// Calculate daily allocation burn rate: spread each allocation from today to its target date
+	let dailyAllocationCost = 0;
+	const allocationDetails: Array<{ dailyCost: number; bucketName: string; notes: string | null; amount: number; targetDate: Date }> = [];
 	for (const alloc of upcomingAllocations) {
+		const daysUntilTarget = differenceInDays(startOfDay(alloc.targetDate), today);
+		if (daysUntilTarget <= 0) continue;
+		const dailyCost = alloc.amount / daysUntilTarget;
+		dailyAllocationCost += dailyCost;
 		const bucketRecord = allBuckets.find(b => b.id === alloc.bucketId);
-		const dateKey = startOfDay(alloc.targetDate).toISOString();
-		if (!allocationsByDate.has(dateKey)) {
-			allocationsByDate.set(dateKey, []);
-		}
-		allocationsByDate.get(dateKey)!.push({
-			amount: alloc.amount,
+		allocationDetails.push({
+			dailyCost,
+			bucketName: bucketRecord?.name ?? 'Bucket',
 			notes: alloc.notes,
-			bucketName: bucketRecord?.name ?? 'Bucket'
+			amount: alloc.amount,
+			targetDate: alloc.targetDate
 		});
 	}
 
@@ -450,18 +453,24 @@ async function projectCashFlow(
 			});
 		}
 
-		// One-time bucket allocation events (planned extra spending)
-		const dayAllocations = allocationsByDate.get(dateKey) || [];
-		for (const alloc of dayAllocations) {
-			dailyExpenses += alloc.amount;
-			runningBalance -= alloc.amount;
-			events.push({
-				type: 'bucket',
-				description: alloc.notes
-					? `${alloc.bucketName}: ${alloc.notes}`
-					: `${alloc.bucketName} planned allocation`,
-				amount: alloc.amount
-			});
+		// Daily allocation savings (spread evenly from today to each target date)
+		if (dailyAllocationCost > 0) {
+			// Only count allocations whose target date is still in the future
+			let todayAllocationCost = 0;
+			for (const alloc of allocationDetails) {
+				if (currentDate < alloc.targetDate) {
+					todayAllocationCost += alloc.dailyCost;
+				}
+			}
+			if (todayAllocationCost > 0) {
+				dailyExpenses += todayAllocationCost;
+				runningBalance -= todayAllocationCost;
+				events.push({
+					type: 'bucket',
+					description: `Saving for planned allocations (${allocationDetails.filter(a => currentDate < a.targetDate).map(a => a.notes || a.bucketName).join(', ')})`,
+					amount: todayAllocationCost
+				});
+			}
 		}
 
 		// Check for debt payments (assume monthly on the 1st)
