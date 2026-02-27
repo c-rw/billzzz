@@ -1,7 +1,6 @@
 /**
  * Date utility functions to handle timezone-safe date operations
  */
-import { format } from 'date-fns';
 
 /**
  * Parses a date-only string (YYYY-MM-DD) as local midnight instead of UTC midnight.
@@ -87,14 +86,4 @@ export function utcDateToLocal(date: Date): Date {
 	return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
 
-/**
- * Formats a UTC-midnight DB date using date-fns format() without a timezone shift.
- * Equivalent to format(utcDateToLocal(date), formatStr).
- *
- * @param date - A Date from the DB (UTC midnight)
- * @param formatStr - A date-fns format string, e.g. 'MMM d, yyyy'
- * @returns Formatted date string for the correct calendar day
- */
-export function formatUTCDate(date: Date, formatStr: string): string {
-	return format(utcDateToLocal(date), formatStr);
-}
+

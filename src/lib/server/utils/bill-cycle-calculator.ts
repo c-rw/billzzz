@@ -10,7 +10,6 @@ import {
 	endOfDay,
 	isBefore,
 	isAfter,
-	isWithinInterval,
 	setDate,
 	getDaysInMonth,
 	lastDayOfMonth
@@ -302,13 +301,4 @@ export function generateBillCyclesBetween(
 	return cycles;
 }
 
-/**
- * Check if a date is within a cycle
- */
-export function isDateInCycle(
-	date: Date,
-	cycleStart: Date,
-	cycleEnd: Date
-): boolean {
-	return isWithinInterval(date, { start: cycleStart, end: cycleEnd });
-}
+

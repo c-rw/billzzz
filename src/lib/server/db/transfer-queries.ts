@@ -2,114 +2,11 @@ import { db } from './index';
 import {
 	transfers,
 	importedTransactions,
-	accounts,
-	type NewTransfer
+	accounts
 } from './schema';
-import { eq, and, ne, sql, desc, between } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 
 // ===== TRANSFER DETECTION & MANAGEMENT =====
-
-/**
- * Detect potential transfers for newly imported transactions in a session.
- *
- * For each unprocessed, non-transfer transaction in the session:
- *  - DEBIT → look for CREDITs of the exact same absolute amount in OTHER accounts within 7 days
- *  - CREDIT → look for DEBITs of the exact same absolute amount in OTHER accounts within 7 days
- *
- * Amounts are stored as absolute values (Math.abs from OFX parser), so we match
- * on exact amount and use transactionType to determine direction.
- *
- * Creates a `transfers` record with status 'pending' for each match found.
- * "from" = the DEBIT side, "to" = the CREDIT side.
- */
-export function detectPotentialTransfers(
-	accountId: number,
-	sessionId: number
-): Array<typeof transfers.$inferSelect> {
-	// Get all transactions from this session that haven't been confirmed as transfers yet
-	const sessionTxns = db
-		.select()
-		.from(importedTransactions)
-		.where(
-			and(
-				eq(importedTransactions.sessionId, sessionId),
-				eq(importedTransactions.isTransfer, false)
-			)
-		)
-		.all();
-
-	const created: Array<typeof transfers.$inferSelect> = [];
-	const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
-
-	for (const txn of sessionTxns) {
-		// Determine what we're looking for on the other side
-		const isDebit = txn.transactionType === 'DEBIT' || txn.transactionType === 'XFER';
-		const isCredit = txn.transactionType === 'CREDIT';
-
-		// We need to match opposite direction in other accounts
-		// DEBIT in this account → look for CREDIT in other accounts
-		// CREDIT in this account → look for DEBIT/XFER in other accounts
-		if (!isDebit && !isCredit) continue;
-
-		const txnTimestamp = Math.floor(txn.datePosted.getTime() / 1000);
-		const windowStart = txnTimestamp - SEVEN_DAYS_SECONDS;
-		const windowEnd = txnTimestamp + SEVEN_DAYS_SECONDS;
-
-		// Find matching transactions in OTHER accounts with exact same amount,
-		// opposite direction, and within 7-day window.
-		// Use raw SQL for the date window since datePosted is stored as unix timestamp.
-		const candidates = db
-			.select()
-			.from(importedTransactions)
-			.where(
-				and(
-					eq(importedTransactions.amount, txn.amount),
-					ne(importedTransactions.ownerAccountId, accountId),
-					eq(importedTransactions.isTransfer, false),
-					sql`${importedTransactions.datePosted} BETWEEN ${windowStart} AND ${windowEnd}`,
-					isDebit
-						? eq(importedTransactions.transactionType, 'CREDIT')
-						: sql`${importedTransactions.transactionType} IN ('DEBIT', 'XFER')`
-				)
-			)
-			.all();
-
-		for (const candidate of candidates) {
-			// Don't create duplicate pending transfers for the same pair
-			const existingTransfer = db
-				.select()
-				.from(transfers)
-				.where(
-					sql`(${transfers.fromTransactionId} = ${txn.id} AND ${transfers.toTransactionId} = ${candidate.id})
-					 OR (${transfers.fromTransactionId} = ${candidate.id} AND ${transfers.toTransactionId} = ${txn.id})`
-				)
-				.get();
-
-			if (existingTransfer) continue;
-
-			// Determine from/to: "from" is the DEBIT side, "to" is the CREDIT side
-			const fromTxn = isDebit ? txn : candidate;
-			const toTxn = isDebit ? candidate : txn;
-
-			const transfer = db
-				.insert(transfers)
-				.values({
-					fromTransactionId: fromTxn.id,
-					toTransactionId: toTxn.id,
-					fromAccountId: fromTxn.ownerAccountId!,
-					toAccountId: toTxn.ownerAccountId!,
-					amount: txn.amount,
-					status: 'pending'
-				})
-				.returning()
-				.get();
-
-			created.push(transfer);
-		}
-	}
-
-	return created;
-}
 
 /**
  * Get all pending transfers, joined with transaction and account details.
@@ -153,67 +50,6 @@ export function getPendingTransfers() {
 		.all();
 
 	// Enrich with account names and to-transaction details
-	return results.map((row) => {
-		const fromAcct = db
-			.select({ name: accounts.name, accountType: accounts.accountType })
-			.from(accounts)
-			.where(eq(accounts.id, row.transfer.fromAccountId))
-			.get();
-
-		const toAcct = db
-			.select({ name: accounts.name, accountType: accounts.accountType })
-			.from(accounts)
-			.where(eq(accounts.id, row.transfer.toAccountId))
-			.get();
-
-		const toTxn = db
-			.select({
-				id: importedTransactions.id,
-				payee: importedTransactions.payee,
-				amount: importedTransactions.amount,
-				datePosted: importedTransactions.datePosted,
-				transactionType: importedTransactions.transactionType
-			})
-			.from(importedTransactions)
-			.where(eq(importedTransactions.id, row.transfer.toTransactionId))
-			.get();
-
-		return {
-			...row.transfer,
-			fromAccount: fromAcct ?? { name: 'Unknown', accountType: null },
-			toAccount: toAcct ?? { name: 'Unknown', accountType: null },
-			fromTransaction: row.fromTransaction,
-			toTransaction: toTxn ?? null
-		};
-	});
-}
-
-/**
- * Get confirmed transfers with full details.
- */
-export function getConfirmedTransfers(options?: { limit?: number; offset?: number }) {
-	const limit = options?.limit ?? 50;
-	const offset = options?.offset ?? 0;
-
-	const results = db
-		.select({
-			transfer: transfers,
-			fromTransaction: {
-				id: importedTransactions.id,
-				payee: importedTransactions.payee,
-				amount: importedTransactions.amount,
-				datePosted: importedTransactions.datePosted,
-				transactionType: importedTransactions.transactionType
-			}
-		})
-		.from(transfers)
-		.innerJoin(importedTransactions, eq(transfers.fromTransactionId, importedTransactions.id))
-		.where(eq(transfers.status, 'confirmed'))
-		.orderBy(desc(transfers.confirmedAt))
-		.limit(limit)
-		.offset(offset)
-		.all();
-
 	return results.map((row) => {
 		const fromAcct = db
 			.select({ name: accounts.name, accountType: accounts.accountType })

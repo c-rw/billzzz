@@ -51,7 +51,7 @@ export function sortByCustom(debts: Debt[], priorityOrder: number[]): Debt[] {
  * Calculate payoff schedule using debt avalanche or snowball method
  * Simplified to match Excel's straightforward logic
  */
-export function calculatePayoffSchedule(
+function calculatePayoffSchedule(
 	debts: Debt[],
 	extraPayment: number,
 	sortedDebts: Debt[]
@@ -167,7 +167,7 @@ export function calculatePayoffSchedule(
 /**
  * Calculate snowball payoff schedule (smallest balance first)
  */
-export function calculateSnowballPayoff(debts: Debt[], extraPayment: number): PayoffSchedule {
+function calculateSnowballPayoff(debts: Debt[], extraPayment: number): PayoffSchedule {
 	const sorted = sortBySnowball(debts);
 	const schedule = calculatePayoffSchedule(debts, extraPayment, sorted);
 	return { ...schedule, strategy: 'snowball' };
@@ -176,7 +176,7 @@ export function calculateSnowballPayoff(debts: Debt[], extraPayment: number): Pa
 /**
  * Calculate avalanche payoff schedule (highest interest first)
  */
-export function calculateAvalanchePayoff(debts: Debt[], extraPayment: number): PayoffSchedule {
+function calculateAvalanchePayoff(debts: Debt[], extraPayment: number): PayoffSchedule {
 	const sorted = sortByAvalanche(debts);
 	const schedule = calculatePayoffSchedule(debts, extraPayment, sorted);
 	return { ...schedule, strategy: 'avalanche' };
@@ -185,7 +185,7 @@ export function calculateAvalanchePayoff(debts: Debt[], extraPayment: number): P
 /**
  * Calculate custom priority payoff schedule
  */
-export function calculateCustomPayoff(
+function calculateCustomPayoff(
 	debts: Debt[],
 	extraPayment: number,
 	priorityOrder: number[]
@@ -198,7 +198,7 @@ export function calculateCustomPayoff(
 /**
  * Calculate minimum payments only schedule (baseline)
  */
-export function calculateMinimumPaymentsOnly(debts: Debt[]): PayoffSchedule {
+function calculateMinimumPaymentsOnly(debts: Debt[]): PayoffSchedule {
 	const sorted = [...debts]; // Order doesn't matter for minimums only
 	const schedule = calculatePayoffSchedule(debts, 0, sorted);
 	return { ...schedule, strategy: 'custom' };
@@ -207,7 +207,7 @@ export function calculateMinimumPaymentsOnly(debts: Debt[]): PayoffSchedule {
 /**
  * Calculate debt consolidation scenario
  */
-export function calculateConsolidation(
+function calculateConsolidation(
 	debts: Debt[],
 	input: ConsolidationInput,
 	extraPayment: number

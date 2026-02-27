@@ -1,8 +1,8 @@
 import { db } from './index';
 import { debts, debtPayments, debtStrategySettings, bills } from './schema';
 import type { NewDebt, NewDebtPayment, NewDebtStrategySettings } from './schema';
-import type { DebtWithDetails, DebtSummary } from '$lib/types/debt';
-import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
+import type { DebtWithDetails } from '$lib/types/debt';
+import { eq, desc } from 'drizzle-orm';
 
 /**
  * Get all debts
@@ -156,42 +156,6 @@ export function recordDebtPayment(data: NewDebtPayment) {
 }
 
 /**
- * Get debt payment history
- */
-export function getDebtPaymentHistory(debtId: number) {
-	return db
-		.select()
-		.from(debtPayments)
-		.where(eq(debtPayments.debtId, debtId))
-		.orderBy(desc(debtPayments.paymentDate))
-		.all();
-}
-
-/**
- * Delete a debt payment
- */
-export function deleteDebtPayment(id: number) {
-	// Get payment info first to update debt balance
-	const payment = db.select().from(debtPayments).where(eq(debtPayments.id, id)).get();
-
-	if (payment) {
-		// Restore the amount to debt balance
-		const debt = db.select().from(debts).where(eq(debts.id, payment.debtId)).get();
-		if (debt) {
-			db.update(debts)
-				.set({
-					currentBalance: debt.currentBalance + payment.amount,
-					updatedAt: new Date()
-				})
-				.where(eq(debts.id, payment.debtId))
-				.run();
-		}
-	}
-
-	db.delete(debtPayments).where(eq(debtPayments.id, id)).run();
-}
-
-/**
  * Get debt strategy settings
  */
 export function getStrategySettings() {
@@ -242,48 +206,6 @@ export function updateStrategySettings(data: Partial<NewDebtStrategySettings>) {
 }
 
 /**
- * Calculate debt summary statistics
- */
-export function getDebtSummary(): DebtSummary {
-	const allDebts = getAllDebts();
-
-	if (allDebts.length === 0) {
-		return {
-			totalDebts: 0,
-			totalBalance: 0,
-			totalOriginalBalance: 0,
-			totalMinimumPayment: 0,
-			weightedAverageInterestRate: 0,
-			totalPaid: 0,
-			percentPaid: 0
-		};
-	}
-
-	const totalBalance = allDebts.reduce((sum, d) => sum + d.currentBalance, 0);
-	const totalOriginalBalance = allDebts.reduce((sum, d) => sum + d.originalBalance, 0);
-	const totalMinimumPayment = allDebts.reduce((sum, d) => sum + d.minimumPayment, 0);
-
-	// Calculate weighted average interest rate
-	const weightedRate = allDebts.reduce(
-		(sum, d) => sum + d.interestRate * (d.currentBalance / totalBalance),
-		0
-	);
-
-	const totalPaid = totalOriginalBalance - totalBalance;
-	const percentPaid = totalOriginalBalance > 0 ? (totalPaid / totalOriginalBalance) * 100 : 0;
-
-	return {
-		totalDebts: allDebts.length,
-		totalBalance,
-		totalOriginalBalance,
-		totalMinimumPayment,
-		weightedAverageInterestRate: weightedRate,
-		totalPaid,
-		percentPaid
-	};
-}
-
-/**
  * Find the debt linked to a specific bill (reverse lookup).
  * A bill can have at most one debt pointing to it.
  */
@@ -321,20 +243,4 @@ export function syncDebtMinimumToBill(debtId: number) {
 		.run();
 }
 
-/**
- * Get auto-created debt payments (those with a sourceBillCycleId) for a given debt.
- * Used to display overpayment info on the UI.
- */
-export function getAutoDebtPayments(debtId: number) {
-	return db
-		.select()
-		.from(debtPayments)
-		.where(
-			and(
-				eq(debtPayments.debtId, debtId),
-				isNotNull(debtPayments.sourceBillCycleId)
-			)
-		)
-		.orderBy(desc(debtPayments.paymentDate))
-		.all();
-}
+

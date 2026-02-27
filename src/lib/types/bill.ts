@@ -2,8 +2,6 @@ import type { Bill, Category, BillCycle, BillPayment } from '$lib/server/db/sche
 
 export type RecurrenceType = 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly' | 'quarterly' | 'semi-annual' | 'yearly';
 
-export type BillStatus = 'paid' | 'upcoming' | 'overdue';
-
 // Extended bill type with category details
 export interface BillWithCategory extends Bill {
 	category?: Category | null;
@@ -34,29 +32,6 @@ export interface BillFilters {
 export interface BillSort {
 	field: 'dueDate' | 'amount' | 'name' | 'createdAt';
 	direction: 'asc' | 'desc';
-}
-
-// Form data for creating/editing bills
-export interface BillFormData {
-	name: string;
-	amount: number;
-	dueDate: Date;
-	paymentLink?: string;
-	categoryId?: number | null;
-	isRecurring: boolean;
-	recurrenceType?: RecurrenceType;
-	recurrenceDay?: number;
-	recurrenceDay2?: number; // Second day of month for semi-monthly
-	isAutopay: boolean;
-	enableCarryover: boolean;
-	notes?: string;
-}
-
-// Category form data
-export interface CategoryFormData {
-	name: string;
-	color: string;
-	icon?: string;
 }
 
 // Export database types

@@ -14,7 +14,7 @@ export function getUserPreferences(): UserPreferences | undefined {
 /**
  * Create user preferences
  */
-export function createUserPreferences(data: NewUserPreferences): UserPreferences {
+function createUserPreferences(data: NewUserPreferences): UserPreferences {
 	const result = db.insert(userPreferences).values(data).returning().get();
 	return result;
 }

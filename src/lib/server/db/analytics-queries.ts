@@ -1,6 +1,6 @@
 import { db } from './index';
-import { bills, buckets, debts, paydaySettings, userPreferences, importedTransactions, debtStrategySettings, bucketAllocations } from './schema';
-import { eq, and, gte, lte, desc } from 'drizzle-orm';
+import { bills, buckets, debts, paydaySettings, userPreferences, debtStrategySettings, bucketAllocations } from './schema';
+import { eq, and, gte, lte } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
 import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays, setDate, getDaysInMonth } from 'date-fns';
 import { utcDateToLocal } from '$lib/utils/dates';
@@ -43,30 +43,6 @@ export interface AnalyticsData {
 		bills: number;
 		buckets: number;
 		debts: number;
-	};
-}
-
-/**
- * Get historical income data from imported transactions
- */
-export async function getHistoricalIncomeData() {
-	const incomeTransactions = await db
-		.select()
-		.from(importedTransactions)
-		.where(and(eq(importedTransactions.isIncome, true), eq(importedTransactions.isTransfer, false)))
-		.orderBy(desc(importedTransactions.datePosted))
-		.limit(10);
-
-	if (incomeTransactions.length === 0) {
-		return { averageIncome: null, transactions: [] };
-	}
-
-	const total = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
-	const averageIncome = total / incomeTransactions.length;
-
-	return {
-		averageIncome,
-		transactions: incomeTransactions
 	};
 }
 
