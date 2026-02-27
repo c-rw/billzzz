@@ -21,7 +21,7 @@ import {
 	updateBill,
 	createImportSession,
 	createImportedTransactionsBatch,
-	checkDuplicateFitId
+	checkAnyDuplicateFitId
 } from '$lib/server/db/queries';
 import { parseOfxFile, isValidOfxFile } from '$lib/server/ofx-parser';
 import { getAllBucketsWithCurrentCycle, getAllBuckets, createTransaction, createBucket } from '$lib/server/db/bucket-queries';
@@ -469,7 +469,7 @@ export const actions: Actions = {
 					continue;
 				}
 
-				const duplicate = checkDuplicateFitId(txn.fitId);
+				const duplicate = checkAnyDuplicateFitId(txn.fitId, accountId);
 				if (!duplicate) {
 					newTransactions.push(txn);
 					seenFitIds.add(txn.fitId);

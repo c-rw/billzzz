@@ -356,29 +356,19 @@ export function deleteImportedTransaction(id: number) {
 	return db.delete(importedTransactions).where(eq(importedTransactions.id, id)).returning().get();
 }
 
-export function checkDuplicateFitId(fitId: string) {
-	// Check if transaction exists and has been processed
-	// This prevents re-importing already processed transactions
-	// Unprocessed transactions from old sessions won't block new imports
+export function checkAnyDuplicateFitId(fitId: string, accountId: number) {
+	// Check if transaction exists at all (processed OR unprocessed) for this account.
+	// Used during import to prevent re-importing transactions that already exist,
+	// regardless of whether they've been classified yet.
 	return db
 		.select()
 		.from(importedTransactions)
 		.where(
 			and(
 				eq(importedTransactions.fitId, fitId),
-				eq(importedTransactions.isProcessed, true)
+				eq(importedTransactions.ownerAccountId, accountId)
 			)
 		)
-		.get();
-}
-
-export function checkAnyDuplicateFitId(fitId: string) {
-	// Check if transaction exists at all (processed OR unprocessed)
-	// Used during import to prevent importing same file multiple times
-	return db
-		.select()
-		.from(importedTransactions)
-		.where(eq(importedTransactions.fitId, fitId))
 		.get();
 }
 
