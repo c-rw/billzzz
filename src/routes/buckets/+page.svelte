@@ -4,6 +4,8 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import BucketForm from '$lib/components/BucketForm.svelte';
 	import Button from '$lib/components/Button.svelte';
+	import StatCard from '$lib/components/StatCard.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { goto } from '$app/navigation';
 
@@ -136,47 +138,32 @@
 
 	<!-- Stats Dashboard -->
 	<div class="mb-8 grid gap-4 sm:grid-cols-3">
-		<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-			<p class="text-sm text-gray-500 dark:text-gray-400">Total Budget</p>
-			<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">${totalBudget.toFixed(2)}</p>
-		</div>
-		<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-			<p class="text-sm text-gray-500 dark:text-gray-400">Total Spent</p>
-			<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">${totalSpent.toFixed(2)}</p>
-		</div>
-		<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-			<p class="text-sm text-gray-500 dark:text-gray-400">Total Remaining</p>
-			<p
-				class="mt-1 text-2xl font-semibold {totalRemaining < 0
-					? 'text-red-600 dark:text-red-400'
-					: 'text-green-600 dark:text-green-400'}"
-			>
-				${totalRemaining.toFixed(2)}
-			</p>
-		</div>
+		<StatCard label="Total Budget" value={`$${totalBudget.toFixed(2)}`} />
+		<StatCard label="Total Spent" value={`$${totalSpent.toFixed(2)}`} />
+		<StatCard
+			label="Total Remaining"
+			value={`$${totalRemaining.toFixed(2)}`}
+			valueClass={totalRemaining < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}
+		/>
 	</div>
 
 	<!-- Buckets List -->
 	{#if data.buckets.length === 0}
-		<div class="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-12 text-center">
-			<svg
-				class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-				/>
-			</svg>
-			<h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">No buckets found</h3>
-			<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-				Get started by creating your first spending bucket.
-			</p>
-			<div class="mt-6">
+		<EmptyState
+			title="No buckets found"
+			description="Get started by creating your first spending bucket."
+		>
+			{#snippet icon()}
+				<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+					/>
+				</svg>
+			{/snippet}
+			{#snippet cta()}
 				<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
 					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
@@ -188,8 +175,8 @@
 					</svg>
 					Add Bucket
 				</Button>
-			</div>
-		</div>
+			{/snippet}
+		</EmptyState>
 	{:else}
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.buckets as bucket (bucket.id)}

@@ -11,6 +11,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import PaydaySettingsForm from '$lib/components/PaydaySettingsForm.svelte';
+	import ResponsiveStatGrid from '$lib/components/ResponsiveStatGrid.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -300,63 +301,7 @@
 	<div class="mb-8">
 		<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Key Metrics</h2>
 
-		<!-- Mobile: Horizontal scroll -->
-		<div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 no-scrollbar md:hidden">
-			<div class="min-w-[280px] snap-center shrink-0">
-				<MetricCard
-					title="Total Balance"
-					value={`$${analytics.metrics.currentBalance.toFixed(2)}`}
-					subtitle="Sum of all accounts"
-					variant={analytics.metrics.currentBalance > 0 ? 'default' : 'danger'}
-				/>
-			</div>
-			<div class="min-w-[280px] snap-center shrink-0">
-				<MetricCard
-					title="Savings Per Paycheck"
-					value={`$${analytics.metrics.savingsPerPaycheck.toFixed(2)}`}
-					subtitle="After all obligations"
-					variant={analytics.metrics.savingsPerPaycheck > 0 ? 'success' : 'danger'}
-					highlight={true}
-				/>
-			</div>
-			<div class="min-w-[280px] snap-center shrink-0">
-				<MetricCard
-					title="Daily Burn Rate"
-					value={`$${analytics.metrics.burnRate.toFixed(2)}`}
-					subtitle="Average spending per day"
-					variant="default"
-				/>
-			</div>
-			<div class="min-w-[280px] snap-center shrink-0">
-				<MetricCard
-					title="Runway"
-					value={`${Math.floor(analytics.metrics.runway)} days`}
-					subtitle="Until balance reaches $0"
-					variant={analytics.metrics.runway > 30 ? 'success' : analytics.metrics.runway > 14 ? 'warning' : 'danger'}
-				/>
-			</div>
-			<div class="min-w-[280px] snap-center shrink-0">
-				<MetricCard
-					title="Monthly Obligations"
-					value={`$${analytics.metrics.totalMonthlyObligations.toFixed(2)}`}
-					subtitle="Bills + Buckets + Debts"
-					variant="default"
-				/>
-			</div>
-			{#if analytics.metrics.nextPayday}
-				<div class="min-w-[280px] snap-center shrink-0">
-					<MetricCard
-						title="Next Payday"
-						value={format(utcDateToLocal(analytics.metrics.nextPayday), 'MMM d')}
-						subtitle={format(utcDateToLocal(analytics.metrics.nextPayday), 'yyyy')}
-						variant="default"
-					/>
-				</div>
-			{/if}
-		</div>
-
-		<!-- Desktop: Grid -->
-		<div class="hidden md:grid md:gap-4 md:grid-cols-2 lg:grid-cols-3">
+		<ResponsiveStatGrid cols={2} lgCols={3}>
 			<MetricCard
 				title="Total Balance"
 				value={`$${analytics.metrics.currentBalance.toFixed(2)}`}
@@ -388,16 +333,16 @@
 				subtitle="Bills + Buckets + Debts"
 				variant="default"
 			/>
-		{#if analytics.metrics.nextPayday}
-			<MetricCard
-				title="Next Payday"
-				value={format(utcDateToLocal(analytics.metrics.nextPayday), 'MMM d')}
-				subtitle={format(utcDateToLocal(analytics.metrics.nextPayday), 'yyyy')}
-				variant="default"
-			/>
-		{/if}
+			{#if analytics.metrics.nextPayday}
+				<MetricCard
+					title="Next Payday"
+					value={format(utcDateToLocal(analytics.metrics.nextPayday), 'MMM d')}
+					subtitle={format(utcDateToLocal(analytics.metrics.nextPayday), 'yyyy')}
+					variant="default"
+				/>
+			{/if}
+		</ResponsiveStatGrid>
 	</div>
-</div>
 
 	<!-- Cash Flow Projection Chart -->
 	{#if !needsIncomeSetup}

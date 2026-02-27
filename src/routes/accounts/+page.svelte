@@ -1,46 +1,25 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import Button from '$lib/components/Button.svelte';
+	import FormBanner from '$lib/components/FormBanner.svelte';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { enhance } from '$app/forms';
 	import {
 		Landmark,
-		CreditCard,
-		PiggyBank,
 		ArrowRightLeft,
 		Check,
 		X,
 		Plus,
-		ExternalLink,
-		Trash2
+		ExternalLink
 	} from 'lucide-svelte';
-	import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
+	import { formatDateForInput, formatDate } from '$lib/utils/dates';
+	import { formatCurrency } from '$lib/utils/format';
+	import { accountTypeIcon } from '$lib/utils/icons';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let showNewAccountForm = $state(false);
-
-	const accountTypeIcon: Record<string, any> = {
-		checking: Landmark,
-		savings: PiggyBank,
-		credit_card: CreditCard
-	};
-
-	function formatCurrency(amount: number): string {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD'
-		}).format(amount);
-	}
-
-	function formatDate(date: Date | string | null): string {
-		if (!date) return 'Never';
-		const d = date instanceof Date ? date : new Date(date);
-		return utcDateToLocal(d).toLocaleDateString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric'
-		});
-	}
 </script>
 
 <svelte:head>
@@ -64,15 +43,11 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mb-6 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 p-4">
-			<p class="text-sm text-red-800 dark:text-red-200">{form.error}</p>
-		</div>
+		<FormBanner type="error" message={form.error} />
 	{/if}
 
 	{#if form?.success}
-		<div class="mb-6 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 p-4">
-			<p class="text-sm text-green-800 dark:text-green-200">Operation completed successfully.</p>
-		</div>
+		<FormBanner type="success" message="Operation completed successfully." />
 	{/if}
 
 	<!-- New Account Form (inline, toggleable) -->
@@ -169,18 +144,19 @@
 
 	<!-- Account Cards -->
 	{#if data.accounts.length === 0}
-		<div class="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-12 text-center">
-			<Landmark class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-			<h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">No accounts yet</h3>
-			<p class="mt-2 text-gray-500 dark:text-gray-400">
-				Create an account, then import transactions from its detail page.
-			</p>
-			<div class="mt-6 flex justify-center gap-3">
+		<EmptyState
+			title="No accounts yet"
+			description="Create an account, then import transactions from its detail page."
+		>
+			{#snippet icon()}
+				<Landmark class="h-12 w-12" />
+			{/snippet}
+			{#snippet cta()}
 				<Button variant="primary" size="md" onclick={() => (showNewAccountForm = true)}>
 					Add Account
 				</Button>
-			</div>
-		</div>
+			{/snippet}
+		</EmptyState>
 	{:else}
 		<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{#each data.accounts as account}
@@ -213,7 +189,7 @@
 							{formatCurrency(account.balance)}
 						</p>
 						<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-							Last import: {formatDate(account.lastImportDate)}
+							Last import: {formatDate(account.lastImportDate, 'Never')}
 						</p>
 					</div>
 				</a>
@@ -257,13 +233,13 @@
 											{formatCurrency(transfer.amount)}
 										</span>
 									</div>
-									<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-										{formatDate(transfer.fromTransaction.datePosted)}
-										{#if transfer.toTransaction}
-											&ndash; {formatDate(transfer.toTransaction.datePosted)}
-										{/if}
-										&middot; {transfer.fromTransaction.payee}
-									</p>
+								<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+									{formatDate(transfer.fromTransaction.datePosted, 'Never')}
+									{#if transfer.toTransaction}
+										&ndash; {formatDate(transfer.toTransaction.datePosted, 'Never')}
+									{/if}
+									&middot; {transfer.fromTransaction.payee}
+								</p>
 								</div>
 								<div class="flex gap-2 ml-4">
 									<form method="POST" action="?/confirmTransfer" use:enhance>
@@ -310,13 +286,10 @@
 									<span class="font-medium text-gray-900 dark:text-gray-100">
 										{formatCurrency(transfer.amount)}
 									</span>
-									<span class="text-xs text-gray-500 dark:text-gray-400">
-										{formatDate(transfer.fromTransaction.datePosted)}
+								<span class="text-xs text-gray-500 dark:text-gray-400">
+										{formatDate(transfer.fromTransaction.datePosted, 'Never')}
 									</span>
-									<span class="inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
-										<Check class="h-3 w-3 mr-0.5" />
-										Confirmed
-									</span>
+									<StatusBadge status="Confirmed" />
 								</div>
 							</div>
 						{/each}

@@ -86,4 +86,26 @@ export function utcDateToLocal(date: Date): Date {
 	return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
 
+/**
+ * Formats a Date (or date string or null) as a localized short date string.
+ * Safe for DB Date objects — converts UTC midnight to local midnight before formatting.
+ *
+ * @param date - A Date, ISO string, or null/undefined
+ * @param fallback - String to return when date is null/undefined (default '—')
+ * @returns Formatted string like "Jan 15, 2025" or the fallback
+ *
+ * @example
+ * formatDate(account.lastImportDate, 'Never') // => "Jan 15, 2025" or "Never"
+ * formatDate(txn.datePosted, 'N/A')           // => "Feb 12, 2025" or "N/A"
+ */
+export function formatDate(date: Date | string | null | undefined, fallback = '—'): string {
+	if (!date) return fallback;
+	const d = date instanceof Date ? date : new Date(date);
+	return utcDateToLocal(d).toLocaleDateString('en-US', {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric'
+	});
+}
+
 
