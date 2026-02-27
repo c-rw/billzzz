@@ -4,7 +4,7 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 
 ## Features
 
-### 💵 Bills Management
+### Bills Management
 
 - Track bills with due dates, amounts, and payment links
 - Recurring bills (weekly, biweekly, monthly, quarterly, yearly)
@@ -15,7 +15,7 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - Payday integration for expense planning
 - Link bills to debts to avoid double-counting in cash flow
 
-### 🪣 Spending Buckets
+### Spending Buckets
 
 - Create budget categories for variable spending (groceries, gas, dining, etc.)
 - Automatic cycle generation based on your schedule
@@ -24,9 +24,8 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - Visual progress indicators with spending bars
 - Cycle history and detailed transaction logs
 - Soft delete with recovery capability
-- Import transactions from OFX/QFX files
 
-### 📊 Debt Calculator
+### Debt Calculator
 
 - Track multiple debts with interest rates and minimum payments
 - Multiple payoff strategies:
@@ -41,7 +40,7 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - Link debts to bills for integrated payment tracking
 - Recommendations based on your financial situation
 
-### 📈 Analytics & Forecasting
+### Analytics & Forecasting
 
 - 90-day cash flow projection with balance tracking
 - Key metrics dashboard:
@@ -56,26 +55,24 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - Balance and income input for accurate forecasting
 - Smart debt/bill integration prevents double-counting
 
-### 🏦 Accounts & Transfers
+### Accounts & Transaction Import
 
-- Create and manage accounts (internal and external)
-- Mark imported transactions as transfers and link a counterparty account
-- Optional category assignment for transfers
-
-### 📱 Import & Export
-
-- Import transactions from OFX/QFX bank files
-- Duplicate detection (skips transactions that were already imported)
-- Automatic payee matching and categorization
-- Map transactions to existing bills or buckets
-- Mark transactions as transfers between accounts
-- Create new bills from recurring transactions
-- Income detection and handling
+- Create and manage bank/savings/credit card accounts
+- Import OFX/QFX bank files directly from each account's page via a modal
+- Automatic account matching on import using bank routing number and last 4 digits of account number — no re-entering details on subsequent imports
+- Duplicate detection skips transactions already imported
+- Classify imported transactions at your leisure directly from the account page:
+  - Map to an existing bill or bucket
+  - Create a new bill or bucket inline
+  - Mark as income, refund, or transfer
+  - Link transfers to a counterparty account for accurate balance tracking
+- Full transaction history with search and filter
+- Import history per account
 - Full data export to JSON for backup
 
 ## Tech Stack
 
-- **Frontend**: SvelteKit 2.47.1 with Svelte 5 (runes)
+- **Frontend**: SvelteKit with Svelte 5 (runes)
 - **Database**: SQLite with better-sqlite3
 - **ORM**: Drizzle ORM
 - **Styling**: Tailwind CSS 4
@@ -83,29 +80,6 @@ A comprehensive personal finance management application built with SvelteKit 5, 
 - **Date Handling**: date-fns
 - **Charts**: Chart.js with chartjs-adapter-date-fns
 - **Language**: TypeScript
-
-## Key Features
-
-### 🌙 Dark Mode Support
-
-- Full dark mode implementation across all pages
-- System preference detection
-- Manual theme toggle in settings
-- Persistent theme preference
-
-### 📊 Intelligent Cash Flow
-
-- Prevents double-counting of linked debts/bills
-- Accurate 90-day forecasting
-- Payday-aware projections
-- Real-time balance updates
-
-### 🔄 Automatic Calculations
-
-- Debt strategies recalculate on-the-fly
-- No manual "Calculate" buttons needed
-- Instant feedback on strategy changes
-- Real-time payoff date updates
 
 ## Docker Deployment
 
@@ -216,11 +190,12 @@ The application uses SQLite with the following main tables:
 - **debt_payments** - Payment history tracking
 - **debt_strategy_settings** - Payoff strategy configuration
 
-### Import/Export
+### Accounts & Imports
 
-- **import_sessions** - OFX/QFX import tracking
-- **imported_transactions** - Pending transactions for review (including transfer metadata)
-- **accounts** - Accounts used for transfer tracking
+- **accounts** - Bank/savings/credit card accounts with routing and account number for OFX matching
+- **import_sessions** - OFX/QFX import history per account
+- **imported_transactions** - Transactions awaiting or completed classification (includes transfer metadata)
+- **transfers** - Linked transfer pairs between accounts
 
 ### Settings
 
@@ -285,7 +260,7 @@ The application uses SQLite with the following main tables:
 
 ### Import/Export
 
-- `POST /api/import` - Import OFX/QFX transactions
+- `POST /api/import` - Bulk data import (JSON backup restore)
 - `GET /api/export` - Export all data to JSON
 
 ### Accounts
