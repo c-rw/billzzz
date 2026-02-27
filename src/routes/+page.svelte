@@ -6,6 +6,9 @@
 	import PaymentModal from '$lib/components/PaymentModal.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import FloatingActionButton from '$lib/components/FloatingActionButton.svelte';
+	import StatCard from '$lib/components/StatCard.svelte';
+	import ResponsiveStatGrid from '$lib/components/ResponsiveStatGrid.svelte';
+	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { BillWithCategory } from '$lib/types/bill';
 	import { invalidateAll } from '$app/navigation';
 	import { format } from 'date-fns';
@@ -235,60 +238,16 @@
 		</div>
 	</div>
 
-		<!-- Stats Dashboard -->
-		<div class="mb-8">
-			<!-- Mobile: Horizontal scroll -->
-			<div class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 no-scrollbar md:hidden">
-				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Total Bills</p>
-					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.totalBills}</p>
-				</div>
-				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Unpaid</p>
-					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.unpaidBills}</p>
-				</div>
-				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
-					<p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{data.stats.overdueBills}</p>
-				</div>
-				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Upcoming</p>
-					<p class="mt-1 text-2xl font-semibold text-yellow-600 dark:text-yellow-400">{data.stats.upcomingBills}</p>
-				</div>
-				<div class="min-w-[280px] snap-center shrink-0 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Due Next 30 Days</p>
-					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-						${data.stats.totalAmount.toFixed(2)}
-					</p>
-				</div>
-			</div>
-
-			<!-- Desktop: Grid -->
-			<div class="hidden md:grid md:gap-4 md:grid-cols-2 lg:grid-cols-5">
-				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Total Bills</p>
-					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.totalBills}</p>
-				</div>
-				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Unpaid</p>
-					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{data.stats.unpaidBills}</p>
-				</div>
-				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Overdue</p>
-					<p class="mt-1 text-2xl font-semibold text-red-600 dark:text-red-400">{data.stats.overdueBills}</p>
-				</div>
-				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Upcoming</p>
-					<p class="mt-1 text-2xl font-semibold text-yellow-600 dark:text-yellow-400">{data.stats.upcomingBills}</p>
-				</div>
-				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
-					<p class="text-sm text-gray-500 dark:text-gray-400">Due Next 30 Days</p>
-					<p class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-						${data.stats.totalAmount.toFixed(2)}
-					</p>
-				</div>
-			</div>
-		</div>
+	<!-- Stats Dashboard -->
+	<div class="mb-8">
+		<ResponsiveStatGrid cols={2} lgCols={5}>
+			<StatCard label="Total Bills" value={String(data.stats.totalBills)} />
+			<StatCard label="Unpaid" value={String(data.stats.unpaidBills)} />
+			<StatCard label="Overdue" value={String(data.stats.overdueBills)} valueClass="text-red-600 dark:text-red-400" />
+			<StatCard label="Upcoming" value={String(data.stats.upcomingBills)} valueClass="text-yellow-600 dark:text-yellow-400" />
+			<StatCard label="Due Next 30 Days" value={`$${data.stats.totalAmount.toFixed(2)}`} />
+		</ResponsiveStatGrid>
+	</div>
 
 		<!-- Payday Info (if configured) -->
 		{#if data.stats.hasPaydayConfigured && data.stats.nextPayday}
@@ -512,15 +471,14 @@
 			</svg>
 		</FloatingActionButton>
 
-		<!-- Bills List -->
-		{#if filteredBills.length === 0}
-			<div class="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-12 text-center">
-				<svg
-					class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-				>
+	<!-- Bills List -->
+	{#if filteredBills.length === 0}
+		<EmptyState
+			title="No bills found"
+			description="Get started by adding your first bill."
+		>
+			{#snippet icon()}
+				<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -528,22 +486,21 @@
 						d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
 					/>
 				</svg>
-				<h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-gray-100">No bills found</h3>
-				<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding your first bill.</p>
-				<div class="mt-6">
-					<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
-						<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 4v16m8-8H4"
-							/>
-						</svg>
-						Add Bill
-					</Button>
-				</div>
-			</div>
+			{/snippet}
+			{#snippet cta()}
+				<Button variant="primary" size="md" onclick={() => (showAddModal = true)}>
+					<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 4v16m8-8H4"
+						/>
+					</svg>
+					Add Bill
+				</Button>
+			{/snippet}
+		</EmptyState>
 		{:else}
 			<div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 				{#each filteredBills as bill (bill.id)}

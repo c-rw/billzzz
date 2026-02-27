@@ -2,35 +2,7 @@
 	import type { BucketWithCycle } from '$lib/types/bucket';
 	import { format } from 'date-fns';
 	import { utcDateToLocal } from '$lib/utils/dates';
-	import {
-		ShoppingCart,
-		Fuel,
-		Utensils,
-		Coffee,
-		Popcorn,
-		Dumbbell,
-		Gamepad2,
-		Smartphone,
-		Shirt,
-		Home,
-		Dog,
-		Heart
-	} from 'lucide-svelte';
-
-	const iconMap: Record<string, any> = {
-		'shopping-cart': ShoppingCart,
-		'fuel': Fuel,
-		'utensils': Utensils,
-		'coffee': Coffee,
-		'popcorn': Popcorn,
-		'dumbbell': Dumbbell,
-		'gamepad': Gamepad2,
-		'smartphone': Smartphone,
-		'shirt': Shirt,
-		'home': Home,
-		'dog': Dog,
-		'heart': Heart
-	};
+	import { bucketIconMap as iconMap } from '$lib/utils/icons';
 
 	interface Props {
 		bucket: BucketWithCycle;

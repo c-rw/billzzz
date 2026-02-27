@@ -7,20 +7,7 @@
 	import CategoriesSection from '$lib/components/settings/CategoriesSection.svelte';
 	import CategoryFormModal from '$lib/components/settings/CategoryFormModal.svelte';
 	import ThemeSelector from '$lib/components/ThemeSelector.svelte';
-	import {
-		ShoppingCart,
-		Fuel,
-		Utensils,
-		Coffee,
-		Popcorn,
-		Dumbbell,
-		Gamepad2,
-		Smartphone,
-		Shirt,
-		Home,
-		Dog,
-		Heart
-	} from 'lucide-svelte';
+	import { bucketIconOptions as iconOptions } from '$lib/utils/icons';
 
 	let { data }: { data: PageData } = $props();
 
@@ -33,22 +20,6 @@
 		color: '#3B82F6',
 		icon: ''
 	});
-
-	// Icon options for categories (same as buckets)
-	const iconOptions = [
-		{ id: 'shopping-cart', component: ShoppingCart, label: 'Groceries' },
-		{ id: 'fuel', component: Fuel, label: 'Gas' },
-		{ id: 'utensils', component: Utensils, label: 'Food' },
-		{ id: 'coffee', component: Coffee, label: 'Coffee' },
-		{ id: 'popcorn', component: Popcorn, label: 'Entertainment' },
-		{ id: 'dumbbell', component: Dumbbell, label: 'Fitness' },
-		{ id: 'gamepad', component: Gamepad2, label: 'Gaming' },
-		{ id: 'smartphone', component: Smartphone, label: 'Tech' },
-		{ id: 'shirt', component: Shirt, label: 'Clothing' },
-		{ id: 'home', component: Home, label: 'Home' },
-		{ id: 'dog', component: Dog, label: 'Pets' },
-		{ id: 'heart', component: Heart, label: 'Health' }
-	];
 
 	function randomCategoryColor(usedColors: Set<string>): string {
 		const palette = [
