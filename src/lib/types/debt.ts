@@ -71,30 +71,6 @@ export interface ConsolidationResult {
 	};
 }
 
-// Form data types
-export interface DebtFormData {
-	name: string;
-	originalBalance: number;
-	currentBalance: number;
-	interestRate: number;
-	minimumPayment: number;
-	linkedBillId?: number | null;
-	priority?: number;
-	notes?: string;
-}
-
-export interface StrategyFormData {
-	strategy: Exclude<PayoffStrategy, 'consolidation'>;
-	extraMonthlyPayment: number;
-	customPriorityOrder?: number[];
-}
-
-export interface DebtPaymentFormData {
-	amount: number;
-	paymentDate: Date;
-	notes?: string;
-}
-
 // Calculator input for backend calculations
 export interface PayoffCalculationInput {
 	debts: Debt[];
@@ -102,17 +78,6 @@ export interface PayoffCalculationInput {
 	extraMonthlyPayment: number;
 	customPriorityOrder?: number[];
 	consolidationInput?: ConsolidationInput;
-}
-
-// Summary statistics
-export interface DebtSummary {
-	totalDebts: number;
-	totalBalance: number;
-	totalOriginalBalance: number;
-	totalMinimumPayment: number;
-	weightedAverageInterestRate: number;
-	totalPaid: number;
-	percentPaid: number;
 }
 
 // Export database types

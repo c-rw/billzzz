@@ -8,8 +8,7 @@ import {
 	startOfDay,
 	endOfDay,
 	isBefore,
-	isAfter,
-	isWithinInterval
+	isAfter
 } from 'date-fns';
 import { utcDateToLocal } from '$lib/utils/dates';
 
@@ -143,13 +142,4 @@ export function generateCyclesBetween(
 	return cycles;
 }
 
-/**
- * Check if a date is within a cycle
- */
-export function isDateInCycle(
-	date: Date,
-	cycleStart: Date,
-	cycleEnd: Date
-): boolean {
-	return isWithinInterval(date, { start: cycleStart, end: cycleEnd });
-}
+

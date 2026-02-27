@@ -1,9 +1,6 @@
 import { addDays, addWeeks, addMonths, addYears, setDate, getDaysInMonth } from 'date-fns';
 import type { RecurrenceType } from '$lib/types/bill';
 
-// Re-export shared utility
-export { getRecurrenceDescription } from '$lib/utils/recurrence';
-
 /**
  * Calculate the next due date for a recurring bill
  * @param currentDueDate The current due date
@@ -90,10 +87,4 @@ export function calculateNextDueDate(
 	return nextDate;
 }
 
-/**
- * Check if a bill's due date has passed and it needs to be updated
- */
-export function shouldUpdateRecurringBill(dueDate: Date, isPaid: boolean): boolean {
-	const now = new Date();
-	return isPaid && dueDate < now;
-}
+

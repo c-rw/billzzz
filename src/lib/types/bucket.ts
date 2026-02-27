@@ -19,31 +19,6 @@ export interface BucketCycleWithComputed extends BucketCycle {
 	allocations: BucketAllocation[]; // allocations that fall within this cycle
 }
 
-// Transaction with bucket details
-export interface TransactionWithBucket extends BucketTransaction {
-	bucket?: Bucket | null;
-}
-
-// Form data for creating/editing buckets
-export interface BucketFormData {
-	name: string;
-	frequency: FrequencyType;
-	budgetAmount: number;
-	enableCarryover: boolean;
-	icon?: string;
-	color?: string;
-	anchorDate: Date;
-}
-
-// Form data for creating/editing transactions
-export interface TransactionFormData {
-	bucketId: number;
-	amount: number;
-	timestamp: Date;
-	vendor?: string;
-	notes?: string;
-}
-
 // Form data for creating/editing planned allocations
 export interface BucketAllocationFormData {
 	bucketId: number;

@@ -19,18 +19,6 @@ export function getAccountById(id: number) {
 }
 
 /**
- * Find an account by bank info (last 4 of account number + bank ID)
- * Used for OFX auto-matching on import
- */
-export function getAccountByBankInfo(accountNumber: string, bankId: string) {
-	return db
-		.select()
-		.from(accounts)
-		.where(and(eq(accounts.accountNumber, accountNumber), eq(accounts.bankId, bankId)))
-		.get();
-}
-
-/**
  * Create a new account
  */
 export function createAccount(data: NewAccount) {
