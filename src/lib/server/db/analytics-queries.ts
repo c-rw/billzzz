@@ -316,6 +316,12 @@ async function projectCashFlow(
 	// Simulate day by day
 	let runningBalance = startingBalance;
 
+	// Track working debt balances so paid-off debts stop generating payments
+	const debtBalances = new Map<number, number>();
+	for (const debt of sortedUnlinkedDebts) {
+		debtBalances.set(debt.id, debt.currentBalance);
+	}
+
 	for (let day = 0; day < daysToProject; day++) {
 		const currentDate = addDays(today, day);
 		const events: Array<{ type: 'income' | 'bill' | 'bucket' | 'debt'; description: string; amount: number }> = [];
@@ -391,6 +397,9 @@ async function projectCashFlow(
 			let remainingExtra = extraMonthlyPayment;
 
 			for (const debt of sortedUnlinkedDebts) {
+				const remainingDebtBalance = debtBalances.get(debt.id) ?? 0;
+				if (remainingDebtBalance <= 0) continue; // Debt already paid off
+
 				let payment = debt.minimumPayment;
 
 				// Allocate extra payment to the highest-priority debt (first in sorted order)
@@ -399,7 +408,11 @@ async function projectCashFlow(
 					remainingExtra = 0;
 				}
 
+				// Cap payment at remaining debt balance
+				payment = Math.min(payment, remainingDebtBalance);
+
 				if (payment > 0) {
+					debtBalances.set(debt.id, remainingDebtBalance - payment);
 					dailyExpenses += payment;
 					runningBalance -= payment;
 					events.push({
@@ -485,7 +498,7 @@ export async function getAnalyticsData(): Promise<AnalyticsData> {
 
 	// Calculate metrics
 	const burnRate = obligations.totalMonthlyObligations / 30; // Daily burn rate
-	const runway = currentBalance && burnRate > 0 ? currentBalance / burnRate : 0;
+	const runway = currentBalance > 0 && burnRate > 0 ? currentBalance / burnRate : 0;
 
 	// Calculate savings per paycheck
 	let paychecksPerMonth = 2; // Default to biweekly

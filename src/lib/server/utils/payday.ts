@@ -44,8 +44,8 @@ function calculateNextWeeklyPayday(now: Date, dayOfWeek: number): Date {
 	const currentDayOfWeek = now.getDay();
 	let daysUntilPayday = dayOfWeek - currentDayOfWeek;
 
-	// If payday is today or has passed this week, get next week's payday
-	if (daysUntilPayday <= 0) {
+	// If payday has passed this week, get next week's payday
+	if (daysUntilPayday < 0) {
 		daysUntilPayday += 7;
 	}
 
@@ -75,8 +75,8 @@ function calculateNextBiweeklyPayday(now: Date, dayOfWeek: number, startDate: Da
 	// Calculate the next payday by adding the appropriate number of cycles
 	let nextPayday = addWeeks(start, cyclesPassed * 2);
 
-	// If that date is today or in the past, move to the next cycle
-	if (nextPayday <= today) {
+	// If that date is in the past, move to the next cycle
+	if (nextPayday < today) {
 		nextPayday = addWeeks(nextPayday, 2);
 	}
 
@@ -99,10 +99,10 @@ function calculateNextSemiMonthlyPayday(now: Date, dayOfMonth1: number, dayOfMon
 
 	let nextPayday: Date;
 
-	if (currentDay < firstDay) {
+	if (currentDay <= firstDay) {
 		// Next payday is the first day of this month
 		nextPayday = setDate(now, firstDay);
-	} else if (currentDay < secondDay) {
+	} else if (currentDay <= secondDay) {
 		// Next payday is the second day of this month
 		nextPayday = setDate(now, secondDay);
 	} else {
@@ -126,7 +126,7 @@ function calculateNextMonthlyPayday(now: Date, dayOfMonth: number): Date {
 
 	let nextPayday: Date;
 
-	if (currentDay < adjustedDay) {
+	if (currentDay <= adjustedDay) {
 		// Next payday is this month
 		nextPayday = setDate(now, adjustedDay);
 	} else {
