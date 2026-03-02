@@ -17,25 +17,6 @@ import {
 } from 'lucide-svelte';
 
 /**
- * Maps bucket icon IDs to their Lucide component constructors.
- * Used in BucketCard, BucketHeader, and the settings category form.
- */
-export const bucketIconMap: Record<string, any> = {
-	'shopping-cart': ShoppingCart,
-	fuel: Fuel,
-	utensils: Utensils,
-	coffee: Coffee,
-	popcorn: Popcorn,
-	dumbbell: Dumbbell,
-	gamepad: Gamepad2,
-	smartphone: Smartphone,
-	shirt: Shirt,
-	home: Home,
-	dog: Dog,
-	heart: Heart
-};
-
-/**
  * Ordered list of icon options for bucket / category icon pickers.
  */
 export const bucketIconOptions: Array<{ id: string; component: any; label: string }> = [
@@ -52,6 +33,14 @@ export const bucketIconOptions: Array<{ id: string; component: any; label: strin
 	{ id: 'dog', component: Dog, label: 'Pets' },
 	{ id: 'heart', component: Heart, label: 'Health' }
 ];
+
+/**
+ * Maps bucket icon IDs to their Lucide component constructors.
+ * Used in BucketCard, BucketHeader, and the settings category form.
+ */
+export const bucketIconMap: Record<string, any> = Object.fromEntries(
+	bucketIconOptions.map(({ id, component }) => [id, component])
+);
 
 /**
  * Maps account type strings to their Lucide icon components.

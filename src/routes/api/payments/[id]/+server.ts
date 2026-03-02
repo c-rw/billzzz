@@ -1,61 +1,33 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { updatePayment, deletePayment } from '$lib/server/db/bill-queries';
-import { parseLocalDate } from '$lib/utils/dates';
+import { parseDateString } from '$lib/utils/dates';
 
-/** Safely parse a date string (YYYY-MM-DD or ISO timestamp) to local midnight */
-function parseDateInput(value: string): Date {
-	if (value.includes('T')) {
-		return parseLocalDate(value.split('T')[0]);
+async function handleUpdate(params: { id: string }, request: Request) {
+	try {
+		const id = parseInt(params.id);
+		const data = await request.json();
+
+		const updateData: any = {};
+		if (data.amount !== undefined) updateData.amount = parseFloat(data.amount);
+		if (data.paymentDate) updateData.paymentDate = parseDateString(data.paymentDate);
+		if (data.notes !== undefined) updateData.notes = data.notes;
+
+		const payment = await updatePayment(id, updateData);
+
+		if (!payment) {
+			return json({ error: 'Payment not found' }, { status: 404 });
+		}
+
+		return json(payment);
+	} catch (error) {
+		console.error('Error updating payment:', error);
+		return json({ error: 'Failed to update payment' }, { status: 500 });
 	}
-	return parseLocalDate(value);
 }
 
-export const PUT: RequestHandler = async ({ params, request }) => {
-	try {
-		const id = parseInt(params.id);
-		const data = await request.json();
-
-		const updateData: any = {};
-		if (data.amount !== undefined) updateData.amount = parseFloat(data.amount);
-		if (data.paymentDate) updateData.paymentDate = parseDateInput(data.paymentDate);
-		if (data.notes !== undefined) updateData.notes = data.notes;
-
-		const payment = await updatePayment(id, updateData);
-
-		if (!payment) {
-			return json({ error: 'Payment not found' }, { status: 404 });
-		}
-
-		return json(payment);
-	} catch (error) {
-		console.error('Error updating payment:', error);
-		return json({ error: 'Failed to update payment' }, { status: 500 });
-	}
-};
-
-export const PATCH: RequestHandler = async ({ params, request }) => {
-	try {
-		const id = parseInt(params.id);
-		const data = await request.json();
-
-		const updateData: any = {};
-		if (data.amount !== undefined) updateData.amount = parseFloat(data.amount);
-		if (data.paymentDate) updateData.paymentDate = parseDateInput(data.paymentDate);
-		if (data.notes !== undefined) updateData.notes = data.notes;
-
-		const payment = await updatePayment(id, updateData);
-
-		if (!payment) {
-			return json({ error: 'Payment not found' }, { status: 404 });
-		}
-
-		return json(payment);
-	} catch (error) {
-		console.error('Error updating payment:', error);
-		return json({ error: 'Failed to update payment' }, { status: 500 });
-	}
-};
+export const PUT: RequestHandler = ({ params, request }) => handleUpdate(params, request);
+export const PATCH: RequestHandler = ({ params, request }) => handleUpdate(params, request);
 
 export const DELETE: RequestHandler = async ({ params }) => {
 	try {

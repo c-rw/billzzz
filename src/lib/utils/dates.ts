@@ -98,6 +98,17 @@ export function utcDateToLocal(date: Date): Date {
  * formatDate(account.lastImportDate, 'Never') // => "Jan 15, 2025" or "Never"
  * formatDate(txn.datePosted, 'N/A')           // => "Feb 12, 2025" or "N/A"
  */
+/**
+ * Parses a date string in either YYYY-MM-DD or ISO timestamp format to local midnight.
+ * Handles both "2025-01-15" and "2025-01-15T06:00:00.000Z" formats.
+ */
+export function parseDateString(value: string): Date {
+	if (value.includes('T')) {
+		return parseLocalDate(value.split('T')[0]);
+	}
+	return parseLocalDate(value);
+}
+
 export function formatDate(date: Date | string | null | undefined, fallback = '—'): string {
 	if (!date) return fallback;
 	const d = date instanceof Date ? date : new Date(date);

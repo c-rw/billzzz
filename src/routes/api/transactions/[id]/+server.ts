@@ -1,16 +1,15 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { updateTransaction, deleteTransaction } from '$lib/server/db/bucket-queries';
-import { parseLocalDate } from '$lib/utils/dates';
+import { parseDateString } from '$lib/utils/dates';
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+async function handleUpdate(params: { id: string }, request: Request) {
 	try {
 		const id = parseInt(params.id);
 		const data = await request.json();
 
-		// Convert date string to Date object if present
 		if (data.timestamp && typeof data.timestamp === 'string') {
-			data.timestamp = parseLocalDate(data.timestamp.split('T')[0]);
+			data.timestamp = parseDateString(data.timestamp);
 		}
 
 		const transaction = await updateTransaction(id, data);
@@ -24,30 +23,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		console.error('Error updating transaction:', error);
 		return json({ error: 'Failed to update transaction' }, { status: 500 });
 	}
-};
+}
 
-export const PATCH: RequestHandler = async ({ params, request }) => {
-	try {
-		const id = parseInt(params.id);
-		const data = await request.json();
-
-		// Convert date string to Date object if present
-		if (data.timestamp && typeof data.timestamp === 'string') {
-			data.timestamp = parseLocalDate(data.timestamp.split('T')[0]);
-		}
-
-		const transaction = await updateTransaction(id, data);
-
-		if (!transaction) {
-			return json({ error: 'Transaction not found' }, { status: 404 });
-		}
-
-		return json(transaction);
-	} catch (error) {
-		console.error('Error updating transaction:', error);
-		return json({ error: 'Failed to update transaction' }, { status: 500 });
-	}
-};
+export const PUT: RequestHandler = ({ params, request }) => handleUpdate(params, request);
+export const PATCH: RequestHandler = ({ params, request }) => handleUpdate(params, request);
 
 export const DELETE: RequestHandler = async ({ params }) => {
 	try {

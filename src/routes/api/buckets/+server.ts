@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getAllBucketsWithCurrentCycle, createBucket } from '$lib/server/db/bucket-queries';
-import { parseLocalDate } from '$lib/utils/dates';
+import { parseDateString } from '$lib/utils/dates';
 
 export const GET: RequestHandler = async () => {
 	try {
@@ -26,15 +26,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		let anchorDate: Date;
 		if (data.anchorDate) {
 			try {
-			if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
-					// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
-					anchorDate = parseLocalDate(data.anchorDate.split('T')[0]);
-				} else {
-					// YYYY-MM-DD format
-					anchorDate = parseLocalDate(data.anchorDate);
-				}
+				anchorDate = parseDateString(data.anchorDate);
 			} catch (error) {
-				console.error('Error parsing anchor date:', { anchorDate: data.anchorDate, error });
 				return json({ error: 'Invalid anchor date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
 			}
 		} else {
