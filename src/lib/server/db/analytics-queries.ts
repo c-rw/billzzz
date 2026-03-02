@@ -2,8 +2,10 @@ import { db } from './index';
 import { bills, buckets, debts, paydaySettings, userPreferences, debtStrategySettings, bucketAllocations } from './schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
-import { addDays, addWeeks, addMonths, addQuarters, addYears, startOfDay, differenceInDays, setDate, getDaysInMonth } from 'date-fns';
+import { addDays, addWeeks, addMonths, startOfDay, differenceInDays } from 'date-fns';
 import { utcDateToLocal } from '$lib/utils/dates';
+import { calculateNextDueDate } from '../utils/recurrence';
+import type { RecurrenceType } from '$lib/types/bill';
 import { getAccountsWithBalances } from './account-queries';
 import { sortBySnowball, sortByAvalanche, sortByCustom } from '../utils/debt-calculator';
 import type { Debt } from '$lib/types/debt';
@@ -277,43 +279,10 @@ async function projectCashFlow(
 			let safetyCounter = 0;
 			while (nextOccurrence < today && safetyCounter < 1000) {
 				safetyCounter++;
-				switch (bill.recurrenceType) {
-					case 'weekly':
-						nextOccurrence = addWeeks(nextOccurrence, 1);
-						break;
-					case 'biweekly':
-						nextOccurrence = addWeeks(nextOccurrence, 2);
-						break;
-					case 'semi-monthly': {
-						const day1 = bill.recurrenceDay || 1;
-						const day2 = (bill as any).recurrenceDay2 || 15;
-						const [firstDay, secondDay] = day1 < day2 ? [day1, day2] : [day2, day1];
-						const curDay = nextOccurrence.getDate();
-						const daysInMonth = getDaysInMonth(nextOccurrence);
-						if (curDay < Math.min(secondDay, daysInMonth)) {
-							nextOccurrence = setDate(nextOccurrence, Math.min(secondDay, daysInMonth));
-						} else {
-							const next = addMonths(nextOccurrence, 1);
-							nextOccurrence = setDate(next, Math.min(firstDay, getDaysInMonth(next)));
-						}
-						break;
-					}
-					case 'monthly':
-						nextOccurrence = addMonths(nextOccurrence, 1);
-						break;
-					case 'quarterly':
-						nextOccurrence = addQuarters(nextOccurrence, 1);
-						break;
-					case 'semi-annual':
-						nextOccurrence = addMonths(nextOccurrence, 6);
-						break;
-					case 'yearly':
-						nextOccurrence = addYears(nextOccurrence, 1);
-						break;
-					default:
-						// Unknown recurrence type — break out to avoid infinite loop
-						safetyCounter = 1000;
-						break;
+				try {
+					nextOccurrence = calculateNextDueDate(nextOccurrence, bill.recurrenceType as RecurrenceType, bill.recurrenceDay, (bill as any).recurrenceDay2);
+				} catch {
+					break;
 				}
 			}
 
@@ -325,44 +294,10 @@ async function projectCashFlow(
 				}
 				billDueDates.get(dateKey)!.push({ bill, dueDate: nextOccurrence });
 
-				// Calculate next occurrence based on recurrence type
-				switch (bill.recurrenceType) {
-					case 'weekly':
-						nextOccurrence = addWeeks(nextOccurrence, 1);
-						break;
-					case 'biweekly':
-						nextOccurrence = addWeeks(nextOccurrence, 2);
-						break;
-					case 'semi-monthly': {
-						const day1 = bill.recurrenceDay || 1;
-						const day2 = (bill as any).recurrenceDay2 || 15;
-						const [firstDay, secondDay] = day1 < day2 ? [day1, day2] : [day2, day1];
-						const curDay = nextOccurrence.getDate();
-						const daysInMonth = getDaysInMonth(nextOccurrence);
-						if (curDay < Math.min(secondDay, daysInMonth)) {
-							nextOccurrence = setDate(nextOccurrence, Math.min(secondDay, daysInMonth));
-						} else {
-							const next = addMonths(nextOccurrence, 1);
-							nextOccurrence = setDate(next, Math.min(firstDay, getDaysInMonth(next)));
-						}
-						break;
-					}
-					case 'monthly':
-						nextOccurrence = addMonths(nextOccurrence, 1);
-						break;
-					case 'quarterly':
-						nextOccurrence = addQuarters(nextOccurrence, 1);
-						break;
-					case 'semi-annual':
-						nextOccurrence = addMonths(nextOccurrence, 6);
-						break;
-					case 'yearly':
-						nextOccurrence = addYears(nextOccurrence, 1);
-						break;
-					default:
-						// Unknown recurrence type — break out to avoid infinite loop
-						nextOccurrence = addDays(endDate, 1);
-						break;
+				try {
+					nextOccurrence = calculateNextDueDate(nextOccurrence, bill.recurrenceType as RecurrenceType, bill.recurrenceDay, (bill as any).recurrenceDay2);
+				} catch {
+					break;
 				}
 			}
 		} else {

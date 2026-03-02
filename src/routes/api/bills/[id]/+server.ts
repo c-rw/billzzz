@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { getBillById, updateBill, deleteBill, markBillAsPaid } from '$lib/server/db/queries';
 import { createPayment, getPaymentsForBill } from '$lib/server/db/bill-queries';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
-import { parseLocalDate, formatDateForInput } from '$lib/utils/dates';
+import { parseLocalDate, formatDateForInput, parseDateString } from '$lib/utils/dates';
 
 // GET /api/bills/[id] - Get a single bill
 export const GET: RequestHandler = async ({ params }) => {
@@ -38,15 +38,8 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		let parsedDueDate: Date | undefined;
 		if (data.dueDate) {
 			try {
-				if (data.dueDate.includes('T')) {
-					// ISO timestamp format: "2025-10-31T05:00:00.000Z" — extract date part
-					parsedDueDate = parseLocalDate(data.dueDate.split('T')[0]);
-				} else {
-					// YYYY-MM-DD format
-					parsedDueDate = parseLocalDate(data.dueDate);
-				}
+				parsedDueDate = parseDateString(data.dueDate);
 			} catch (error) {
-				console.error('Error parsing due date:', { dueDate: data.dueDate, error });
 				return json({ error: 'Invalid due date format. Expected YYYY-MM-DD' }, { status: 400 });
 			}
 		}

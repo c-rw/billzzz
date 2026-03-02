@@ -5,7 +5,7 @@ import {
 	updateBucket,
 	deleteBucket
 } from '$lib/server/db/bucket-queries';
-import { parseLocalDate } from '$lib/utils/dates';
+import { parseDateString } from '$lib/utils/dates';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
@@ -23,23 +23,15 @@ export const GET: RequestHandler = async ({ params }) => {
 	}
 };
 
-export const PUT: RequestHandler = async ({ params, request }) => {
+async function handleUpdate(params: { id: string }, request: Request) {
 	try {
 		const id = parseInt(params.id);
 		const data = await request.json();
 
-		// Convert date string to Date object if present
 		if (data.anchorDate) {
 			try {
-			if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
-					// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
-					data.anchorDate = parseLocalDate(data.anchorDate.split('T')[0]);
-				} else {
-					// YYYY-MM-DD format
-					data.anchorDate = parseLocalDate(data.anchorDate);
-				}
+				data.anchorDate = parseDateString(data.anchorDate);
 			} catch (error) {
-				console.error('Error parsing anchor date:', { anchorDate: data.anchorDate, error });
 				return json({ error: 'Invalid anchor date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
 			}
 		}
@@ -55,41 +47,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		console.error('Error updating bucket:', error);
 		return json({ error: 'Failed to update bucket' }, { status: 500 });
 	}
-};
+}
 
-export const PATCH: RequestHandler = async ({ params, request }) => {
-	try {
-		const id = parseInt(params.id);
-		const data = await request.json();
-
-		// Convert date string to Date object if present
-		if (data.anchorDate) {
-			try {
-				if (typeof data.anchorDate === 'string' && data.anchorDate.includes('T')) {
-					// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
-					data.anchorDate = parseLocalDate(data.anchorDate.split('T')[0]);
-				} else {
-					// YYYY-MM-DD format
-					data.anchorDate = parseLocalDate(data.anchorDate);
-				}
-			} catch (error) {
-				console.error('Error parsing anchor date:', { anchorDate: data.anchorDate, error });
-				return json({ error: 'Invalid anchor date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
-			}
-		}
-
-		const bucket = await updateBucket(id, data);
-
-		if (!bucket) {
-			return json({ error: 'Bucket not found' }, { status: 404 });
-		}
-
-		return json(bucket);
-	} catch (error) {
-		console.error('Error updating bucket:', error);
-		return json({ error: 'Failed to update bucket' }, { status: 500 });
-	}
-};
+export const PUT: RequestHandler = ({ params, request }) => handleUpdate(params, request);
+export const PATCH: RequestHandler = ({ params, request }) => handleUpdate(params, request);
 
 export const DELETE: RequestHandler = async ({ params }) => {
 	try {

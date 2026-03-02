@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createBill, getAllBills } from '$lib/server/db/queries';
 import type { NewBill } from '$lib/server/db/schema';
-import { parseLocalDate } from '$lib/utils/dates';
+import { parseDateString } from '$lib/utils/dates';
 
 // GET /api/bills - Get all bills
 export const GET: RequestHandler = async ({ url }) => {
@@ -47,15 +47,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		// Parse and validate due date
 		let dueDate: Date;
 		try {
-		if (typeof data.dueDate === 'string' && data.dueDate.includes('T')) {
-				// ISO timestamp format: "2025-11-24T06:00:00.000Z" — extract date part
-				dueDate = parseLocalDate(data.dueDate.split('T')[0]);
-			} else {
-				// YYYY-MM-DD format
-				dueDate = parseLocalDate(data.dueDate);
-			}
+			dueDate = parseDateString(data.dueDate);
 		} catch (error) {
-			console.error('Error parsing due date:', { dueDate: data.dueDate, error });
 			return json({ error: 'Invalid due date format. Expected YYYY-MM-DD or ISO timestamp' }, { status: 400 });
 		}
 
