@@ -47,7 +47,7 @@ export function calculateFollowingPayday(settings: PaydaySettingsLike, fromDate:
 function calculateNextWeeklyPayday(now: Date, dayOfWeek: number): Date {
 	const currentDayOfWeek = now.getDay();
 	let daysUntilPayday = dayOfWeek - currentDayOfWeek;
-	if (daysUntilPayday <= 0) daysUntilPayday += 7;
+	if (daysUntilPayday < 0) daysUntilPayday += 7;
 	return addDays(now, daysUntilPayday);
 }
 
@@ -63,7 +63,7 @@ function calculateNextBiweeklyPayday(now: Date, _dayOfWeek: number, startDate: D
 	const cyclesPassed = Math.floor(daysSinceStart / 14);
 	let nextPayday = addWeeks(start, cyclesPassed * 2);
 
-	if (nextPayday <= today) nextPayday = addWeeks(nextPayday, 2);
+	if (nextPayday < today) nextPayday = addWeeks(nextPayday, 2);
 
 	return nextPayday;
 }
@@ -76,8 +76,8 @@ function calculateNextSemiMonthlyPayday(now: Date, dayOfMonth1: number, dayOfMon
 	const day2 = Math.min(dayOfMonth2, daysInCurrentMonth);
 	const [firstDay, secondDay] = [day1, day2].sort((a, b) => a - b);
 
-	if (currentDay < firstDay) return setDate(now, firstDay);
-	if (currentDay < secondDay) return setDate(now, secondDay);
+	if (currentDay <= firstDay) return setDate(now, firstDay);
+	if (currentDay <= secondDay) return setDate(now, secondDay);
 
 	const nextMonth = addMonths(now, 1);
 	return setDate(nextMonth, Math.min(dayOfMonth1, getDaysInMonth(nextMonth)));
@@ -87,7 +87,7 @@ function calculateNextMonthlyPayday(now: Date, dayOfMonth: number): Date {
 	const currentDay = now.getDate();
 	const adjustedDay = Math.min(dayOfMonth, getDaysInMonth(now));
 
-	if (currentDay < adjustedDay) return setDate(now, adjustedDay);
+	if (currentDay <= adjustedDay) return setDate(now, adjustedDay);
 
 	const nextMonth = addMonths(now, 1);
 	return setDate(nextMonth, Math.min(dayOfMonth, getDaysInMonth(nextMonth)));
