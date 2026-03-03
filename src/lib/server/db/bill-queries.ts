@@ -15,7 +15,7 @@ import {
 	generateBillCyclesBetween
 } from '../utils/bill-cycle-calculator';
 import { getDebtByLinkedBillId } from './debt-queries';
-import { isBefore, isAfter } from 'date-fns';
+import { isBefore, isAfter, format } from 'date-fns';
 
 /**
  * Get bill with current cycle
@@ -67,15 +67,15 @@ export async function getAllBillsWithCurrentCycle(): Promise<BillWithCycle[]> {
  */
 export async function getCurrentCycle(billId: number): Promise<BillCycle | undefined> {
 	const now = new Date();
-	const nowTimestamp = Math.floor(now.getTime() / 1000);
+	const nowStr = format(now, 'yyyy-MM-dd');
 	const result = await db
 		.select()
 		.from(billCycles)
 		.where(
 			and(
 				eq(billCycles.billId, billId),
-				sql`${billCycles.startDate} <= ${nowTimestamp}`,
-				sql`${billCycles.endDate} >= ${nowTimestamp}`
+				sql`${billCycles.startDate} <= ${nowStr}`,
+				sql`${billCycles.endDate} >= ${nowStr}`
 			)
 		)
 		.limit(1);
@@ -367,14 +367,14 @@ export async function getPaymentsForCycle(cycleId: number): Promise<BillPayment[
  */
 async function recalculateCyclesFrom(bill: Bill, startDate: Date): Promise<void> {
 	// Get all cycles from the start date forward
-	const startTimestamp = Math.floor(startDate.getTime() / 1000);
+	const startStr = format(startDate, 'yyyy-MM-dd');
 	const cycles = await db
 		.select()
 		.from(billCycles)
 		.where(
 			and(
 				eq(billCycles.billId, bill.id),
-				sql`${billCycles.startDate} >= ${startTimestamp}`
+				sql`${billCycles.startDate} >= ${startStr}`
 			)
 		)
 		.orderBy(asc(billCycles.startDate));
@@ -383,14 +383,14 @@ async function recalculateCyclesFrom(bill: Bill, startDate: Date): Promise<void>
 	let prevRemaining = 0;
 	if (bill.enableCarryover && cycles.length > 0) {
 		const firstCycleStart = cycles[0].startDate;
-		const firstTimestamp = Math.floor(firstCycleStart.getTime() / 1000);
+		const firstStr = format(firstCycleStart, 'yyyy-MM-dd');
 		const prevCycle = await db
 			.select()
 			.from(billCycles)
 			.where(
 				and(
 					eq(billCycles.billId, bill.id),
-					sql`${billCycles.startDate} < ${firstTimestamp}`
+					sql`${billCycles.startDate} < ${firstStr}`
 				)
 			)
 			.orderBy(desc(billCycles.startDate))

@@ -80,10 +80,11 @@
 				class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded focus:ring-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 focus:border-transparent"
 			>
 				<option value="weekly">Weekly</option>
-				<option value="biweekly">Biweekly</option>
+				<option value="biweekly">Every 2 Weeks</option>
+				<option value="semi-monthly">Twice a Month</option>
 				<option value="monthly">Monthly</option>
 				<option value="quarterly">Quarterly</option>
-				<option value="semi-annual">Semi-Annual</option>
+				<option value="semi-annual">Every 6 Months</option>
 				<option value="yearly">Yearly</option>
 			</select>
 		</div>

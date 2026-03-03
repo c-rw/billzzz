@@ -2,8 +2,7 @@ import { db } from './index';
 import { bills, buckets, debts, paydaySettings, userPreferences, debtStrategySettings, bucketAllocations } from './schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
-import { addDays, addWeeks, addMonths, startOfDay, differenceInDays } from 'date-fns';
-import { utcDateToLocal } from '$lib/utils/dates';
+import { addDays, addWeeks, addMonths, startOfDay } from 'date-fns';
 import { calculateNextDueDate } from '../utils/recurrence';
 import type { RecurrenceType } from '$lib/types/bill';
 import { getAccountsWithBalances } from './account-queries';
@@ -196,8 +195,8 @@ async function projectCashFlow(
 	const today = startOfDay(new Date());
 	const endDate = addDays(today, daysToProject);
 
-	// Query upcoming bucket allocations (target date in the future)
-	// These get spread as daily burn from today until their target date
+	// Query upcoming bucket allocations (target date within projection window)
+	// Each allocation shows as a lump-sum expense on its target date (like a bill).
 	const upcomingAllocations = await db
 		.select({
 			amount: bucketAllocations.amount,
@@ -210,25 +209,22 @@ async function projectCashFlow(
 		.where(
 			and(
 				eq(buckets.isDeleted, false),
-				gte(bucketAllocations.targetDate, today)
+				gte(bucketAllocations.targetDate, today),
+				lte(bucketAllocations.targetDate, endDate)
 			)
 		);
 
-	// Calculate daily allocation burn rate: spread each allocation from today to its target date
-	let dailyAllocationCost = 0;
-	const allocationDetails: Array<{ dailyCost: number; bucketName: string; notes: string | null; amount: number; targetDate: Date }> = [];
+	// Index allocations by target date for O(1) lookup in the day loop
+	const allocationsByDate = new Map<string, Array<{ amount: number; label: string }>>();
 	for (const alloc of upcomingAllocations) {
-		const daysUntilTarget = differenceInDays(startOfDay(alloc.targetDate), today);
-		if (daysUntilTarget <= 0) continue;
-		const dailyCost = alloc.amount / daysUntilTarget;
-		dailyAllocationCost += dailyCost;
+		const dateKey = startOfDay(alloc.targetDate).toISOString();
+		if (!allocationsByDate.has(dateKey)) {
+			allocationsByDate.set(dateKey, []);
+		}
 		const bucketRecord = allBuckets.find(b => b.id === alloc.bucketId);
-		allocationDetails.push({
-			dailyCost,
-			bucketName: bucketRecord?.name ?? 'Bucket',
-			notes: alloc.notes,
+		allocationsByDate.get(dateKey)!.push({
 			amount: alloc.amount,
-			targetDate: alloc.targetDate
+			label: alloc.notes || bucketRecord?.name || 'Bucket'
 		});
 	}
 
@@ -273,7 +269,7 @@ async function projectCashFlow(
 			// For recurring bills, calculate all occurrences in the projection period
 			// Start with the bill's original due date (converted to local midnight so keys
 			// match the local-midnight keys produced by the day-loop below).
-			let nextOccurrence = startOfDay(utcDateToLocal(bill.dueDate));
+			let nextOccurrence = startOfDay(bill.dueDate);
 
 			// Fast-forward to the first occurrence on or after today
 			let safetyCounter = 0;
@@ -302,7 +298,7 @@ async function projectCashFlow(
 			}
 		} else {
 			// For non-recurring bills, only include if due within projection period
-			const billDue = startOfDay(utcDateToLocal(bill.dueDate));
+			const billDue = startOfDay(bill.dueDate);
 			if (billDue >= today && billDue <= endDate && !bill.isPaid) {
 				const dateKey = billDue.toISOString();
 				if (!billDueDates.has(dateKey)) {
@@ -370,29 +366,20 @@ async function projectCashFlow(
 			});
 		}
 
-		// Daily allocation savings (spread evenly from today to each target date)
-		if (dailyAllocationCost > 0) {
-			// Only count allocations whose target date is still in the future
-			let todayAllocationCost = 0;
-			for (const alloc of allocationDetails) {
-				if (currentDate < alloc.targetDate) {
-					todayAllocationCost += alloc.dailyCost;
-				}
-			}
-			if (todayAllocationCost > 0) {
-				dailyExpenses += todayAllocationCost;
-				runningBalance -= todayAllocationCost;
-				events.push({
-					type: 'bucket',
-					description: `Saving for planned allocations (${allocationDetails.filter(a => currentDate < a.targetDate).map(a => a.notes || a.bucketName).join(', ')})`,
-					amount: todayAllocationCost
-				});
-			}
+		// Bucket allocations due on this date (lump-sum, like a bill)
+		const dueAllocations = allocationsByDate.get(dateKey) || [];
+		for (const alloc of dueAllocations) {
+			dailyExpenses += alloc.amount;
+			runningBalance -= alloc.amount;
+			events.push({
+				type: 'bucket',
+				description: `Bucket allocation: ${alloc.label}`,
+				amount: alloc.amount
+			});
 		}
 
-		// Check for debt payments (assume monthly on the 1st)
-		// Exclude debts linked to bills to avoid double-counting
-		// Show individual debt events with extra payment distributed by strategy priority
+		// Debt payments: unlinked debts fire on the 1st of each month.
+		// Debts linked to a bill are already accounted for on the bill's due date above.
 		if (currentDate.getDate() === 1 && sortedUnlinkedDebts.length > 0) {
 			let remainingExtra = extraMonthlyPayment;
 

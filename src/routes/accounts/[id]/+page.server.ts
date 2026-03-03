@@ -25,7 +25,7 @@ import {
 import { parseOfxFile, isValidOfxFile } from '$lib/server/ofx-parser';
 import { getAllBucketsWithCurrentCycle, getAllBuckets, createTransaction, createBucket } from '$lib/server/db/bucket-queries';
 import { createPayment } from '$lib/server/db/bill-queries';
-import { parseLocalDate, utcDateToLocal } from '$lib/utils/dates';
+import { parseLocalDate } from '$lib/utils/dates';
 import { calculateNextDueDate } from '$lib/server/utils/recurrence';
 import { db } from '$lib/server/db/index';
 import { importSessions, importedTransactions } from '$lib/server/db/schema';
@@ -228,6 +228,18 @@ export const actions: Actions = {
 				const existingBills = getAllBills();
 				const existingBill = existingBills.find(b => b.id === billId);
 
+				// For semi-monthly bills missing day2, infer it from this transaction's day
+				const txnDay = txn.datePosted.getDate();
+				const inferredDay2 = (
+					existingBill?.recurrenceType === 'semi-monthly' &&
+					!existingBill.recurrenceDay2 &&
+					txnDay !== existingBill.recurrenceDay
+				) ? txnDay : (existingBill?.recurrenceDay2 ?? null);
+
+				if (existingBill && inferredDay2 !== existingBill.recurrenceDay2) {
+					updateBill(billId, { recurrenceDay2: inferredDay2 });
+				}
+
 				await createPayment({
 					billId,
 					amount,
@@ -242,7 +254,8 @@ export const actions: Actions = {
 						const nextDueDate = calculateNextDueDate(
 							existingBill.dueDate,
 							existingBill.recurrenceType as any,
-							existingBill.recurrenceDay
+							existingBill.recurrenceDay,
+							inferredDay2
 						);
 						updateBill(billId, { isPaid: false, dueDate: nextDueDate });
 					}
@@ -276,8 +289,8 @@ export const actions: Actions = {
 					categoryId: categoryId || null,
 					isRecurring: isRecurring || false,
 					recurrenceType: effectiveRecurrenceType,
-					recurrenceDay: (isRecurring && (effectiveRecurrenceType === 'monthly' || effectiveRecurrenceType === 'quarterly'))
-						? utcDateToLocal(billDueDate).getDate()
+					recurrenceDay: (isRecurring && ['monthly', 'quarterly', 'semi-monthly'].includes(effectiveRecurrenceType || ''))
+						? billDueDate.getDate()
 						: null,
 					isPaid: shouldMarkAsPaid,
 					isAutopay: false,
@@ -296,7 +309,7 @@ export const actions: Actions = {
 					const nextDueDate = calculateNextDueDate(
 						billDueDate,
 						(effectiveRecurrenceType || 'monthly') as any,
-						utcDateToLocal(billDueDate).getDate()
+						billDueDate.getDate()
 					);
 					updateBill(newBill.id, { isPaid: false, dueDate: nextDueDate });
 				}

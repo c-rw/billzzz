@@ -5,6 +5,21 @@ import { eq, and, gt, desc, asc, sql, isNull, isNotNull, like, or } from 'drizzl
 // ===== ACCOUNT QUERIES =====
 
 /**
+ * Build the signed-amount SQL expression for balance calculation.
+ *
+ * For bank accounts: CREDIT = deposit (positive), all else = negative.
+ * For credit cards:  CREDIT (refund) and PAYMENT (payment to card) = positive (reduces debt);
+ *                    DEBIT, FEE, INT, SRVCHG etc. = negative (increases debt).
+ * Note: amounts are stored as Math.abs(), so direction must be derived from transactionType.
+ */
+function buildSignedAmountSql(accountType: string) {
+	if (accountType === 'credit_card') {
+		return sql<number>`COALESCE(SUM(CASE WHEN ${importedTransactions.transactionType} IN ('CREDIT', 'PAYMENT') OR ${importedTransactions.isIncome} = 1 THEN ${importedTransactions.amount} ELSE -${importedTransactions.amount} END), 0)`;
+	}
+	return sql<number>`COALESCE(SUM(CASE WHEN ${importedTransactions.transactionType} = 'CREDIT' OR ${importedTransactions.isIncome} = 1 THEN ${importedTransactions.amount} ELSE -${importedTransactions.amount} END), 0)`;
+}
+
+/**
  * Get all accounts ordered by name
  */
 export function getAllAccounts() {
@@ -46,19 +61,20 @@ export function deleteAccount(id: number) {
 
 /**
  * Calculate the running balance for an account:
- *   initialBalance + sum of imported transaction amounts after balanceAsOfDate
+ *   initialBalance + sum of ALL imported transaction amounts after balanceAsOfDate
  *
  * If balanceAsOfDate is null, all transactions are included (original behavior).
  * If set, only transactions with datePosted > balanceAsOfDate are summed,
  * since the initialBalance already accounts for everything up to that date.
+ * Note: both processed and unprocessed transactions are included — a transaction
+ * affects your real balance regardless of whether it has been categorized.
  */
 export function getAccountBalance(id: number): number {
 	const account = getAccountById(id);
 	if (!account) return 0;
 
 	const conditions = [
-		eq(importedTransactions.ownerAccountId, id),
-		eq(importedTransactions.isProcessed, true)
+		eq(importedTransactions.ownerAccountId, id)
 	];
 
 	if (account.balanceAsOfDate) {
@@ -67,7 +83,7 @@ export function getAccountBalance(id: number): number {
 
 	const result = db
 		.select({
-			total: sql<number>`COALESCE(SUM(${importedTransactions.amount}), 0)`
+			total: buildSignedAmountSql(account.accountType)
 		})
 		.from(importedTransactions)
 		.where(and(...conditions))
@@ -84,8 +100,7 @@ export function getAccountsWithBalances() {
 
 	return allAccounts.map((account) => {
 		const conditions = [
-			eq(importedTransactions.ownerAccountId, account.id),
-			eq(importedTransactions.isProcessed, true)
+			eq(importedTransactions.ownerAccountId, account.id)
 		];
 
 		if (account.balanceAsOfDate) {
@@ -94,7 +109,7 @@ export function getAccountsWithBalances() {
 
 		const result = db
 			.select({
-				total: sql<number>`COALESCE(SUM(${importedTransactions.amount}), 0)`
+				total: buildSignedAmountSql(account.accountType)
 			})
 			.from(importedTransactions)
 			.where(and(...conditions))

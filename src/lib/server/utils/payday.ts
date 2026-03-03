@@ -1,6 +1,5 @@
 import type { PaydaySettings } from '$lib/server/db/schema';
 import { addDays, addWeeks, addMonths, setDate, getDaysInMonth, startOfDay } from 'date-fns';
-import { utcDateToLocal } from '$lib/utils/dates';
 
 export type PaydayFrequency = 'weekly' | 'biweekly' | 'semi-monthly' | 'monthly';
 
@@ -58,7 +57,7 @@ function calculateNextWeeklyPayday(now: Date, dayOfWeek: number): Date {
 function calculateNextBiweeklyPayday(now: Date, dayOfWeek: number, startDate: Date): Date {
 	// Convert the UTC-midnight DB date to local midnight before stripping time,
 	// so the anchor day is the correct calendar day in the user's timezone.
-	const start = utcDateToLocal(startDate);
+	const start = startDate;
 	const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
 	// If the start date is in the future, that's the next payday

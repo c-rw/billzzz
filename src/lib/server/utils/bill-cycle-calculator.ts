@@ -21,7 +21,7 @@ import { utcDateToLocal } from '$lib/utils/dates';
  */
 function getSemiMonthlyDays(bill: Bill): [number, number] {
 	const d1 = (bill as any).recurrenceDay || 1;
-	const d2 = (bill as any).recurrenceDay2 || 15;
+	const d2 = (bill as any).recurrenceDay2 ?? (d1 + 15 <= 31 ? d1 + 15 : d1 - 15);
 	return d1 < d2 ? [d1, d2] : [d2, d1];
 }
 
@@ -134,7 +134,7 @@ export function calculateBillCycleDates(
 	if (!bill.isRecurring || !bill.recurrenceType) {
 		return {
 			startDate: startOfDay(utcDateToLocal(bill.createdAt)),
-			endDate: endOfDay(utcDateToLocal(bill.dueDate))
+			endDate: endOfDay(bill.dueDate)
 		};
 	}
 
@@ -148,7 +148,7 @@ export function calculateBillCycleDates(
 		return { startDate: cycleStart, endDate: cycleEnd };
 	}
 
-	const dueDate = startOfDay(utcDateToLocal(bill.dueDate));
+	const dueDate = startOfDay(bill.dueDate);
 
 	let cycleStart = dueDate;
 
@@ -270,7 +270,7 @@ export function generateBillCyclesBetween(
 	if (!bill.isRecurring || !bill.recurrenceType) {
 		return [{
 			startDate: startOfDay(utcDateToLocal(bill.createdAt)),
-			endDate: endOfDay(utcDateToLocal(bill.dueDate))
+			endDate: endOfDay(bill.dueDate)
 		}];
 	}
 
