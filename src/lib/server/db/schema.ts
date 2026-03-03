@@ -1,5 +1,18 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, customType } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+
+const localDate = customType<{ data: Date; driverData: string }>({
+	dataType() {
+		return 'text';
+	},
+	fromDriver(v: string): Date {
+		const [y, m, d] = v.split('-').map(Number);
+		return new Date(y, m - 1, d);
+	},
+	toDriver(v: Date): string {
+		return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+	}
+});
 
 export const categories = sqliteTable('categories', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -15,7 +28,7 @@ export const bills = sqliteTable('bills', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull(),
 	amount: real('amount').notNull(),
-	dueDate: integer('due_date', { mode: 'timestamp' }).notNull(),
+	dueDate: localDate('due_date').notNull(),
 	paymentLink: text('payment_link'),
 	categoryId: integer('category_id').references(() => categories.id, { onDelete: 'set null' }),
 	isRecurring: integer('is_recurring', { mode: 'boolean' }).notNull().default(false),
@@ -42,8 +55,8 @@ export const billCycles = sqliteTable('bill_cycles', {
 	billId: integer('bill_id')
 		.notNull()
 		.references(() => bills.id, { onDelete: 'cascade' }),
-	startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
-	endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
+	startDate: localDate('start_date').notNull(),
+	endDate: localDate('end_date').notNull(),
 	expectedAmount: real('expected_amount').notNull(), // Snapshot of bill amount when cycle created
 	carryoverAmount: real('carryover_amount').notNull().default(0),
 	totalPaid: real('total_paid').notNull().default(0),
@@ -66,7 +79,7 @@ export const billPayments = sqliteTable('bill_payments', {
 		.notNull()
 		.references(() => billCycles.id, { onDelete: 'cascade' }),
 	amount: real('amount').notNull(),
-	paymentDate: integer('payment_date', { mode: 'timestamp' }).notNull(),
+	paymentDate: localDate('payment_date').notNull(),
 	notes: text('notes'),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
@@ -76,7 +89,7 @@ export const billPayments = sqliteTable('bill_payments', {
 		.default(sql`(unixepoch())`)
 });
 
-export const paydaySettings = sqliteTable('payday_settings', {
+export const paydaySettings= sqliteTable('payday_settings', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	frequency: text('frequency', {
 		enum: ['weekly', 'biweekly', 'semi-monthly', 'monthly']
@@ -84,7 +97,7 @@ export const paydaySettings = sqliteTable('payday_settings', {
 	dayOfWeek: integer('day_of_week'), // 0-6 for Sunday-Saturday (weekly/biweekly)
 	dayOfMonth: integer('day_of_month'), // 1-31 (monthly/semi-monthly)
 	dayOfMonth2: integer('day_of_month_2'), // Second day for semi-monthly
-	startDate: integer('start_date', { mode: 'timestamp' }), // Reference date for biweekly
+	startDate: localDate('start_date'), // Reference date for biweekly
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`),
@@ -117,7 +130,7 @@ export const debtPayments = sqliteTable('debt_payments', {
 		.notNull()
 		.references(() => debts.id, { onDelete: 'cascade' }),
 	amount: real('amount').notNull(),
-	paymentDate: integer('payment_date', { mode: 'timestamp' }).notNull(),
+	paymentDate: localDate('payment_date').notNull(),
 	notes: text('notes'),
 	// When set, this debt payment was auto-created from a bill cycle overpayment.
 	// At most one auto-created debt payment per bill cycle.
@@ -173,7 +186,7 @@ export const buckets = sqliteTable('buckets', {
 	enableCarryover: integer('enable_carryover', { mode: 'boolean' }).notNull().default(true),
 	icon: text('icon'),
 	color: text('color'),
-	anchorDate: integer('anchor_date', { mode: 'timestamp' }).notNull(), // Reference date for cycle calculation
+	anchorDate: localDate('anchor_date').notNull(), // Reference date for cycle calculation
 	isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
@@ -190,7 +203,7 @@ export const bucketAllocations = sqliteTable('bucket_allocations', {
 		.notNull()
 		.references(() => buckets.id, { onDelete: 'cascade' }),
 	amount: real('amount').notNull(),
-	targetDate: integer('target_date', { mode: 'timestamp' }).notNull(),
+	targetDate: localDate('target_date').notNull(),
 	notes: text('notes'),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
@@ -206,8 +219,8 @@ export const bucketCycles = sqliteTable('bucket_cycles', {
 	bucketId: integer('bucket_id')
 		.notNull()
 		.references(() => buckets.id, { onDelete: 'cascade' }),
-	startDate: integer('start_date', { mode: 'timestamp' }).notNull(),
-	endDate: integer('end_date', { mode: 'timestamp' }).notNull(),
+	startDate: localDate('start_date').notNull(),
+	endDate: localDate('end_date').notNull(),
 	budgetAmount: real('budget_amount').notNull(), // Snapshot of budget at cycle creation
 	carryoverAmount: real('carryover_amount').notNull().default(0),
 	allocatedAmount: real('allocated_amount').notNull().default(0),
@@ -273,7 +286,7 @@ export const accounts = sqliteTable('accounts', {
 	accountNumber: text('account_number'), // last 4 digits for display/matching
 	bankId: text('bank_id'), // routing number for matching
 	initialBalance: real('initial_balance').notNull().default(0),
-	balanceAsOfDate: integer('balance_as_of_date', { mode: 'timestamp' }), // null = before all transactions
+	balanceAsOfDate: localDate('balance_as_of_date'), // null = before all transactions
 	isExternal: integer('is_external', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()

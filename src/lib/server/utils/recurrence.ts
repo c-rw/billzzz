@@ -28,7 +28,8 @@ export function calculateNextDueDate(
 		case 'semi-monthly': {
 			// Semi-monthly: two specific days per month (e.g., 1st and 15th)
 			const day1 = recurrenceDay || 1;
-			const day2 = recurrenceDay2 || 15;
+			// If no second day specified, infer the other half of the month
+			const day2 = recurrenceDay2 ?? (day1 + 15 <= 31 ? day1 + 15 : day1 - 15);
 			const [firstDay, secondDay] = day1 < day2 ? [day1, day2] : [day2, day1];
 
 			const currentDay = currentDueDate.getDate();

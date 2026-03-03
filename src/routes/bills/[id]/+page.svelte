@@ -4,7 +4,7 @@
 	import { formatCurrency } from '$lib/utils/format';
 	import { format } from 'date-fns';
 	import { ArrowLeft, Calendar, DollarSign, TrendingUp } from 'lucide-svelte';
-	import { utcDateToLocal } from '$lib/utils/dates';
+	import {  } from '$lib/utils/dates';
 
 	export let data: PageData;
 
@@ -23,8 +23,8 @@
 	}, {} as Record<number, typeof payments>);
 
 	function getCycleName(cycle: typeof cycles[0]) {
-		const start = format(utcDateToLocal(cycle.startDate), 'MMM d, yyyy');
-		const end = format(utcDateToLocal(cycle.endDate), 'MMM d, yyyy');
+		const start = format(cycle.startDate, 'MMM d, yyyy');
+		const end = format(cycle.endDate, 'MMM d, yyyy');
 		return `${start} - ${end}`;
 	}
 
@@ -55,9 +55,9 @@
 				<h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{bill.name}</h1>
 				<p class="text-gray-600 dark:text-gray-400 mt-1">
 					{#if bill.isRecurring}
-					Recurring {bill.recurrenceType} • Due {format(utcDateToLocal(bill.dueDate), 'MMM d, yyyy')}
+					Recurring {bill.recurrenceType} • Due {format(bill.dueDate, 'MMM d, yyyy')}
 					{:else}
-						One-time bill • Due {format(utcDateToLocal(bill.dueDate), 'MMM d, yyyy')}
+						One-time bill • Due {format(bill.dueDate, 'MMM d, yyyy')}
 					{/if}
 				</p>
 			</div>
@@ -82,7 +82,7 @@
 				<div>
 					<p class="text-sm text-gray-600 dark:text-gray-400">Period</p>
 					<p class="text-lg font-medium text-gray-900 dark:text-gray-100">
-						{format(utcDateToLocal(currentCycle.startDate), 'MMM d')} - {format(utcDateToLocal(currentCycle.endDate), 'MMM d, yyyy')}
+						{format(currentCycle.startDate, 'MMM d')} - {format(currentCycle.endDate, 'MMM d, yyyy')}
 					</p>
 				</div>
 				<div>
@@ -218,7 +218,7 @@
 									{#each paymentsByCycle[cycle.id] as payment}
 										<div class="flex items-center justify-between text-sm">
 										<span class="text-gray-600 dark:text-gray-400">
-											{format(utcDateToLocal(payment.paymentDate), 'MMM d, yyyy')}
+											{format(payment.paymentDate, 'MMM d, yyyy')}
 											{#if payment.notes}
 													<span class="text-xs">• {payment.notes}</span>
 												{/if}

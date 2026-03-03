@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { format } from 'date-fns';
 	import CycleHistoryCard from './CycleHistoryCard.svelte';
-	import { utcDateToLocal } from '$lib/utils/dates';
-
+	
 	interface Cycle {
 		id: number;
 		startDate: Date;
@@ -87,7 +86,7 @@
 					{@const remaining = startingBalance - cycle.totalSpent}
 						<tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
 							<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
-								{format(utcDateToLocal(cycle.startDate), 'MMM d')} – {format(utcDateToLocal(cycle.endDate), 'MMM d, yyyy')}
+								{format(cycle.startDate, 'MMM d')} – {format(cycle.endDate, 'MMM d, yyyy')}
 							</td>
 							<td class="whitespace-nowrap px-6 py-4 text-right text-sm text-gray-900 dark:text-gray-100">
 								${cycle.budgetAmount.toFixed(2)}

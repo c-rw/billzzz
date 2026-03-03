@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { format, differenceInDays, startOfDay } from 'date-fns';
-	import { utcDateToLocal } from '$lib/utils/dates';
-
+	
 	interface Allocation {
 		amount: number;
 		targetDate: Date;
@@ -89,7 +88,7 @@
 	<div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
 		<p class="text-sm text-gray-500 dark:text-gray-400">Cycle Period</p>
 		<p class="mt-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-			{format(utcDateToLocal(currentCycle.startDate), 'MMM d')} – {format(utcDateToLocal(currentCycle.endDate), 'MMM d, yyyy')}
+			{format(currentCycle.startDate, 'MMM d')} – {format(currentCycle.endDate, 'MMM d, yyyy')}
 		</p>
 		<p class="mt-1 text-xs text-gray-500 dark:text-gray-400 capitalize">{frequency}</p>
 	</div>
@@ -106,7 +105,7 @@
 					<span class="text-blue-700 dark:text-blue-400">
 						{alloc.notes || `$${alloc.amount.toFixed(2)} allocation`}
 						<span class="text-blue-500 dark:text-blue-500">
-							— due {format(utcDateToLocal(alloc.targetDate), 'MMM d, yyyy')} ({alloc.daysUntil}d)
+							— due {format(alloc.targetDate, 'MMM d, yyyy')} ({alloc.daysUntil}d)
 						</span>
 					</span>
 					<span class="font-medium text-blue-800 dark:text-blue-300">

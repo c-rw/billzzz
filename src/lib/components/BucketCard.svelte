@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { BucketWithCycle } from '$lib/types/bucket';
 	import { format } from 'date-fns';
-	import { utcDateToLocal } from '$lib/utils/dates';
-	import { bucketIconMap as iconMap } from '$lib/utils/icons';
+		import { bucketIconMap as iconMap } from '$lib/utils/icons';
 
 	interface Props {
 		bucket: BucketWithCycle;
@@ -94,7 +93,7 @@
 		{#if currentCycle}
 			<div class="mb-3 flex items-center justify-between text-xs">
 				<span class="text-gray-500 dark:text-gray-400">
-					{format(utcDateToLocal(currentCycle.startDate), 'MMM d')} – {format(utcDateToLocal(currentCycle.endDate), 'MMM d, yyyy')}
+					{format(currentCycle.startDate, 'MMM d')} – {format(currentCycle.endDate, 'MMM d, yyyy')}
 				</span>
 				<div class="flex items-center gap-1.5">
 					{#if remaining < 0}

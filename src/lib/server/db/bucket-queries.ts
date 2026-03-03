@@ -17,7 +17,7 @@ import {
 	findCycleForTimestamp,
 	generateCyclesBetween
 } from '../utils/bucket-cycle-calculator';
-import { isBefore, isAfter } from 'date-fns';
+import { isBefore, isAfter, format } from 'date-fns';
 
 /**
  * Get all non-deleted buckets
@@ -166,15 +166,15 @@ export async function deleteBucket(id: number): Promise<void> {
  */
 export async function getCurrentCycle(bucketId: number): Promise<BucketCycle | undefined> {
 	const now = new Date();
-	const nowTimestamp = Math.floor(now.getTime() / 1000);
+	const nowStr = format(now, 'yyyy-MM-dd');
 	const result = await db
 		.select()
 		.from(bucketCycles)
 		.where(
 			and(
 				eq(bucketCycles.bucketId, bucketId),
-				sql`${bucketCycles.startDate} <= ${nowTimestamp}`,
-				sql`${bucketCycles.endDate} >= ${nowTimestamp}`
+				sql`${bucketCycles.startDate} <= ${nowStr}`,
+				sql`${bucketCycles.endDate} >= ${nowStr}`
 			)
 		)
 		.limit(1);
@@ -299,7 +299,7 @@ async function closeCycle(cycleId: number): Promise<void> {
  */
 async function updateFutureCycleBudgets(bucketId: number, newBudgetAmount: number): Promise<void> {
 	const now = new Date();
-	const nowTimestamp = Math.floor(now.getTime() / 1000);
+	const nowStr = format(now, 'yyyy-MM-dd');
 
 	await db
 		.update(bucketCycles)
@@ -310,7 +310,7 @@ async function updateFutureCycleBudgets(bucketId: number, newBudgetAmount: numbe
 		.where(
 			and(
 				eq(bucketCycles.bucketId, bucketId),
-				sql`${bucketCycles.startDate} >= ${nowTimestamp}`
+				sql`${bucketCycles.startDate} >= ${nowStr}`
 			)
 		);
 
@@ -335,8 +335,8 @@ async function getAllocationsForCycle(
 	startDate: Date,
 	endDate: Date
 ): Promise<BucketAllocation[]> {
-	const startTimestamp = Math.floor(startDate.getTime() / 1000);
-	const endTimestamp = Math.floor(endDate.getTime() / 1000);
+	const startStr = format(startDate, 'yyyy-MM-dd');
+	const endStr = format(endDate, 'yyyy-MM-dd');
 
 	return db
 		.select()
@@ -344,8 +344,8 @@ async function getAllocationsForCycle(
 		.where(
 			and(
 				eq(bucketAllocations.bucketId, bucketId),
-				sql`${bucketAllocations.targetDate} >= ${startTimestamp}`,
-				sql`${bucketAllocations.targetDate} <= ${endTimestamp}`
+				sql`${bucketAllocations.targetDate} >= ${startStr}`,
+				sql`${bucketAllocations.targetDate} <= ${endStr}`
 			)
 		)
 		.orderBy(asc(bucketAllocations.targetDate));
@@ -563,14 +563,14 @@ export async function getTransactionsForCycle(cycleId: number): Promise<BucketTr
  */
 async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<void> {
 	// Get all cycles from the start date forward
-	const startTimestamp = Math.floor(startDate.getTime() / 1000);
+	const startStr = format(startDate, 'yyyy-MM-dd');
 	const cycles = await db
 		.select()
 		.from(bucketCycles)
 		.where(
 			and(
 				eq(bucketCycles.bucketId, bucket.id),
-				sql`${bucketCycles.startDate} >= ${startTimestamp}`
+				sql`${bucketCycles.startDate} >= ${startStr}`
 			)
 		)
 		.orderBy(asc(bucketCycles.startDate));
@@ -588,14 +588,14 @@ async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<v
 		);
 
 		// Get carryover from previous cycle
-		const cycleStartTimestamp = Math.floor(cycle.startDate.getTime() / 1000);
+		const cycleStartStr = format(cycle.startDate, 'yyyy-MM-dd');
 		const previousCycle = await db
 			.select()
 			.from(bucketCycles)
 			.where(
 				and(
 					eq(bucketCycles.bucketId, bucket.id),
-					sql`${bucketCycles.endDate} < ${cycleStartTimestamp}`
+					sql`${bucketCycles.endDate} < ${cycleStartStr}`
 				)
 			)
 			.orderBy(desc(bucketCycles.endDate))

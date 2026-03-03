@@ -282,7 +282,47 @@
 					class="w-full text-left border-b border-gray-100 dark:border-gray-700/50 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer {expandedTxnId === txn.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}"
 					onclick={() => toggleTransaction(txn)}
 				>
-					<div class="grid grid-cols-12 gap-2 py-2.5 px-3 items-center text-sm">
+					<!-- Mobile layout -->
+					<div class="sm:hidden flex items-start gap-2 py-2.5 px-3 text-sm">
+						<div class="flex-none pt-0.5">
+							{#if expandedTxnId === txn.id}
+								<ChevronDown class="h-4 w-4 text-gray-400" />
+							{:else}
+								<ChevronRight class="h-4 w-4 text-gray-400" />
+							{/if}
+						</div>
+						<div class="flex-1 min-w-0">
+							<div class="flex items-baseline justify-between gap-2">
+								<span class="text-gray-900 dark:text-gray-100 truncate">{txn.payee}</span>
+								<span class="flex-none font-medium {txn.transactionType === 'CREDIT' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}">
+									{txn.transactionType === 'CREDIT' ? '+' : '-'}{formatCurrency(txn.amount)}
+								</span>
+							</div>
+							{#if txn.memo}
+								<span class="block text-xs text-gray-500 dark:text-gray-400 truncate">{txn.memo}</span>
+							{/if}
+							<div class="flex items-center justify-between gap-2 mt-0.5">
+								<span class="text-xs text-gray-500 dark:text-gray-400">{formatDate(txn.datePosted, 'N/A')}</span>
+								<div class="flex items-center gap-1.5">
+									{#if txn.isTransfer}
+										<span class="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400">
+											<ArrowRightLeft class="h-3 w-3 shrink-0" />
+											{getTransferLabel(txn)}
+										</span>
+									{:else}
+										<span class="text-xs font-medium {getClassificationColor(txn)}">
+											{getClassificationLabel(txn)}
+										</span>
+									{/if}
+									{#if txn.isProcessed}
+										<Check class="h-3 w-3 text-green-500 shrink-0" />
+									{/if}
+								</div>
+							</div>
+						</div>
+					</div>
+					<!-- Desktop layout -->
+					<div class="hidden sm:grid grid-cols-12 gap-2 py-2.5 px-3 items-center text-sm">
 						<div class="col-span-1 flex items-center">
 							{#if expandedTxnId === txn.id}
 								<ChevronDown class="h-4 w-4 text-gray-400" />

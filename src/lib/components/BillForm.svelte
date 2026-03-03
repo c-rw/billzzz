@@ -2,6 +2,7 @@
 	import type { Category } from '$lib/types/bill';
 	import type { RecurrenceType } from '$lib/types/bill';
 	import { format } from 'date-fns';
+import { formatDateForInput } from '$lib/utils/dates';
 	import Button from '$lib/components/Button.svelte';
 
 	interface Props {
@@ -55,14 +56,7 @@
 		name = initialData?.name || '';
 		amount = initialData?.amount || 0;
 		if (initialData?.dueDate) {
-			// Use UTC methods to format the date, since dates are stored as UTC midnight in the DB.
-			// Using local-time methods (like date-fns format) causes an off-by-one shift for
-			// timezones behind UTC (e.g. UTC-5 would show Feb 11 for a UTC midnight Feb 12 date).
-			const d = initialData.dueDate;
-			const y = d.getUTCFullYear();
-			const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-			const day = String(d.getUTCDate()).padStart(2, '0');
-			dueDate = `${y}-${m}-${day}`;
+			dueDate = formatDateForInput(initialData.dueDate);
 		} else {
 			dueDate = format(new Date(), 'yyyy-MM-dd');
 		}
@@ -83,7 +77,7 @@
 	$effect(() => {
 		const needsDay = recurrenceType === 'monthly' || recurrenceType === 'quarterly' || recurrenceType === 'semi-monthly';
 		const neededDay = prevRecurrenceType === 'monthly' || prevRecurrenceType === 'quarterly' || prevRecurrenceType === 'semi-monthly';
-		if (needsDay && !neededDay) {
+		if (needsDay && !neededDay && prevRecurrenceType !== null) {
 			// Parse the day from the current dueDate string (YYYY-MM-DD), using the UTC day
 			// to stay consistent with how dates are stored and displayed.
 			const parts = dueDate.split('-');

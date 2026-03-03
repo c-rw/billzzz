@@ -4,7 +4,7 @@
 	import CategoryBadge from './CategoryBadge.svelte';
 	import { format } from 'date-fns';
 	import { getRecurrenceDescription } from '$lib/utils/recurrence';
-	import { utcDateToLocal } from '$lib/utils/dates';
+	
 	import { goto } from '$app/navigation';
 
 	interface Props {
@@ -118,7 +118,7 @@
 			</div>
 			<div>
 				<span class="text-gray-500 dark:text-gray-400">Due:</span>
-				<span class="ml-2 font-medium text-gray-900 dark:text-gray-100">			{format(utcDateToLocal(bill.dueDate), 'MMM d, yyyy')}</span>
+				<span class="ml-2 font-medium text-gray-900 dark:text-gray-100">			{format(bill.dueDate, 'MMM d, yyyy')}</span>
 			</div>
 		</div>
 
@@ -160,42 +160,6 @@
 
 	<!-- Action Buttons -->
 	<div class="flex items-center justify-end gap-1 border-t border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
-		<button
-			onclick={handleTogglePaid}
-			class="rounded-md p-3 min-h-11 min-w-11 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-			title={bill.isPaid ? 'Mark as unpaid' : 'Mark as paid'}
-		>
-			{#if bill.isPaid}
-				<svg
-					class="h-5 w-5 text-green-600"
-					fill="currentColor"
-					viewBox="0 0 20 20"
-					xmlns="http://www.w3.org/2000/svg"
-				>
-					<path
-						fill-rule="evenodd"
-						d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-						clip-rule="evenodd"
-					/>
-				</svg>
-			{:else}
-				<svg
-					class="h-5 w-5"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					xmlns="http://www.w3.org/2000/svg"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-					/>
-				</svg>
-			{/if}
-		</button>
-
 		{#if bill.paymentLink}
 			<a
 				href={bill.paymentLink}

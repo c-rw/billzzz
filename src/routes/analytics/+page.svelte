@@ -3,8 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { format } from 'date-fns';
-	import { utcDateToLocal } from '$lib/utils/dates';
-	import { calculateNextPayday, daysUntil } from '$lib/utils/payday';
+		import { calculateNextPayday, daysUntil } from '$lib/utils/payday';
 	import CashFlowChart from '$lib/components/CashFlowChart.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import AlertBanner from '$lib/components/AlertBanner.svelte';
@@ -24,6 +23,10 @@
 	// Group warnings by severity (reactive)
 	const highWarnings = $derived(analytics.warnings.filter((w) => w.severity === 'high'));
 	const mediumWarnings = $derived(analytics.warnings.filter((w) => w.severity === 'medium'));
+
+	// Collapsible warning sections
+	let highWarningsOpen = $state(true);
+	let mediumWarningsOpen = $state(true);
 
 	// Income form state
 	let showIncomeForm = $state(false);
@@ -282,18 +285,30 @@
 	<!-- Warnings / Alerts -->
 	{#if highWarnings.length > 0}
 		<div class="mb-8">
-			<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Critical Alerts</h2>
-			<div class="space-y-3">
-				{#each highWarnings as warning}
-					<AlertBanner
-						type={warning.type}
-						severity={warning.severity}
-						date={warning.date}
-						message={warning.message}
-						amount={warning.amount}
-					/>
-				{/each}
-			</div>
+			<button
+				onclick={() => (highWarningsOpen = !highWarningsOpen)}
+				class="flex w-full items-center justify-between mb-4 text-left"
+			>
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+					Critical Alerts <span class="ml-2 text-sm font-normal text-red-600 dark:text-red-400">({highWarnings.length})</span>
+				</h2>
+				<svg class="h-5 w-5 text-gray-500 transition-transform {highWarningsOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+				</svg>
+			</button>
+			{#if highWarningsOpen}
+				<div class="space-y-3">
+					{#each highWarnings as warning}
+						<AlertBanner
+							type={warning.type}
+							severity={warning.severity}
+							date={warning.date}
+							message={warning.message}
+							amount={warning.amount}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -336,8 +351,8 @@
 			{#if analytics.metrics.nextPayday}
 				<MetricCard
 					title="Next Payday"
-					value={format(utcDateToLocal(analytics.metrics.nextPayday), 'MMM d')}
-					subtitle={format(utcDateToLocal(analytics.metrics.nextPayday), 'yyyy')}
+					value={format(analytics.metrics.nextPayday, 'MMM d')}
+					subtitle={format(analytics.metrics.nextPayday, 'yyyy')}
 					variant="default"
 				/>
 			{/if}
@@ -405,18 +420,30 @@
 	<!-- Medium Priority Warnings -->
 	{#if mediumWarnings.length > 0}
 		<div class="mb-8">
-			<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Additional Warnings</h2>
-			<div class="space-y-2">
-				{#each mediumWarnings.slice(0, 5) as warning}
-					<AlertBanner
-						type={warning.type}
-						severity={warning.severity}
-						date={warning.date}
-						message={warning.message}
-						amount={warning.amount}
-					/>
-				{/each}
-			</div>
+			<button
+				onclick={() => (mediumWarningsOpen = !mediumWarningsOpen)}
+				class="flex w-full items-center justify-between mb-4 text-left"
+			>
+				<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">
+					Additional Warnings <span class="ml-2 text-sm font-normal text-yellow-600 dark:text-yellow-400">({mediumWarnings.length})</span>
+				</h2>
+				<svg class="h-5 w-5 text-gray-500 transition-transform {mediumWarningsOpen ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+				</svg>
+			</button>
+			{#if mediumWarningsOpen}
+				<div class="space-y-2">
+					{#each mediumWarnings.slice(0, 5) as warning}
+						<AlertBanner
+							type={warning.type}
+							severity={warning.severity}
+							date={warning.date}
+							message={warning.message}
+							amount={warning.amount}
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>

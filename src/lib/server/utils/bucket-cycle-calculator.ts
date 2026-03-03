@@ -10,7 +10,6 @@ import {
 	isBefore,
 	isAfter
 } from 'date-fns';
-import { utcDateToLocal } from '$lib/utils/dates';
 
 /**
  * Calculate the cycle dates for a given reference date based on frequency and anchor date
@@ -20,7 +19,7 @@ export function calculateCycleDates(
 	anchorDate: Date,
 	referenceDate: Date = new Date()
 ): { startDate: Date; endDate: Date } {
-	const anchor = startOfDay(utcDateToLocal(anchorDate));
+	const anchor = startOfDay(anchorDate);
 	const ref = startOfDay(referenceDate);
 
 	let cycleStart = anchor;
