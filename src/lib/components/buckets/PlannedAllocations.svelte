@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { format } from 'date-fns';
-	import {  } from '$lib/utils/dates';
+	import { utcDateToLocal, formatDateForInput, parseLocalDate } from '$lib/utils/dates';
 	import type { BucketAllocation, BucketAllocationFormData } from '$lib/types/bucket';
 	import Button from '$lib/components/Button.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -48,7 +48,7 @@
 	function openEditModal(allocation: BucketAllocation) {
 		editingAllocation = allocation;
 		formAmount = allocation.amount;
-		formTargetDate = format(allocation.targetDate, 'yyyy-MM-dd');
+		formTargetDate = formatDateForInput(utcDateToLocal(allocation.targetDate));
 		formNotes = allocation.notes || '';
 		showEditModal = true;
 	}
@@ -60,7 +60,7 @@
 			await onAdd({
 				bucketId,
 				amount: formAmount,
-				targetDate: new Date(formTargetDate + 'T12:00:00'),
+				targetDate: parseLocalDate(formTargetDate),
 				notes: formNotes || undefined
 			});
 			showAddModal = false;
@@ -76,7 +76,7 @@
 		try {
 			await onUpdate(editingAllocation.id, {
 				amount: formAmount,
-				targetDate: new Date(formTargetDate + 'T12:00:00'),
+				targetDate: parseLocalDate(formTargetDate),
 				notes: formNotes || undefined
 			});
 			showEditModal = false;
@@ -117,7 +117,7 @@
 								+${allocation.amount.toFixed(2)}
 							</span>
 							<span class="text-sm text-gray-500 dark:text-gray-400">
-								{format(allocation.targetDate, 'MMM yyyy')}
+								{format(utcDateToLocal(allocation.targetDate), 'MMM yyyy')}
 							</span>
 						</div>
 						{#if allocation.notes}

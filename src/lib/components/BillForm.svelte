@@ -2,7 +2,7 @@
 	import type { Category } from '$lib/types/bill';
 	import type { RecurrenceType } from '$lib/types/bill';
 	import { format } from 'date-fns';
-import { formatDateForInput } from '$lib/utils/dates';
+import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
 	import Button from '$lib/components/Button.svelte';
 
 	interface Props {
@@ -56,7 +56,7 @@ import { formatDateForInput } from '$lib/utils/dates';
 		name = initialData?.name || '';
 		amount = initialData?.amount || 0;
 		if (initialData?.dueDate) {
-			dueDate = formatDateForInput(initialData.dueDate);
+			dueDate = formatDateForInput(utcDateToLocal(initialData.dueDate));
 		} else {
 			dueDate = format(new Date(), 'yyyy-MM-dd');
 		}

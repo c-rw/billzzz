@@ -38,7 +38,7 @@ export function parseLocalDate(dateString: string): Date {
 	}
 
 	// Create the date
-	const date = new Date(year, month - 1, day);
+	const date = new Date(Date.UTC(year, month - 1, day));
 
 	// Validate that the date is valid (not Invalid Date)
 	if (isNaN(date.getTime())) {
