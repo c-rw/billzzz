@@ -7,10 +7,10 @@ const localDate = customType<{ data: Date; driverData: string }>({
 	},
 	fromDriver(v: string): Date {
 		const [y, m, d] = v.split('-').map(Number);
-		return new Date(y, m - 1, d);
+		return new Date(Date.UTC(y, m - 1, d));
 	},
 	toDriver(v: Date): string {
-		return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+		return `${v.getUTCFullYear()}-${String(v.getUTCMonth() + 1).padStart(2, '0')}-${String(v.getUTCDate()).padStart(2, '0')}`;
 	}
 });
 

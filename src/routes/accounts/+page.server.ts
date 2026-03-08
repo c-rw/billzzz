@@ -1,3 +1,4 @@
+import { parseLocalDate } from '$lib/utils/dates';
 import type { Actions, PageServerLoad } from './$types';
 import { fail } from '@sveltejs/kit';
 import { getAccountsWithBalances, createAccount, deleteAccount, accountHasTransactions } from '$lib/server/db/account-queries';
@@ -57,9 +58,9 @@ export const actions: Actions = {
 		const isExternal = formData.get('isExternal') === 'on';
 		const initialBalance = parseFloat(formData.get('initialBalance') as string) || 0;
 		const balanceAsOfDateStr = formData.get('balanceAsOfDate') as string;
-		// Parse as local midnight to match OFX datePosted parsing (new Date(y, m, d))
+		// Parse as UTC midnight — consistent with the localDate schema type
 		const balanceAsOfDate = balanceAsOfDateStr
-			? (() => { const [y, m, d] = balanceAsOfDateStr.split('-').map(Number); return new Date(y, m - 1, d); })()
+			? parseLocalDate(balanceAsOfDateStr)
 			: null;
 
 		if (!name) {

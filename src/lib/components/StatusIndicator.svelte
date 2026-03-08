@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { formatDistanceToNow, isPast, differenceInDays } from 'date-fns';
-	import {  } from '$lib/utils/dates';
+	import { utcDateToLocal } from '$lib/utils/dates';
 
 	interface Props {
 		dueDate: Date;
@@ -11,7 +11,7 @@
 
 	// Convert the UTC-midnight DB date to local midnight so all date-fns
 	// comparisons operate on the correct calendar day.
-	const localDueDate = $derived(dueDate);
+	const localDueDate = $derived(utcDateToLocal(dueDate));
 
 	const status = $derived.by(() => {
 		if (isPaid) return 'paid';
