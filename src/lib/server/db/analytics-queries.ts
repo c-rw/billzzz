@@ -1,8 +1,8 @@
 import { db } from './index';
-import { bills, buckets, debts, paydaySettings, userPreferences, debtStrategySettings, bucketAllocations } from './schema';
+import { bills, buckets, debts, paydaySettings, userPreferences, debtStrategySettings, bucketAllocations, importedTransactions } from './schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { calculateNextPayday, calculateFollowingPayday } from '../utils/payday';
-import { addDays, addWeeks, addMonths, startOfDay } from 'date-fns';
+import { addDays, addWeeks, addMonths, startOfDay, subDays } from 'date-fns';
 import { calculateNextDueDate } from '../utils/recurrence';
 import type { RecurrenceType } from '$lib/types/bill';
 import { getAccountsWithBalances } from './account-queries';
@@ -545,4 +545,137 @@ export async function updateAnalyticsPreferences(data: {
 			})
 			.where(eq(userPreferences.id, prefs[0].id));
 	}
+}
+
+// ─── Spending Analytics (historical, from imported transactions) ─────────────
+
+export interface SpendingByBucket {
+	bucketId: number | null;
+	bucketName: string;
+	totalSpent: number;
+	count: number;
+	isBills?: boolean;
+	isUncategorized?: boolean;
+}
+
+export interface SpendingByMonth {
+	month: string;      // "2025-01" for sorting
+	monthLabel: string; // "Jan 2025" for display
+	totalSpent: number;
+}
+
+export interface TopPayee {
+	payee: string;
+	totalSpent: number;
+	count: number;
+}
+
+export interface SpendingAnalytics {
+	byBucket: SpendingByBucket[];
+	byMonth: SpendingByMonth[];
+	topPayees: TopPayee[];
+	totalSpent: number;
+	uncategorizedSpent: number;
+	billsSpent: number;
+	transactionCount: number;
+}
+
+/**
+ * Aggregate real spending from imported bank transactions over the last N days.
+ * Excludes transfers and income credits. Groups spending by bucket, month, and payee.
+ */
+export function getSpendingAnalytics(daysBack = 90): SpendingAnalytics {
+	const startDate = subDays(new Date(), daysBack);
+
+	const rows = db
+		.select({
+			mappedBucketId: importedTransactions.mappedBucketId,
+			mappedBillId: importedTransactions.mappedBillId,
+			bucketName: buckets.name,
+			amount: importedTransactions.amount,
+			payee: importedTransactions.payee,
+			datePosted: importedTransactions.datePosted
+		})
+		.from(importedTransactions)
+		.leftJoin(buckets, eq(importedTransactions.mappedBucketId, buckets.id))
+		.where(
+			and(
+				eq(importedTransactions.isTransfer, false),
+				eq(importedTransactions.isIncome, false),
+				gte(importedTransactions.datePosted, startDate)
+			)
+		)
+		.all();
+
+	const bucketMap = new Map<number, { bucketName: string; totalSpent: number; count: number }>();
+	const monthMap = new Map<string, number>();
+	const payeeMap = new Map<string, { totalSpent: number; count: number }>();
+
+	let totalSpent = 0;
+	let billsSpent = 0;
+	let uncategorizedSpent = 0;
+
+	for (const row of rows) {
+		totalSpent += row.amount;
+
+		if (row.mappedBucketId !== null) {
+			const existing = bucketMap.get(row.mappedBucketId);
+			if (existing) {
+				existing.totalSpent += row.amount;
+				existing.count++;
+			} else {
+				bucketMap.set(row.mappedBucketId, {
+					bucketName: row.bucketName ?? 'Unknown',
+					totalSpent: row.amount,
+					count: 1
+				});
+			}
+		} else if (row.mappedBillId !== null) {
+			billsSpent += row.amount;
+		} else {
+			uncategorizedSpent += row.amount;
+		}
+
+		// Group by UTC month (datePosted is stored as a unix timestamp → UTC)
+		const d = row.datePosted;
+		const monthKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+		monthMap.set(monthKey, (monthMap.get(monthKey) ?? 0) + row.amount);
+
+		const existing = payeeMap.get(row.payee);
+		if (existing) {
+			existing.totalSpent += row.amount;
+			existing.count++;
+		} else {
+			payeeMap.set(row.payee, { totalSpent: row.amount, count: 1 });
+		}
+	}
+
+	const byBucket: SpendingByBucket[] = Array.from(bucketMap.entries())
+		.map(([bucketId, d]) => ({ bucketId, bucketName: d.bucketName, totalSpent: d.totalSpent, count: d.count }))
+		.sort((a, b) => b.totalSpent - a.totalSpent);
+
+	if (billsSpent > 0) {
+		byBucket.push({ bucketId: null, bucketName: 'Bills', totalSpent: billsSpent, count: 0, isBills: true });
+	}
+	if (uncategorizedSpent > 0) {
+		byBucket.push({ bucketId: null, bucketName: 'Uncategorized', totalSpent: uncategorizedSpent, count: 0, isUncategorized: true });
+	}
+
+	const byMonth: SpendingByMonth[] = Array.from(monthMap.entries())
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([key, spent]) => {
+			const [year, month] = key.split('-').map(Number);
+			const monthLabel = new Date(year, month - 1, 1).toLocaleDateString('en-US', {
+				month: 'short',
+				year: 'numeric'
+			});
+			return { month: key, monthLabel, totalSpent: spent };
+		});
+
+	const topPayees: TopPayee[] = Array.from(payeeMap.entries())
+		.map(([payee, d]) => ({ payee, totalSpent: d.totalSpent, count: d.count }))
+		.sort((a, b) => b.totalSpent - a.totalSpent)
+		.slice(0, 10);
+
+	return { byBucket, byMonth, topPayees, totalSpent, uncategorizedSpent, billsSpent, transactionCount: rows.length };
 }

@@ -5,17 +5,21 @@
 	import { format } from 'date-fns';
 		import { calculateNextPayday, daysUntil } from '$lib/utils/payday';
 	import CashFlowChart from '$lib/components/CashFlowChart.svelte';
+	import SpendingByBucketChart from '$lib/components/SpendingByBucketChart.svelte';
+	import MonthlySpendingChart from '$lib/components/MonthlySpendingChart.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import AlertBanner from '$lib/components/AlertBanner.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import PaydaySettingsForm from '$lib/components/PaydaySettingsForm.svelte';
 	import ResponsiveStatGrid from '$lib/components/ResponsiveStatGrid.svelte';
+	import { formatCurrency } from '$lib/utils/format';
 
 	let { data }: { data: PageData } = $props();
 
 	// Make analytics reactive
 	const analytics = $derived(data.analytics);
+	const spending = $derived(data.spendingAnalytics);
 
 	// Check if user needs to configure income for full forecasting
 	const needsIncomeSetup = $derived(analytics.metrics.expectedIncome === null || !data.paydaySettings);
@@ -35,6 +39,9 @@
 
 	// Payday modal state
 	let showPaydaySettingsModal = $state(false);
+
+	// Tab state
+	let activeTab = $state<'cashflow' | 'spending'>('cashflow');
 
 	// Payday computed values
 	function ordinal(n: number): string {
@@ -282,7 +289,30 @@
 		</div>
 	</div>
 
-	<!-- Warnings / Alerts -->
+	<!-- Tab bar -->
+	<div class="mb-8 border-b border-gray-200 dark:border-gray-700">
+		<nav class="-mb-px flex gap-6" aria-label="Analytics tabs">
+			<button
+				onclick={() => (activeTab = 'cashflow')}
+				class="whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors {activeTab === 'cashflow'
+					? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+					: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}"
+			>
+				Cash Flow Forecast
+			</button>
+			<button
+				onclick={() => (activeTab = 'spending')}
+				class="whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors {activeTab === 'spending'
+					? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+					: 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}"
+			>
+				Spending History
+			</button>
+		</nav>
+	</div>
+
+	<!-- ── Cash Flow Tab ── -->
+	{#if activeTab === 'cashflow'}
 	{#if highWarnings.length > 0}
 		<div class="mb-8">
 			<button
@@ -446,9 +476,87 @@
 			{/if}
 		</div>
 	{/if}
-</div>
 
-<!-- Payday Settings Modal -->
+	{/if}
+
+	<!-- ── Spending History Tab ── -->
+	{#if activeTab === 'spending'}
+		{#if spending.transactionCount === 0}
+			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-10 text-center shadow-sm">
+				<p class="text-gray-500 dark:text-gray-400">No imported transactions found in the last 90 days.</p>
+				<p class="mt-1 text-sm text-gray-400 dark:text-gray-500">Import bank transactions from an account to see spending analytics.</p>
+			</div>
+		{:else}
+			<!-- Summary stats -->
+			<div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Spent (90 days)</p>
+					<p class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCurrency(spending.totalSpent)}</p>
+				</div>
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Transactions</p>
+					<p class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">{spending.transactionCount}</p>
+				</div>
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Avg / Month</p>
+					<p class="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
+						{formatCurrency(spending.byMonth.length > 0 ? spending.totalSpent / spending.byMonth.length : 0)}
+					</p>
+				</div>
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm">
+					<p class="text-sm font-medium text-gray-500 dark:text-gray-400">Uncategorized</p>
+					<p class="mt-1 text-2xl font-bold {spending.uncategorizedSpent > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-gray-100'}">
+						{formatCurrency(spending.uncategorizedSpent)}
+					</p>
+				</div>
+			</div>
+
+			<div class="mb-6 grid gap-6 lg:grid-cols-2">
+				<!-- Spending by Bucket -->
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Spending by Category</h2>
+					<SpendingByBucketChart data={spending.byBucket} />
+				</div>
+
+				<!-- Monthly Spending -->
+				<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
+					<h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Monthly Spending</h2>
+					<MonthlySpendingChart data={spending.byMonth} />
+				</div>
+			</div>
+
+			<!-- Top Payees -->
+			<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+				<div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+					<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Top Payees</h2>
+					<p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">Highest-spend merchants in the last 90 days</p>
+				</div>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="border-b border-gray-100 dark:border-gray-700 text-left">
+								<th class="px-6 py-3 font-medium text-gray-500 dark:text-gray-400">#</th>
+								<th class="px-6 py-3 font-medium text-gray-500 dark:text-gray-400">Payee</th>
+								<th class="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Transactions</th>
+								<th class="px-6 py-3 text-right font-medium text-gray-500 dark:text-gray-400">Total Spent</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each spending.topPayees as payee, i}
+								<tr class="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+									<td class="px-6 py-3 text-gray-400 dark:text-gray-500">{i + 1}</td>
+									<td class="px-6 py-3 font-medium text-gray-900 dark:text-gray-100">{payee.payee}</td>
+									<td class="px-6 py-3 text-right text-gray-600 dark:text-gray-400">{payee.count}</td>
+									<td class="px-6 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(payee.totalSpent)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		{/if}
+	{/if}
+</div>
 {#if showPaydaySettingsModal}
 	<Modal
 		bind:isOpen={showPaydaySettingsModal}

@@ -1,15 +1,17 @@
 import type { PageServerLoad, Actions } from './$types';
-import { getAnalyticsData, updateAnalyticsPreferences } from '$lib/server/db/analytics-queries';
+import { getAnalyticsData, updateAnalyticsPreferences, getSpendingAnalytics } from '$lib/server/db/analytics-queries';
 import { getPaydaySettings } from '$lib/server/db/queries';
 import { fail } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async () => {
 	const analyticsData = await getAnalyticsData();
 	const paydaySettingsData = getPaydaySettings();
+	const spendingAnalytics = getSpendingAnalytics(90);
 
 	return {
 		analytics: analyticsData,
-		paydaySettings: paydaySettingsData
+		paydaySettings: paydaySettingsData,
+		spendingAnalytics
 	};
 };
 
