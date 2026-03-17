@@ -4,7 +4,7 @@
 	import StatCard from '$lib/components/StatCard.svelte';
 	import ImportModal from '$lib/components/import/ImportModal.svelte';
 	import { enhance } from '$app/forms';
-	import { formatDateForInput, formatDate } from '$lib/utils/dates';
+	import { formatDateForInput, formatDate, utcDateToLocal } from '$lib/utils/dates';
 	import { formatCurrency } from '$lib/utils/format';
 	import { accountTypeIcon } from '$lib/utils/icons';
 	import { Landmark, Pencil, Upload, Trash2 } from 'lucide-svelte';
@@ -94,7 +94,7 @@
 						id="balanceAsOfDate"
 						type="date"
 						name="balanceAsOfDate"
-						value={account.balanceAsOfDate ? formatDateForInput(account.balanceAsOfDate) : formatDateForInput(new Date())}
+						value={account.balanceAsOfDate ? formatDateForInput(utcDateToLocal(account.balanceAsOfDate)) : formatDateForInput(new Date())}
 						class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 					/>
 					<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
