@@ -237,29 +237,29 @@ async function ensureCyclesExist(bucket: Bucket): Promise<void> {
 	// Generate all missing cycles up to now
 	const cycles = generateCyclesBetween(bucket.frequency, bucket.anchorDate, startFrom, now);
 
+	// Track carryover in memory across iterations instead of re-querying with
+	// potentially mismatched types (the old code compared TEXT endDate against
+	// an INTEGER unix timestamp, which only worked by accident in SQLite).
+	let prevRemaining = 0;
+	let hasPrev = false;
+
+	// Seed from the most recent existing cycle (if any)
+	const seedCycle = await db
+		.select()
+		.from(bucketCycles)
+		.where(eq(bucketCycles.bucketId, bucket.id))
+		.orderBy(desc(bucketCycles.id))
+		.limit(1);
+
+	if (seedCycle.length > 0 && bucket.enableCarryover) {
+		const prev = seedCycle[0];
+		const startingBalance = prev.budgetAmount + prev.allocatedAmount + prev.carryoverAmount;
+		prevRemaining = startingBalance - prev.totalSpent;
+		hasPrev = true;
+	}
+
 	for (const cycle of cycles) {
-		// Get the carryover from the previous cycle
-		const cycleStartTimestamp = Math.floor(cycle.startDate.getTime() / 1000);
-		const previousCycle = await db
-			.select()
-			.from(bucketCycles)
-			.where(
-				and(
-					eq(bucketCycles.bucketId, bucket.id),
-					sql`${bucketCycles.endDate} < ${cycleStartTimestamp}`
-				)
-			)
-			.orderBy(desc(bucketCycles.endDate))
-			.limit(1);
-
-		let carryoverAmount = 0;
-
-		if (previousCycle.length > 0 && bucket.enableCarryover) {
-			const prev = previousCycle[0];
-			const startingBalance = prev.budgetAmount + prev.allocatedAmount + prev.carryoverAmount;
-			const remaining = startingBalance - prev.totalSpent;
-			carryoverAmount = remaining;
-		}
+		const carryoverAmount = hasPrev && bucket.enableCarryover ? prevRemaining : 0;
 
 		// Calculate allocated amount for this cycle from matching allocations
 		const allocatedAmount = await sumAllocationsForCycle(
@@ -278,6 +278,13 @@ async function ensureCyclesExist(bucket: Bucket): Promise<void> {
 			totalSpent: 0,
 			isClosed: false
 		});
+
+		// Carry forward for next iteration
+		if (bucket.enableCarryover) {
+			const startingBalance = bucket.budgetAmount + allocatedAmount + carryoverAmount;
+			prevRemaining = startingBalance - 0; // totalSpent is 0 for new cycles
+		}
+		hasPrev = true;
 	}
 }
 
@@ -559,7 +566,11 @@ export async function getTransactionsForCycle(cycleId: number): Promise<BucketTr
 }
 
 /**
- * Recalculate all cycles from a starting date forward
+ * Recalculate all cycles from a starting date forward.
+ *
+ * Uses an in-memory accumulator for carryover (like the bill version) instead
+ * of re-querying the DB each iteration, which avoids timezone-induced date
+ * comparison mismatches that caused carryover to be sourced from 2 cycles back.
  */
 async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<void> {
 	// Get all cycles from the start date forward
@@ -575,6 +586,29 @@ async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<v
 		)
 		.orderBy(asc(bucketCycles.startDate));
 
+	// Seed prevRemaining from the cycle immediately before the first one we're recalculating
+	let prevRemaining = 0;
+	if (bucket.enableCarryover && cycles.length > 0) {
+		const firstCycle = cycles[0];
+		const prevCycle = await db
+			.select()
+			.from(bucketCycles)
+			.where(
+				and(
+					eq(bucketCycles.bucketId, bucket.id),
+					sql`${bucketCycles.id} < ${firstCycle.id}`
+				)
+			)
+			.orderBy(desc(bucketCycles.id))
+			.limit(1);
+
+		if (prevCycle.length > 0) {
+			const prev = prevCycle[0];
+			const prevStartingBalance = prev.budgetAmount + prev.allocatedAmount + prev.carryoverAmount;
+			prevRemaining = prevStartingBalance - prev.totalSpent;
+		}
+	}
+
 	for (const cycle of cycles) {
 		// Calculate total spent for this cycle
 		const transactions = await getTransactionsForCycle(cycle.id);
@@ -587,28 +621,8 @@ async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<v
 			cycle.endDate
 		);
 
-		// Get carryover from previous cycle
-		const cycleStartStr = format(cycle.startDate, 'yyyy-MM-dd');
-		const previousCycle = await db
-			.select()
-			.from(bucketCycles)
-			.where(
-				and(
-					eq(bucketCycles.bucketId, bucket.id),
-					sql`${bucketCycles.endDate} < ${cycleStartStr}`
-				)
-			)
-			.orderBy(desc(bucketCycles.endDate))
-			.limit(1);
-
-		let carryoverAmount = 0;
-
-		if (previousCycle.length > 0 && bucket.enableCarryover) {
-			const prev = previousCycle[0];
-			const startingBalance = prev.budgetAmount + prev.allocatedAmount + prev.carryoverAmount;
-			const remaining = startingBalance - prev.totalSpent;
-			carryoverAmount = remaining;
-		}
+		// Carryover from previous cycle's remaining (accumulated in-memory)
+		const carryoverAmount = bucket.enableCarryover ? prevRemaining : 0;
 
 		// Update the cycle
 		await db
@@ -620,6 +634,12 @@ async function recalculateCyclesFrom(bucket: Bucket, startDate: Date): Promise<v
 				updatedAt: new Date()
 			})
 			.where(eq(bucketCycles.id, cycle.id));
+
+		// Carry forward: this cycle's remaining becomes the next cycle's carryover
+		if (bucket.enableCarryover) {
+			const startingBalance = cycle.budgetAmount + allocatedAmount + carryoverAmount;
+			prevRemaining = startingBalance - totalSpent;
+		}
 	}
 }
 

@@ -379,21 +379,21 @@ async function recalculateCyclesFrom(bill: Bill, startDate: Date): Promise<void>
 		)
 		.orderBy(asc(billCycles.startDate));
 
-	// If carryover is enabled, we need the previous cycle's remaining to seed the first cycle
+	// If carryover is enabled, we need the previous cycle's remaining to seed the first cycle.
+	// Use id-based lookup to avoid timezone-sensitive date string comparisons.
 	let prevRemaining = 0;
 	if (bill.enableCarryover && cycles.length > 0) {
-		const firstCycleStart = cycles[0].startDate;
-		const firstStr = format(firstCycleStart, 'yyyy-MM-dd');
+		const firstCycle = cycles[0];
 		const prevCycle = await db
 			.select()
 			.from(billCycles)
 			.where(
 				and(
 					eq(billCycles.billId, bill.id),
-					sql`${billCycles.startDate} < ${firstStr}`
+					sql`${billCycles.id} < ${firstCycle.id}`
 				)
 			)
-			.orderBy(desc(billCycles.startDate))
+			.orderBy(desc(billCycles.id))
 			.limit(1);
 
 		if (prevCycle.length > 0) {
