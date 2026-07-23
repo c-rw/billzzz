@@ -2,7 +2,7 @@
 	import Button from '$lib/components/Button.svelte';
 	import type { PaydaySettings } from '$lib/server/db/schema';
 	import { format } from 'date-fns';
-	import { formatDateForInput, utcDateToLocal } from '$lib/utils/dates';
+	import { formatDateForInput, utcDateToLocal, parseLocalDate } from '$lib/utils/dates';
 
 	interface Props {
 		initialData?: PaydaySettings | null;
